@@ -12,25 +12,39 @@ Phase 1 台股資料收集系統的 Docker 部署與測試指南。
 
 ## 快速開始
 
-### 1. 建置 Docker Image
+### 1. 登入 GitHub Container Registry (GHCR)
 
 ```bash
-# 建置 Phase 1 映像檔
-docker-compose build phase1-test
+# 使用 GitHub Personal Access Token 登入
+echo $GHCR_TOKEN | docker login ghcr.io -u YOUR_GITHUB_USERNAME --password-stdin
+
+# 或使用互動式登入
+docker login ghcr.io
 ```
 
-### 2. 執行測試
+### 2. 拉取映像檔
 
 ```bash
-# 執行 Phase 1 測試（不含 API 測試）
+# 拉取最新的 Phase 1 映像檔
+docker pull ghcr.io/twcs-analysis/tw-stock-collector:phase1-latest
+```
+
+### 3. 執行測試
+
+```bash
+# 使用 docker-compose 執行測試
 docker-compose up phase1-test
 
 # 或直接使用 Docker
-docker build -t tw-stock-collector:phase1 .
-docker run --rm tw-stock-collector:phase1
+docker run --rm ghcr.io/twcs-analysis/tw-stock-collector:phase1-latest
 ```
 
-### 3. 查看結果
+> **注意**: 如果你想在本地建置映像檔而不是使用 GHCR,可以執行:
+> ```bash
+> docker build -t tw-stock-collector:phase1 .
+> ```
+
+### 4. 查看結果
 
 測試完成後會顯示：
 ```
