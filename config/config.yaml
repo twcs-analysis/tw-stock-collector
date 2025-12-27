@@ -115,7 +115,7 @@ storage:
     overwrite: false
 
     # 是否建立備份 (在覆蓋前)
-    create_backup: true
+    create_backup: false
 
     # 檔案壓縮: null, gzip, zip
     compression: null
