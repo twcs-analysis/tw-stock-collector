@@ -1,0 +1,196 @@
+# ====================================
+# 台股資料收集系統 - 日誌配置
+# ====================================
+# 使用 Python logging.config.dictConfig 格式
+
+version: 1
+disable_existing_loggers: false
+
+# ====================================
+# 格式器 (Formatters)
+# ====================================
+formatters:
+  # 詳細格式 (用於檔案)
+  detailed:
+    format: '%(asctime)s - %(name)s - %(levelname)s - [%(filename)s:%(lineno)d] - %(message)s'
+    datefmt: '%Y-%m-%d %H:%M:%S'
+
+  # 簡潔格式 (用於 console)
+  simple:
+    format: '%(asctime)s - %(levelname)s - %(message)s'
+    datefmt: '%H:%M:%S'
+
+  # JSON 格式 (用於結構化日誌)
+  json:
+    class: pythonjsonlogger.jsonlogger.JsonFormatter
+    format: '%(asctime)s %(name)s %(levelname)s %(message)s'
+
+# ====================================
+# 處理器 (Handlers)
+# ====================================
+handlers:
+  # Console 輸出
+  console:
+    class: logging.StreamHandler
+    level: INFO
+    formatter: simple
+    stream: ext://sys.stdout
+
+  # 主日誌檔案 (輪替)
+  file:
+    class: logging.handlers.RotatingFileHandler
+    level: DEBUG
+    formatter: detailed
+    filename: logs/collector.log
+    maxBytes: 10485760  # 10 MB
+    backupCount: 5
+    encoding: utf-8
+
+  # 錯誤日誌檔案
+  error_file:
+    class: logging.handlers.RotatingFileHandler
+    level: ERROR
+    formatter: detailed
+    filename: logs/error.log
+    maxBytes: 10485760  # 10 MB
+    backupCount: 5
+    encoding: utf-8
+
+  # API 呼叫日誌
+  api_file:
+    class: logging.handlers.RotatingFileHandler
+    level: DEBUG
+    formatter: detailed
+    filename: logs/api.log
+    maxBytes: 10485760  # 10 MB
+    backupCount: 3
+    encoding: utf-8
+
+  # 資料收集日誌
+  collection_file:
+    class: logging.handlers.RotatingFileHandler
+    level: INFO
+    formatter: detailed
+    filename: logs/collection.log
+    maxBytes: 10485760  # 10 MB
+    backupCount: 10
+    encoding: utf-8
+
+  # 按日期輪替的日誌
+  daily_file:
+    class: logging.handlers.TimedRotatingFileHandler
+    level: INFO
+    formatter: detailed
+    filename: logs/daily.log
+    when: midnight
+    interval: 1
+    backupCount: 30
+    encoding: utf-8
+
+# ====================================
+# 記錄器 (Loggers)
+# ====================================
+loggers:
+  # 根記錄器
+  root:
+    level: INFO
+    handlers:
+      - console
+      - file
+      - error_file
+
+  # 資料收集器
+  collectors:
+    level: INFO
+    handlers:
+      - collection_file
+      - console
+    propagate: false
+
+  # API 呼叫
+  finmind.api:
+    level: DEBUG
+    handlers:
+      - api_file
+    propagate: true
+
+  # 價格收集器
+  collectors.price:
+    level: INFO
+    handlers:
+      - collection_file
+    propagate: true
+
+  # 法人收集器
+  collectors.institutional:
+    level: INFO
+    handlers:
+      - collection_file
+    propagate: true
+
+  # 融資融券收集器
+  collectors.margin:
+    level: INFO
+    handlers:
+      - collection_file
+    propagate: true
+
+  # 工具模組
+  utils:
+    level: INFO
+    handlers:
+      - file
+    propagate: true
+
+  # 檔案處理器
+  utils.file_handler:
+    level: DEBUG
+    handlers:
+      - file
+    propagate: true
+
+  # 驗證器
+  utils.validator:
+    level: INFO
+    handlers:
+      - file
+    propagate: true
+
+  # 股票清單管理
+  utils.stock_list:
+    level: INFO
+    handlers:
+      - file
+    propagate: true
+
+  # 排程器
+  schedulers:
+    level: INFO
+    handlers:
+      - file
+      - console
+    propagate: false
+
+  # 第三方套件 (降低日誌等級)
+  urllib3:
+    level: WARNING
+    handlers:
+      - file
+    propagate: false
+
+  requests:
+    level: WARNING
+    handlers:
+      - file
+    propagate: false
+
+  FinMind:
+    level: INFO
+    handlers:
+      - api_file
+    propagate: false
+
+# ====================================
+# 預設配置
+# ====================================
+# 所有未明確定義的 logger 都會使用 root logger 的配置
