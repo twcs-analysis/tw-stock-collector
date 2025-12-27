@@ -31,6 +31,281 @@
 - 主力分點前 15 大排行（如有需要）
 - 其他特殊需求資料
 
+### 1.3 股票清單獲取與管理
+
+#### 1.3.1 獲取所有台股清單
+
+**FinMind API**: `taiwan_stock_info`
+
+```python
+from FinMind.data import DataLoader
+
+dl = DataLoader()
+
+# 取得所有台股資訊
+all_stocks = dl.taiwan_stock_info()
+
+# 資料欄位:
+# - stock_id: 股票代碼 (如 "2330")
+# - stock_name: 股票名稱 (如 "台積電")
+# - industry_category: 產業別
+# - type: 類型 (股票/ETF/權證/特別股等)
+# - date: 資料日期
+```
+
+**資料範圍**:
+- 上市股票 (TWSE): ~950 檔
+- 上櫃股票 (TPEx): ~780 檔
+- ETF: ~250 檔
+- 權證、特別股等: ~數千檔
+- **總計**: ~2000-3000 檔 (不含衍生性商品)
+
+#### 1.3.2 股票清單篩選策略
+
+```python
+def filter_stock_list(all_stocks):
+    """篩選股票清單,排除不需要的類型"""
+
+    # 方案一: 只保留普通股票和 ETF
+    filtered = all_stocks[
+        all_stocks['type'].isin(['股票', 'ETF'])
+    ]
+
+    # 方案二: 排除特定類型
+    excluded_types = ['權證', '特別股', 'REITs', '受益證券']
+    filtered = all_stocks[
+        ~all_stocks['type'].isin(excluded_types)
+    ]
+
+    # 方案三: 根據代碼規則篩選
+    # 一般股票: 1000-9999
+    # ETF: 00xx, 000xx
+    filtered = all_stocks[
+        all_stocks['stock_id'].str.match(r'^(00\d{2,3}|[1-9]\d{3})$')
+    ]
+
+    return filtered
+
+# 實際使用
+all_stocks = dl.taiwan_stock_info()
+active_stocks = filter_stock_list(all_stocks)
+
+print(f"總股票數: {len(all_stocks)}")
+print(f"篩選後: {len(active_stocks)}")
+
+# 儲存到本地
+active_stocks.to_csv('data/stock_list.csv', index=False)
+```
+
+**建議篩選結果**: 約 1500-1800 檔 (普通股票 + ETF)
+
+#### 1.3.3 股票清單更新頻率
+
+| 更新類型 | 頻率 | 原因 |
+|---------|------|------|
+| 完整更新 | 每週一次 | 捕捉新上市/下市股票 |
+| 增量檢查 | 每月一次 | 人工確認特殊狀況 |
+| 緊急更新 | 手動觸發 | 重大事件 (如公司合併) |
+
+**實作方式**:
+```python
+# 定期更新股票清單 (每週日執行)
+def update_stock_list():
+    """更新股票清單"""
+    old_list = pd.read_csv('data/stock_list.csv')
+    new_list = dl.taiwan_stock_info()
+    new_list_filtered = filter_stock_list(new_list)
+
+    # 比較差異
+    old_ids = set(old_list['stock_id'])
+    new_ids = set(new_list_filtered['stock_id'])
+
+    added = new_ids - old_ids
+    removed = old_ids - new_ids
+
+    if added:
+        print(f"新增股票: {added}")
+    if removed:
+        print(f"下市股票: {removed}")
+
+    # 儲存新清單
+    new_list_filtered.to_csv('data/stock_list.csv', index=False)
+
+    # 記錄變更日誌
+    log_stock_list_changes(added, removed)
+```
+
+### 1.4 批次收集策略與 API 限制
+
+#### 1.4.1 FinMind API 限制 (免費版)
+
+| 限制類型 | 免費會員 | 付費會員 |
+|---------|---------|---------|
+| 每分鐘請求數 | 600 次 | 無限制 |
+| 每日請求數 | 無限制 | 無限制 |
+| 歷史資料範圍 | 完整 | 完整 |
+| 即時報價 | ❌ | ✅ |
+| 分 K 資料 | ❌ | ✅ |
+
+**重要**: 免費版每分鐘 600 次請求已足夠日線資料收集
+
+#### 1.4.2 收集時間估算
+
+**假設**: 收集 1500 檔股票
+
+| 資料類型 | API 次數 | 每次間隔 | 總時間 |
+|---------|---------|---------|--------|
+| 價量資料 | 1500 | 3 秒 | 75 分鐘 |
+| 法人買賣 | 1 (總表) | - | <1 分鐘 |
+| 融資融券 | 1 (總表) | - | <1 分鐘 |
+| 外資持股 | 1500 | 3 秒 | 75 分鐘 |
+| **總計** | ~3000 | - | **約 2.5 小時** |
+
+**優化策略**:
+
+1. **使用總表 API (推薦)**:
+   ```python
+   # ❌ 不好: 逐檔查詢 (需要 1500 次請求)
+   for stock_id in stock_list:
+       data = dl.taiwan_stock_institutional_investors(stock_id=stock_id, date=date)
+
+   # ✅ 好: 一次取得所有股票 (只需 1 次請求)
+   all_data = dl.taiwan_stock_institutional_investors(date=date)
+   ```
+
+2. **只收集有交易的股票**:
+   ```python
+   # 先取得當日有成交的股票清單
+   traded_stocks = get_traded_stocks_today()  # 通常約 1200 檔
+
+   # 只收集這些股票的詳細資料
+   for stock_id in traded_stocks:
+       collect_stock_data(stock_id)
+   ```
+
+3. **錯誤重試與延遲**:
+   ```python
+   import time
+   from tenacity import retry, stop_after_attempt, wait_fixed
+
+   @retry(stop=stop_after_attempt(3), wait=wait_fixed(10))
+   def collect_with_retry(stock_id, date):
+       """帶重試的資料收集"""
+       try:
+           data = dl.taiwan_stock_daily(stock_id=stock_id, start_date=date, end_date=date)
+           time.sleep(3)  # 避免超過 API 限制
+           return data
+       except Exception as e:
+           print(f"收集失敗: {stock_id}, 錯誤: {e}")
+           raise
+   ```
+
+#### 1.4.3 優化後時間估算
+
+使用總表 API 和只收集有交易股票:
+
+| 資料類型 | API 次數 | 總時間 |
+|---------|---------|--------|
+| 價量資料 (總表) | 1 | <1 分鐘 |
+| 法人買賣 (總表) | 1 | <1 分鐘 |
+| 融資融券 (總表) | 1 | <1 分鐘 |
+| 外資持股 (總表) | 1 | <1 分鐘 |
+| **總計** | 4 | **約 5 分鐘** |
+
+**結論**: 使用總表 API 可將收集時間從 2.5 小時縮短到 **5 分鐘**
+
+#### 1.4.4 總表 API 對照表
+
+| 資料類型 | 逐檔 API | 總表 API (推薦) |
+|---------|---------|----------------|
+| 每日價量 | `taiwan_stock_daily(stock_id=...)` | ❌ 無總表 |
+| 法人買賣 | `taiwan_stock_institutional_investors(stock_id=...)` | ✅ 不帶 stock_id 參數 |
+| 融資融券 | `taiwan_stock_margin_purchase_short_sale(stock_id=...)` | ✅ 不帶 stock_id 參數 |
+| 借券賣出 | `taiwan_stock_securities_lending(stock_id=...)` | ✅ 不帶 stock_id 參數 |
+| 股權分散 | `taiwan_stock_shareholding(stock_id=...)` | ❌ 需逐檔查詢 |
+
+**實作範例**:
+```python
+def collect_daily_all_stocks(date):
+    """收集所有股票的每日資料 (使用總表)"""
+
+    # 1. 價量資料 - 需逐檔 (但可批次處理)
+    stock_list = pd.read_csv('data/stock_list.csv')['stock_id'].tolist()
+
+    # 分批處理,每 100 檔休息一下
+    batch_size = 100
+    for i in range(0, len(stock_list), batch_size):
+        batch = stock_list[i:i+batch_size]
+        for stock_id in batch:
+            data = dl.taiwan_stock_daily(stock_id=stock_id, start_date=date, end_date=date)
+            save_data(data, f'price/{date}/{stock_id}.json')
+            time.sleep(0.1)  # 間隔 0.1 秒 (每分鐘 600 次以內)
+
+        print(f"完成 {i+len(batch)}/{len(stock_list)}")
+
+    # 2. 法人買賣 - 使用總表 (1 次請求)
+    institutional = dl.taiwan_stock_institutional_investors(date=date)
+    save_data(institutional, f'institutional/{date}/all.json')
+
+    # 3. 融資融券 - 使用總表 (1 次請求)
+    margin = dl.taiwan_stock_margin_purchase_short_sale(date=date)
+    save_data(margin, f'margin/{date}/all.json')
+
+    # 4. 借券賣出 - 使用總表 (1 次請求)
+    lending = dl.taiwan_stock_securities_lending(date=date)
+    save_data(lending, f'lending/{date}/all.json')
+
+    print(f"完成 {date} 資料收集")
+```
+
+#### 1.4.5 GitHub Actions 執行時間規劃
+
+**每日收集時程** (台北時間):
+- 17:30 - 證交所收盤資料更新
+- 18:00 - GitHub Actions 開始執行
+- 18:05 - 資料收集完成
+- 18:10 - Commit 並 Push 到 Git
+
+**workflow 範例**:
+```yaml
+name: Daily Stock Data Collection
+
+on:
+  schedule:
+    # 每交易日 18:00 (UTC 10:00 = 台北 18:00)
+    - cron: '0 10 * * 1-5'
+  workflow_dispatch:  # 允許手動觸發
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30  # 預留 30 分鐘
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Collect data
+        env:
+          FINMIND_API_TOKEN: ${{ secrets.FINMIND_API_TOKEN }}
+        run: python scripts/run_collection.py --date today
+
+      - name: Commit and push
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add data/
+          git commit -m "data: daily collection $(date +%Y-%m-%d)" || echo "No changes"
+          git push
+```
+
 ---
 
 ## 二、FinMind 資料需求清單

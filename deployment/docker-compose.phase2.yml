@@ -1,0 +1,118 @@
+# ====================================
+# Phase 2: 資料庫設計與匯入
+# ====================================
+#
+# 用途: 啟動資料庫服務並從 Git 儲存的資料匯入
+# 資料流: data/ (Git) → PostgreSQL
+#
+# 使用方式:
+#   # 啟動資料庫
+#   docker-compose -f deployment/docker-compose.phase2.yml up -d postgres
+#
+#   # 執行資料匯入
+#   docker-compose -f deployment/docker-compose.phase2.yml run --rm importer
+#
+# 前置條件: Phase 1 已收集資料到 data/ 目錄
+
+version: '3.8'
+
+services:
+  # PostgreSQL 資料庫
+  postgres:
+    image: postgres:16-alpine
+    container_name: tw-stock-db
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=${DB_NAME:-tw_stock}
+      - POSTGRES_USER=${DB_USER:-stock_user}
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-changeme}
+      - POSTGRES_INITDB_ARGS=--encoding=UTF-8 --lc-collate=C --lc-ctype=C
+      - TZ=Asia/Taipei
+    volumes:
+      # 資料持久化
+      - postgres_data:/var/lib/postgresql/data
+      # 資料庫初始化 SQL 腳本
+      - ../database/init:/docker-entrypoint-initdb.d:ro
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    networks:
+      - stock-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-stock_user} -d ${DB_NAME:-tw_stock}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # 資料匯入器 (Phase 2)
+  importer:
+    build:
+      context: ..
+      dockerfile: build/Dockerfile
+    image: tw-stock-collector:latest
+    container_name: tw-stock-importer
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      # 讀取 Phase 1 收集的資料 (唯讀)
+      - ../data:/app/data:ro
+      # 日誌目錄
+      - ../logs:/app/logs
+      # 配置檔 (唯讀)
+      - ../config:/app/config:ro
+    env_file:
+      - .env
+    environment:
+      - TZ=Asia/Taipei
+      - PYTHONUNBUFFERED=1
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=${DB_NAME:-tw_stock}
+      - DB_USER=${DB_USER:-stock_user}
+      - DB_PASSWORD=${DB_PASSWORD:-changeme}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    # 預設執行全部匯入
+    # 可透過 docker-compose run 覆寫
+    command: >
+      python -m scripts.run_import
+      --mode ${IMPORT_MODE:-append}
+      --batch-size ${IMPORT_BATCH_SIZE:-1000}
+    networks:
+      - stock-network
+    # 設為 profile,避免自動啟動
+    # 需要手動執行: docker-compose run importer
+    profiles:
+      - import
+
+  # pgAdmin (選用,用於資料庫管理)
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: tw-stock-pgadmin
+    restart: unless-stopped
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=${PGADMIN_EMAIL:-admin@localhost}
+      - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_PASSWORD:-admin}
+      - PGADMIN_CONFIG_SERVER_MODE=False
+    ports:
+      - "${PGADMIN_PORT:-5050}:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    depends_on:
+      - postgres
+    networks:
+      - stock-network
+    profiles:
+      - tools
+
+networks:
+  stock-network:
+    name: ${NETWORK_NAME:-tw-stock-network}
+    driver: bridge
+
+volumes:
+  postgres_data:
+    name: ${POSTGRES_VOLUME:-tw_stock_postgres_data}
+    driver: local
+  pgadmin_data:
+    driver: local
