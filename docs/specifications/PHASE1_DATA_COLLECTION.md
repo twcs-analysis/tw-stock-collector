@@ -78,48 +78,41 @@
 data/
 ├── raw/                          # 原始資料 (JSON/CSV)
 │   ├── price/                    # 價量資料
-│   │   ├── daily/               # 每日價量
-│   │   │   ├── 2025/
-│   │   │   │   ├── 01/
-│   │   │   │   │   ├── 20250102.json
-│   │   │   │   │   ├── 20250103.json
-│   │   │   │   │   └── ...
-│   │   │   │   └── 02/
-│   │   │   └── 2024/
-│   │   └── adjusted/            # 還原股價
-│   │       └── YYYY/MM/
-│   ├── institutional/           # 法人籌碼
-│   │   ├── investors/          # 三大法人買賣超
+│   │   └── YYYY/MM/
+│   │       └── YYYY-MM-DD.json   # 每日一檔，包含所有股票
+│   ├── institutional/            # 法人籌碼
+│   │   └── YYYY/MM/
+│   │       └── YYYY-MM-DD.json
+│   ├── margin/                   # 信用交易
+│   │   └── YYYY/MM/
+│   │       └── YYYY-MM-DD.json
+│   ├── lending/                  # 借券賣出
+│   │   └── YYYY/MM/
+│   │       └── YYYY-MM-DD.json
+│   ├── ownership/                # 持股結構
+│   │   ├── shareholding/         # 股權分散表
 │   │   │   └── YYYY/MM/
-│   │   ├── foreign_holding/    # 外資持股
-│   │   │   └── YYYY/MM/
-│   │   └── major_trades/       # 八大行庫 (若有)
+│   │   │       └── YYYY-Www.json
+│   │   └── directors/            # 董監持股
 │   │       └── YYYY/MM/
-│   ├── margin/                  # 信用交易
-│   │   ├── margin_trading/     # 融資融券
-│   │   │   └── YYYY/MM/
-│   │   └── securities_lending/ # 借券
-│   │       └── YYYY/MM/
-│   ├── ownership/               # 持股結構
-│   │   ├── shareholding/       # 股權分散表
-│   │   │   └── YYYY/MM/
-│   │   └── directors/          # 董監持股
-│   │       └── YYYY/MM/
-│   └── metadata/                # 基礎資料
-│       ├── stock_list/         # 股票清單
+│   │           └── YYYY-Www.json
+│   └── metadata/                 # 基礎資料
+│       ├── stock_list/           # 股票清單
 │       │   └── YYYY/MM/
-│       └── trading_calendar/   # 交易日曆
-│           └── YYYY/
-└── logs/                        # 執行日誌
+│       │       └── YYYY-MM.json
+│       └── trading_calendar/     # 交易日曆
+│           └── YYYY.json
+└── logs/                         # 執行日誌
     └── collection/
         └── YYYY/MM/
 ```
 
 ### 檔案命名規範
 
-#### 每日資料
-- 格式: `YYYYMMDD.json` 或 `YYYYMMDD.csv`
-- 範例: `20250128.json`
+#### 每日資料（聚合格式）
+- 格式: `YYYY-MM-DD.json`（包含當日所有股票）
+- 範例: `2025-01-28.json`
+- 特點: 每日僅產生 1 個檔案，內含所有股票資料的 JSON 陣列
 
 #### 每週資料
 - 格式: `YYYY-Www.json` (ISO 週次)
@@ -246,7 +239,8 @@ scripts/
   - 成交量、成交金額
   - 成交筆數
 
-- **儲存路徑**: `data/raw/price/daily/YYYY/MM/YYYYMMDD.csv`
+- **儲存路徑**: `data/raw/price/YYYY/MM/YYYY-MM-DD.json`
+- **檔案格式**: JSON 陣列，包含當日所有股票
 
 #### 2. 還原股價資料
 - **資料項目**:
@@ -263,7 +257,8 @@ scripts/
   - 投信買賣超金額與張數
   - 自營商買賣超金額與張數
 
-- **儲存路徑**: `data/raw/institutional/investors/YYYY/MM/YYYYMMDD.json`
+- **儲存路徑**: `data/raw/institutional/YYYY/MM/YYYY-MM-DD.json`
+- **檔案格式**: JSON 陣列，包含當日所有股票
 
 #### 4. 融資融券
 - **資料項目**:
@@ -271,14 +266,16 @@ scripts/
   - 融券餘額、融券增減
   - 資券相抵張數
 
-- **儲存路徑**: `data/raw/margin/margin_trading/YYYY/MM/YYYYMMDD.json`
+- **儲存路徑**: `data/raw/margin/YYYY/MM/YYYY-MM-DD.json`
+- **檔案格式**: JSON 陣列，包含當日所有股票
 
 #### 5. 借券資料
 - **資料項目**:
   - 借券賣出餘額
   - 借券賣出增減
 
-- **儲存路徑**: `data/raw/margin/securities_lending/YYYY/MM/YYYYMMDD.json`
+- **儲存路徑**: `data/raw/lending/YYYY/MM/YYYY-MM-DD.json`
+- **檔案格式**: JSON 陣列，包含當日所有股票
 
 #### 6. 外資持股比例
 - **資料項目**:
@@ -286,7 +283,8 @@ scripts/
   - 外資持股比例
   - 外資可投資比例
 
-- **儲存路徑**: `data/raw/institutional/foreign_holding/YYYY/MM/YYYYMMDD.json`
+- **儲存路徑**: `data/raw/institutional/YYYY/MM/YYYY-MM-DD.json`
+- **檔案格式**: JSON 陣列，包含當日所有股票
 
 #### 7. 股權分散表 (每週)
 - **資料項目**:
@@ -452,11 +450,11 @@ data: collect daily price for 2025-01-28
 
 ### 儲存空間管理
 
-#### 預估空間需求
-- 每日價量資料: ~2MB/日
-- 法人籌碼資料: ~1MB/日
-- 預估月增長: ~60MB
+#### 預估空間需求（聚合格式）
+- 每日所有資料類型: ~15MB/日（4 個檔案，每個 3-5MB）
+- 預估月增長: ~60MB（約 20 個交易日）
 - 預估年增長: ~720MB
+- 檔案數量: ~1,000 個檔案/年（每交易日 4 個檔案）
 
 #### 優化策略
 1. 使用壓縮格式 (JSON.gz, CSV.gz)

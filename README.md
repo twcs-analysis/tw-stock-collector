@@ -77,9 +77,13 @@ tw-stock-collector/
 ├── data/                        # Phase 1: 原始資料儲存
 │   ├── raw/                     # 原始資料 (JSON/CSV)
 │   │   ├── price/              # 價量資料
+│   │   │   └── YYYY/MM/YYYY-MM-DD.json  # 每日一檔，包含所有股票
 │   │   ├── institutional/      # 法人籌碼
+│   │   │   └── YYYY/MM/YYYY-MM-DD.json
 │   │   ├── margin/             # 信用交易
-│   │   └── ownership/          # 持股結構
+│   │   │   └── YYYY/MM/YYYY-MM-DD.json
+│   │   └── lending/            # 借券賣出
+│   │       └── YYYY/MM/YYYY-MM-DD.json
 │   └── logs/                    # 收集日誌
 │
 ├── scripts/                     # 執行腳本
@@ -262,6 +266,7 @@ tw-stock-collector/
 ### Phase 1 (資料收集)
 - 每日收集時間: < 5 分鐘
 - 儲存空間: ~60MB/月
+- 檔案數量: ~1,000 個檔案/年（每日 4 個檔案）
 - GitHub Actions 免費額度內
 
 ### Phase 2 (資料匯入)
