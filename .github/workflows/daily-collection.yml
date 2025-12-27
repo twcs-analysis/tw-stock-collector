@@ -39,7 +39,7 @@ jobs:
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          password: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
 
       - name: Set collection parameters
         id: params
@@ -106,11 +106,9 @@ jobs:
           if git diff --staged --quiet; then
             echo "沒有新資料需要提交"
           else
-            git commit -m "data: Daily collection for ${COMMIT_DATE}
-
-Collected data types: ${{ steps.params.outputs.types }}
-
-🤖 Automated collection by GitHub Actions"
+            git commit -m "data: Daily collection for ${COMMIT_DATE}" \
+                       -m "Collected data types: ${{ steps.params.outputs.types }}" \
+                       -m "🤖 Automated collection by GitHub Actions"
 
             git push
             echo "✅ 資料已提交到 Git"
