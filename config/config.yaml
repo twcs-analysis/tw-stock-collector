@@ -1,0 +1,28 @@
+# 資料收集設定
+collection:
+  # 請求設定
+  request_timeout: 30
+  retry_times: 3
+  retry_delay: 5
+
+  # 請求間隔（秒）
+  request_interval: 3
+
+  # 股票清單
+  stock_list_file: "data/stock_list.csv"
+
+  # 日期範圍
+  start_date: "2020-01-01"
+
+# 排程設定
+schedule:
+  daily_collection_time: "15:30"
+  weekly_collection_day: "saturday"
+  weekly_collection_time: "09:00"
+
+# 日誌設定
+logging:
+  level: "INFO"
+  file: "logs/collector.log"
+  max_bytes: 10485760  # 10MB
+  backup_count: 5
