@@ -3,10 +3,7 @@ version: '3.8'
 services:
   # Phase 1 測試服務
   phase1-test:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    image: tw-stock-collector:phase1
+    image: ghcr.io/twcs-analysis/tw-stock-collector:phase1-latest
     container_name: tw-stock-phase1-test
     environment:
       - FINMIND_API_TOKEN=${FINMIND_API_TOKEN:-}
@@ -22,10 +19,7 @@ services:
 
   # Phase 1 收集服務（用於實際收集）
   phase1-collector:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    image: tw-stock-collector:phase1
+    image: ghcr.io/twcs-analysis/tw-stock-collector:phase1-latest
     container_name: tw-stock-phase1-collector
     environment:
       - FINMIND_API_TOKEN=${FINMIND_API_TOKEN:-}
@@ -48,10 +42,7 @@ services:
 
   # Phase 1 回補服務
   phase1-backfill:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    image: tw-stock-collector:phase1
+    image: ghcr.io/twcs-analysis/tw-stock-collector:phase1-latest
     container_name: tw-stock-phase1-backfill
     environment:
       - FINMIND_API_TOKEN=${FINMIND_API_TOKEN:-}
