@@ -35,7 +35,7 @@ class PriceCollector(BaseCollector):
 
         Args:
             date: 收集日期
-            stock_id: 股票代碼 (必須提供)
+            stock_id: 股票代碼 (None 則收集所有股票，使用 Aggregate API)
             **kwargs: 其他參數
 
         Returns:
@@ -46,13 +46,35 @@ class PriceCollector(BaseCollector):
 
         Examples:
             >>> collector = PriceCollector()
+            >>> # 收集單一股票
             >>> df = collector.collect('2025-01-28', stock_id='2330')
-            >>> print(df[['date', 'open', 'high', 'low', 'close', 'volume']])
+            >>> # 收集所有股票（Aggregate API）
+            >>> df = collector.collect('2025-01-28', stock_id=None)
         """
-        if stock_id is None:
-            raise CollectorError("價格資料收集需要提供 stock_id")
-
         date_str = self._format_date(date)
+
+        # 如果 stock_id 為 None，使用 Aggregate API 收集所有股票
+        if stock_id is None:
+            self.logger.info(f"收集所有股票價格資料（Aggregate API）: {date_str}")
+
+            # 呼叫 FinMind Aggregate API（不指定 stock_id）
+            df = self.fetch_with_retry(
+                self.dl.taiwan_stock_daily,
+                start_date=date_str,
+                end_date=date_str
+            )
+
+            if df is None or df.empty:
+                self.logger.warning(f"無資料: {date_str}")
+                return pd.DataFrame()
+
+            # 資料處理
+            df = self._process_data(df)
+
+            self.logger.info(f"收集完成: {len(df)} 筆（所有股票）")
+            return df
+
+        # 收集單一股票
         self.logger.info(f"收集價格資料: {stock_id}, {date_str}")
 
         # 呼叫 FinMind API
