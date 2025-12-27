@@ -34,7 +34,7 @@ jobs:
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          password: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
 
       - name: Set collection date
         id: date
@@ -110,13 +110,12 @@ jobs:
           if git diff --staged --quiet; then
             echo "沒有新資料需要提交"
           else
-            git commit -m "data: Weekly collection for ${COMMIT_DATE}
-
-Collected data:
-- Ownership (股權分散表)
-- Revenue (月營收，如適用)
-
-🤖 Automated weekly collection by GitHub Actions"
+            git commit -m "data: Weekly collection for ${COMMIT_DATE}" \
+                       -m "Collected data:" \
+                       -m "- Ownership (股權分散表)" \
+                       -m "- Revenue (月營收，如適用)" \
+                       -m "" \
+                       -m "🤖 Automated weekly collection by GitHub Actions"
 
             git push
             echo "✅ 每週資料已提交"

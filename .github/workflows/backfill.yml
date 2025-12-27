@@ -66,7 +66,7 @@ jobs:
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          password: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
 
       - name: Pull Docker image
         run: |
@@ -148,12 +148,11 @@ jobs:
           if git diff --staged --quiet; then
             echo "沒有新資料需要提交"
           else
-            git commit -m "data: Backfill from ${{ steps.dates.outputs.start_date }} to ${{ steps.dates.outputs.end_date }}
-
-Data types: ${{ github.event.inputs.types }}
-Batch size: ${{ github.event.inputs.batch_size }}
-
-🤖 Automated backfill by GitHub Actions"
+            git commit -m "data: Backfill from ${{ steps.dates.outputs.start_date }} to ${{ steps.dates.outputs.end_date }}" \
+                       -m "Data types: ${{ github.event.inputs.types }}" \
+                       -m "Batch size: ${{ github.event.inputs.batch_size }}" \
+                       -m "" \
+                       -m "🤖 Automated backfill by GitHub Actions"
 
             git push
             echo "✅ 回補資料已提交"
