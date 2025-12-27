@@ -150,6 +150,20 @@ class BaseCollector(ABC):
 
                 return df
 
+            except KeyError as e:
+                # KeyError 通常表示 API 返回沒有 data 欄位(非交易日或無資料)
+                # 這是正常情況,不需要重試,直接返回空 DataFrame
+                elapsed = time.time() - start_time
+                if 'data' in str(e):
+                    self.logger.info(
+                        f"查詢日期無資料(可能是非交易日): {fetch_func.__name__}, "
+                        f"耗時 {elapsed:.2f}s"
+                    )
+                    return pd.DataFrame()
+                else:
+                    # 其他 KeyError 還是要報錯
+                    raise
+
             except Exception as e:
                 elapsed = time.time() - start_time
                 self.logger.warning(
@@ -160,6 +174,9 @@ class BaseCollector(ABC):
 
         try:
             return _fetch()
+        except KeyError:
+            # KeyError 已經在 _fetch 中處理了,這裡直接返回空 DataFrame
+            return pd.DataFrame()
         except Exception as e:
             self.logger.error(f"API 呼叫最終失敗: {e}", exc_info=True)
             raise CollectorError(f"API 呼叫失敗: {e}") from e
@@ -250,6 +267,13 @@ class BaseCollector(ABC):
         try:
             # 收集
             df = self.collect(date, stock_id, **kwargs)
+
+            # 如果是空資料(例如非交易日),記錄訊息但不算失敗
+            if df is None or df.empty:
+                self.logger.info(
+                    f"查詢日期無資料: date={date}, stock_id={stock_id} (可能是非交易日)"
+                )
+                return True  # 無資料不算失敗,返回 True
 
             # 儲存
             return self.save_data(df, date, stock_id)
