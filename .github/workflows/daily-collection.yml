@@ -1,0 +1,144 @@
+name: Daily Data Collection
+
+on:
+  schedule:
+    # 每個交易日 18:00 台灣時間執行 (UTC+8 = 10:00 UTC)
+    - cron: '0 10 * * 1-5'
+  workflow_dispatch:
+    inputs:
+      date:
+        description: '收集日期 (YYYY-MM-DD，留空為昨天)'
+        required: false
+        type: string
+      types:
+        description: '資料類型 (用空格分隔，如: price institutional)'
+        required: false
+        default: 'price institutional margin lending'
+        type: string
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  collect:
+    name: Collect Daily Data
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set collection parameters
+        id: params
+        run: |
+          if [ -n "${{ github.event.inputs.date }}" ]; then
+            echo "date=${{ github.event.inputs.date }}" >> $GITHUB_OUTPUT
+          else
+            echo "date=yesterday" >> $GITHUB_OUTPUT
+          fi
+
+          if [ -n "${{ github.event.inputs.types }}" ]; then
+            echo "types=${{ github.event.inputs.types }}" >> $GITHUB_OUTPUT
+          else
+            echo "types=price institutional margin lending" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Pull Docker image
+        run: |
+          docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:phase1-latest
+
+      - name: Run data collection
+        env:
+          FINMIND_API_TOKEN: ${{ secrets.FINMIND_API_TOKEN }}
+          COLLECTION_DATE: ${{ steps.params.outputs.date }}
+          COLLECTION_TYPES: ${{ steps.params.outputs.types }}
+        run: |
+          docker run --rm \
+            -e FINMIND_API_TOKEN="${FINMIND_API_TOKEN}" \
+            -e COLLECTION_DATE="${COLLECTION_DATE}" \
+            -e COLLECTION_TYPES="${COLLECTION_TYPES}" \
+            -e TZ=Asia/Taipei \
+            -v ${{ github.workspace }}/data:/app/data \
+            -v ${{ github.workspace }}/logs:/app/logs \
+            -v ${{ github.workspace }}/cache:/app/cache \
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:phase1-latest \
+            python scripts/run_collection.py --date ${COLLECTION_DATE} --types ${COLLECTION_TYPES}
+
+      - name: Check collected data
+        run: |
+          echo "=== 收集的資料 ==="
+          find data/raw -type f -name "*.json" -o -name "*.csv" | head -20
+
+          echo ""
+          echo "=== 資料統計 ==="
+          echo "JSON 檔案數: $(find data/raw -type f -name "*.json" | wc -l)"
+          echo "CSV 檔案數: $(find data/raw -type f -name "*.csv" | wc -l)"
+          echo "總大小: $(du -sh data/raw | cut -f1)"
+
+      - name: Commit and push data
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+
+          # 設定日期（用於 commit message）
+          if [ "${{ steps.params.outputs.date }}" = "yesterday" ]; then
+            COMMIT_DATE=$(date -d "yesterday" +%Y-%m-%d 2>/dev/null || date -v-1d +%Y-%m-%d)
+          else
+            COMMIT_DATE="${{ steps.params.outputs.date }}"
+          fi
+
+          git add data/raw/ logs/
+
+          # 檢查是否有變更
+          if git diff --staged --quiet; then
+            echo "沒有新資料需要提交"
+          else
+            git commit -m "data: Daily collection for ${COMMIT_DATE}
+
+Collected data types: ${{ steps.params.outputs.types }}
+
+🤖 Automated collection by GitHub Actions"
+
+            git push
+            echo "✅ 資料已提交到 Git"
+          fi
+
+      - name: Upload collection logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: collection-logs-${{ steps.params.outputs.date }}
+          path: logs/
+          retention-days: 30
+
+      - name: Create issue on failure
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: '🚨 Daily Collection Failed - ${{ steps.params.outputs.date }}',
+              body: `## Collection Failed
+
+              **Date:** ${{ steps.params.outputs.date }}
+              **Types:** ${{ steps.params.outputs.types }}
+              **Workflow:** [Run #${{ github.run_number }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+
+              Please check the workflow logs for details.`,
+              labels: ['automated', 'data-collection', 'bug']
+            })

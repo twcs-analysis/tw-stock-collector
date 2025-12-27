@@ -1,0 +1,131 @@
+name: Weekly Data Collection
+
+on:
+  schedule:
+    # 每週六 10:00 台灣時間執行 (UTC+8 = 02:00 UTC)
+    - cron: '0 2 * * 6'
+  workflow_dispatch:
+    inputs:
+      date:
+        description: '收集日期 (YYYY-MM-DD，留空為昨天)'
+        required: false
+        type: string
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  collect-weekly:
+    name: Collect Weekly Data
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set collection date
+        id: date
+        run: |
+          if [ -n "${{ github.event.inputs.date }}" ]; then
+            echo "date=${{ github.event.inputs.date }}" >> $GITHUB_OUTPUT
+          else
+            echo "date=yesterday" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Pull Docker image
+        run: |
+          docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:phase1-latest
+
+      - name: Collect ownership data (股權分散表)
+        env:
+          FINMIND_API_TOKEN: ${{ secrets.FINMIND_API_TOKEN }}
+          COLLECTION_DATE: ${{ steps.date.outputs.date }}
+        run: |
+          docker run --rm \
+            -e FINMIND_API_TOKEN="${FINMIND_API_TOKEN}" \
+            -e COLLECTION_DATE="${COLLECTION_DATE}" \
+            -e TZ=Asia/Taipei \
+            -v ${{ github.workspace }}/data:/app/data \
+            -v ${{ github.workspace }}/logs:/app/logs \
+            -v ${{ github.workspace }}/cache:/app/cache \
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:phase1-latest \
+            python scripts/run_collection.py --date ${COLLECTION_DATE} --types ownership
+
+      - name: Collect revenue data (月營收)
+        if: success() || failure()
+        env:
+          FINMIND_API_TOKEN: ${{ secrets.FINMIND_API_TOKEN }}
+        run: |
+          # 月營收通常在每月 10 日前公布
+          CURRENT_DAY=$(date +%d)
+          if [ "$CURRENT_DAY" -le 10 ]; then
+            docker run --rm \
+              -e FINMIND_API_TOKEN="${FINMIND_API_TOKEN}" \
+              -e TZ=Asia/Taipei \
+              -v ${{ github.workspace }}/data:/app/data \
+              -v ${{ github.workspace }}/logs:/app/logs \
+              -v ${{ github.workspace }}/cache:/app/cache \
+              ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:phase1-latest \
+              python scripts/run_collection.py --types revenue
+          else
+            echo "⏭️ 跳過月營收收集（非公布期間）"
+          fi
+
+      - name: Check collected data
+        run: |
+          echo "=== 每週資料收集結果 ==="
+          echo ""
+          echo "股權分散表:"
+          find data/raw/ownership -type f -name "*.json" -o -name "*.csv" | tail -10
+          echo ""
+          echo "月營收:"
+          find data/raw/revenue -type f -name "*.json" -o -name "*.csv" 2>/dev/null | tail -10 || echo "無月營收資料"
+
+      - name: Commit and push data
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+
+          if [ "${{ steps.date.outputs.date }}" = "yesterday" ]; then
+            COMMIT_DATE=$(date -d "yesterday" +%Y-%m-%d 2>/dev/null || date -v-1d +%Y-%m-%d)
+          else
+            COMMIT_DATE="${{ steps.date.outputs.date }}"
+          fi
+
+          git add data/raw/ logs/
+
+          if git diff --staged --quiet; then
+            echo "沒有新資料需要提交"
+          else
+            git commit -m "data: Weekly collection for ${COMMIT_DATE}
+
+Collected data:
+- Ownership (股權分散表)
+- Revenue (月營收，如適用)
+
+🤖 Automated weekly collection by GitHub Actions"
+
+            git push
+            echo "✅ 每週資料已提交"
+          fi
+
+      - name: Upload collection logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: weekly-collection-logs
+          path: logs/
+          retention-days: 30

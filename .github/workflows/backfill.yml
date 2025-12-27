@@ -1,0 +1,210 @@
+name: Historical Data Backfill
+
+on:
+  workflow_dispatch:
+    inputs:
+      start_date:
+        description: '開始日期 (YYYY-MM-DD)'
+        required: true
+        type: string
+      end_date:
+        description: '結束日期 (YYYY-MM-DD，與 days 二選一)'
+        required: false
+        type: string
+      days:
+        description: '回補天數（與 end_date 二選一）'
+        required: false
+        default: '7'
+        type: string
+      types:
+        description: '資料類型 (用空格分隔)'
+        required: false
+        default: 'price institutional margin lending'
+        type: string
+      batch_size:
+        description: '批次大小（每批處理天數）'
+        required: false
+        default: '7'
+        type: string
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  backfill:
+    name: Backfill Historical Data
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Validate inputs
+        run: |
+          if [ -z "${{ github.event.inputs.start_date }}" ]; then
+            echo "::error::start_date is required"
+            exit 1
+          fi
+
+          if [ -z "${{ github.event.inputs.end_date }}" ] && [ -z "${{ github.event.inputs.days }}" ]; then
+            echo "::error::Either end_date or days must be provided"
+            exit 1
+          fi
+
+          if [ -n "${{ github.event.inputs.end_date }}" ] && [ -n "${{ github.event.inputs.days }}" ]; then
+            echo "::warning::Both end_date and days provided, will use end_date"
+          fi
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Pull Docker image
+        run: |
+          docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:phase1-latest
+
+      - name: Calculate date range
+        id: dates
+        run: |
+          START_DATE="${{ github.event.inputs.start_date }}"
+
+          if [ -n "${{ github.event.inputs.end_date }}" ]; then
+            END_DATE="${{ github.event.inputs.end_date }}"
+          else
+            # 計算結束日期
+            DAYS="${{ github.event.inputs.days }}"
+            END_DATE=$(date -d "${START_DATE} +${DAYS} days" +%Y-%m-%d 2>/dev/null || date -j -v+${DAYS}d -f "%Y-%m-%d" "${START_DATE}" +%Y-%m-%d)
+          fi
+
+          echo "start_date=${START_DATE}" >> $GITHUB_OUTPUT
+          echo "end_date=${END_DATE}" >> $GITHUB_OUTPUT
+
+          echo "📅 回補期間: ${START_DATE} 到 ${END_DATE}"
+
+      - name: Run backfill
+        env:
+          FINMIND_API_TOKEN: ${{ secrets.FINMIND_API_TOKEN }}
+          START_DATE: ${{ steps.dates.outputs.start_date }}
+          END_DATE: ${{ steps.dates.outputs.end_date }}
+          BACKFILL_TYPES: ${{ github.event.inputs.types }}
+          BATCH_SIZE: ${{ github.event.inputs.batch_size }}
+        run: |
+          echo "開始回補歷史資料..."
+          echo "期間: ${START_DATE} - ${END_DATE}"
+          echo "類型: ${BACKFILL_TYPES}"
+          echo "批次大小: ${BATCH_SIZE}"
+
+          docker run --rm \
+            -e FINMIND_API_TOKEN="${FINMIND_API_TOKEN}" \
+            -e START_DATE="${START_DATE}" \
+            -e END_DATE="${END_DATE}" \
+            -e BACKFILL_TYPES="${BACKFILL_TYPES}" \
+            -e TZ=Asia/Taipei \
+            -v ${{ github.workspace }}/data:/app/data \
+            -v ${{ github.workspace }}/logs:/app/logs \
+            -v ${{ github.workspace }}/cache:/app/cache \
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:phase1-latest \
+            python scripts/backfill.py \
+              --start ${START_DATE} \
+              --end ${END_DATE} \
+              --types ${BACKFILL_TYPES} \
+              --batch-size ${BATCH_SIZE}
+
+      - name: Generate backfill summary
+        id: summary
+        run: |
+          echo "=== 回補資料統計 ==="
+
+          # 統計各類型資料
+          for TYPE in ${{ github.event.inputs.types }}; do
+            if [ -d "data/raw/${TYPE}" ]; then
+              COUNT=$(find "data/raw/${TYPE}" -type f \( -name "*.json" -o -name "*.csv" \) | wc -l)
+              SIZE=$(du -sh "data/raw/${TYPE}" | cut -f1)
+              echo "${TYPE}: ${COUNT} 檔案, ${SIZE}"
+            fi
+          done
+
+          # 計算總大小
+          TOTAL_SIZE=$(du -sh data/raw | cut -f1)
+          echo ""
+          echo "總大小: ${TOTAL_SIZE}"
+
+      - name: Commit and push data
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+
+          git add data/raw/ logs/
+
+          if git diff --staged --quiet; then
+            echo "沒有新資料需要提交"
+          else
+            git commit -m "data: Backfill from ${{ steps.dates.outputs.start_date }} to ${{ steps.dates.outputs.end_date }}
+
+Data types: ${{ github.event.inputs.types }}
+Batch size: ${{ github.event.inputs.batch_size }}
+
+🤖 Automated backfill by GitHub Actions"
+
+            git push
+            echo "✅ 回補資料已提交"
+          fi
+
+      - name: Upload backfill logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backfill-logs-${{ steps.dates.outputs.start_date }}-to-${{ steps.dates.outputs.end_date }}
+          path: logs/
+          retention-days: 30
+
+      - name: Create summary comment
+        if: success()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const summary = `## ✅ Historical Data Backfill Completed
+
+            **Period:** ${{ steps.dates.outputs.start_date }} to ${{ steps.dates.outputs.end_date }}
+            **Data Types:** ${{ github.event.inputs.types }}
+            **Batch Size:** ${{ github.event.inputs.batch_size }}
+
+            **Workflow:** [Run #${{ github.run_number }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+
+            Check the artifacts for detailed logs.`;
+
+            await github.rest.repos.createCommitComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              commit_sha: context.sha,
+              body: summary
+            });
+
+      - name: Create issue on failure
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: '🚨 Backfill Failed - ${{ steps.dates.outputs.start_date }} to ${{ steps.dates.outputs.end_date }}',
+              body: `## Backfill Failed
+
+              **Period:** ${{ steps.dates.outputs.start_date }} to ${{ steps.dates.outputs.end_date }}
+              **Types:** ${{ github.event.inputs.types }}
+              **Batch Size:** ${{ github.event.inputs.batch_size }}
+              **Workflow:** [Run #${{ github.run_number }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+
+              Please check the workflow logs for details.`,
+              labels: ['automated', 'backfill', 'bug']
+            })
