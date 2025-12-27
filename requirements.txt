@@ -1,0 +1,28 @@
+# 資料收集
+requests>=2.31.0
+beautifulsoup4>=4.12.0
+selenium>=4.15.0
+
+# 資料處理
+pandas>=2.1.0
+numpy>=1.24.0
+
+# 資料庫
+psycopg2-binary>=2.9.9
+sqlalchemy>=2.0.0
+
+# 任務排程
+schedule>=1.2.0
+APScheduler>=3.10.0
+
+# 第三方資料源
+FinMind>=1.4.0
+twstock>=1.3.1
+
+# 技術指標計算
+TA-Lib>=0.4.28
+pandas-ta>=0.3.14b
+
+# 工具
+python-dotenv>=1.0.0
+PyYAML>=6.0.1
