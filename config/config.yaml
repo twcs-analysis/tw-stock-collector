@@ -93,8 +93,8 @@ storage:
   # 目錄結構模式
   # date_hierarchy: {data_type}/{year}/{month}/{date}/{stock_id}.json
   # flat: {data_type}/{date}_{stock_id}.json
-  # aggregate: {data_type}/{date}.json (用於批次 API 結果)
-  directory_structure: date_hierarchy
+  # aggregate: {data_type}/{year}/{month}/{date}.json (每日一個檔案，包含所有股票)
+  directory_structure: aggregate
 
   # 檔案格式: json, csv, parquet
   file_format: json

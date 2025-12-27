@@ -227,11 +227,17 @@ class BaseCollector(ABC):
             structure=storage_config.directory_structure
         )
 
+        # 決定合併模式
+        # aggregate 結構：多個股票存入同一個檔案，使用 merge_by_key
+        # 其他結構：每個股票獨立檔案，使用 overwrite
+        merge_mode = 'merge_by_key' if storage_config.directory_structure == 'aggregate' else 'overwrite'
+
         # 儲存
         success = self.file_handler.save_dataframe(
             df=df,
             file_path=file_path,
             format=storage_config.file_format,
+            merge_mode=merge_mode,
             create_backup=storage_config.options.create_backup
         )
 
