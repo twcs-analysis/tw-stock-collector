@@ -1,28 +1,272 @@
+# ====================================
+# 台股資料收集系統 - 主配置檔案
+# ====================================
+
+# ====================================
+# FinMind API 設定
+# ====================================
+finmind:
+  # API Token (選用，免費版可不填)
+  # 建議透過環境變數設定: FINMIND_API_TOKEN
+  api_token: ${FINMIND_API_TOKEN:}
+
+  # API 速率限制 (requests/minute)
+  rate_limit: 600
+
+  # 請求重試設定
+  retry:
+    max_attempts: 3        # 最大重試次數
+    wait_seconds: 10       # 重試間隔 (秒)
+    backoff_factor: 2      # 指數退避係數
+
+# ====================================
 # 資料收集設定
+# ====================================
 collection:
-  # 請求設定
-  request_timeout: 30
-  retry_times: 3
-  retry_delay: 5
+  # 股票清單過濾設定
+  stock_filter:
+    # 過濾模式: include (包含清單), exclude (排除清單), regex (正則表達式)
+    mode: exclude
 
-  # 請求間隔（秒）
-  request_interval: 3
+    # 排除的股票類型
+    exclude_types:
+      - 權證
+      - 特別股
+      - REITs
+      - 受益證券
+      - 牛證
+      - 熊證
 
-  # 股票清單
-  stock_list_file: "data/stock_list.csv"
+    # 正則表達式過濾 (僅在 mode=regex 時生效)
+    # 匹配 4 位數股票代碼或 ETF (00XX)
+    regex_pattern: '^(00\d{2,3}|[1-9]\d{3})$'
 
-  # 日期範圍
-  start_date: "2020-01-01"
+  # 資料收集範圍
+  data_types:
+    price: true                    # 每日價量
+    institutional: true            # 三大法人買賣超
+    margin: true                   # 融資融券
+    lending: true                  # 借券賣出
+    foreign_holding: true          # 外資持股
+    shareholding: true             # 股權分散表
+    director: true                 # 董監持股
 
-# 排程設定
-schedule:
-  daily_collection_time: "15:30"
-  weekly_collection_day: "saturday"
-  weekly_collection_time: "09:00"
+  # 批次處理設定
+  batch:
+    # 是否使用批次 API (aggregate API)
+    use_aggregate_api: true
 
+    # 每批次處理股票數量 (僅用於必須逐一查詢的 API)
+    batch_size: 100
+
+    # 批次間延遲 (秒)
+    batch_delay: 1
+
+  # 日期設定
+  date:
+    # 預設收集日期: today, yesterday, latest_trading_day
+    default: latest_trading_day
+
+    # 回補資料時的日期範圍
+    backfill:
+      start_date: '2020-01-01'
+      end_date: null  # null 表示至今天
+
+  # 並發設定
+  concurrency:
+    # 是否啟用並發收集
+    enabled: true
+
+    # 最大並發數
+    max_workers: 4
+
+    # 並發模式: thread (執行緒), process (程序)
+    mode: thread
+
+# ====================================
+# 資料儲存設定
+# ====================================
+storage:
+  # 資料根目錄
+  base_path: data/raw
+
+  # 目錄結構模式
+  # date_hierarchy: {data_type}/{year}/{month}/{date}/{stock_id}.json
+  # flat: {data_type}/{date}_{stock_id}.json
+  # aggregate: {data_type}/{date}.json (用於批次 API 結果)
+  directory_structure: date_hierarchy
+
+  # 檔案格式: json, csv, parquet
+  file_format: json
+
+  # JSON 格式化設定
+  json:
+    indent: 2              # 縮排空格數 (null 為不格式化)
+    ensure_ascii: false    # 允許中文字元
+
+  # CSV 格式設定
+  csv:
+    encoding: utf-8-sig    # 使用 BOM 以支援 Excel
+    index: false           # 不儲存 DataFrame index
+
+  # 儲存選項
+  options:
+    # 是否覆蓋現有檔案
+    overwrite: false
+
+    # 是否建立備份 (在覆蓋前)
+    create_backup: true
+
+    # 檔案壓縮: null, gzip, zip
+    compression: null
+
+# ====================================
+# 股票清單管理
+# ====================================
+stock_list:
+  # 股票清單檔案路徑
+  file_path: data/stock_list.csv
+
+  # 更新頻率 (天)
+  update_interval_days: 7
+
+  # 快取設定
+  cache:
+    enabled: true
+    ttl_seconds: 3600  # 快取有效期 (秒)
+
+# ====================================
 # 日誌設定
+# ====================================
 logging:
-  level: "INFO"
-  file: "logs/collector.log"
-  max_bytes: 10485760  # 10MB
-  backup_count: 5
+  # 日誌配置檔案
+  config_file: config/logging.yaml
+
+  # 日誌根目錄
+  log_dir: logs
+
+  # 預設日誌等級: DEBUG, INFO, WARNING, ERROR, CRITICAL
+  level: INFO
+
+  # 是否輸出到 console
+  console: true
+
+  # 檔案輪替設定
+  rotation:
+    max_bytes: 10485760    # 10 MB
+    backup_count: 5        # 保留 5 個備份
+
+# ====================================
+# 驗證設定
+# ====================================
+validation:
+  # 資料驗證規則
+  rules:
+    # 價格資料驗證
+    price:
+      required_columns:
+        - stock_id
+        - date
+        - close
+      min_volume: 0
+      max_change_rate: 0.15  # 漲跌幅上限 (15%)
+
+    # 法人資料驗證
+    institutional:
+      required_columns:
+        - stock_id
+        - date
+        - foreign_net
+        - trust_net
+        - dealer_net
+
+    # 融資融券驗證
+    margin:
+      required_columns:
+        - stock_id
+        - date
+        - margin_purchase
+        - margin_sale
+
+  # 驗證失敗處理: skip (跳過), raise (拋出異常), log (僅記錄)
+  on_validation_error: log
+
+# ====================================
+# 效能監控
+# ====================================
+monitoring:
+  # 是否啟用效能監控
+  enabled: true
+
+  # 監控指標
+  metrics:
+    - api_calls_count       # API 呼叫次數
+    - api_response_time     # API 回應時間
+    - data_volume           # 資料量
+    - success_rate          # 成功率
+    - error_count           # 錯誤次數
+
+  # 報告輸出路徑
+  report_path: logs/monitoring_report.json
+
+# ====================================
+# Git 整合設定 (選用)
+# ====================================
+git:
+  # 是否自動提交收集的資料
+  auto_commit: false
+
+  # 提交訊息範本
+  commit_message: "chore: Update stock data for {date}"
+
+  # 是否自動推送
+  auto_push: false
+
+# ====================================
+# 通知設定 (選用)
+# ====================================
+notification:
+  # 是否啟用通知
+  enabled: false
+
+  # 通知方式: email, slack, webhook
+  methods: []
+
+  # Email 設定
+  email:
+    smtp_host: ${SMTP_HOST:}
+    smtp_port: ${SMTP_PORT:587}
+    from_addr: ${SMTP_FROM:}
+    to_addrs: []
+    username: ${SMTP_USER:}
+    password: ${SMTP_PASSWORD:}
+
+  # Slack 設定
+  slack:
+    webhook_url: ${SLACK_WEBHOOK_URL:}
+
+  # Webhook 設定
+  webhook:
+    url: ${WEBHOOK_URL:}
+    method: POST
+
+# ====================================
+# 開發/除錯設定
+# ====================================
+development:
+  # 是否為開發模式
+  debug_mode: false
+
+  # 測試模式 (限制收集數量)
+  test_mode:
+    enabled: false
+    max_stocks: 5          # 最多收集幾檔股票
+    max_days: 3            # 最多收集幾天資料
+
+  # 模擬模式 (不實際呼叫 API)
+  mock_api: false
+
+  # Profiling
+  profiling:
+    enabled: false
+    output_path: logs/profiling.prof
