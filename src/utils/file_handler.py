@@ -41,7 +41,8 @@ class FileHandler:
         file_path: Union[str, Path],
         ensure_ascii: bool = False,
         indent: int = 2,
-        create_backup: bool = False
+        create_backup: bool = False,
+        merge_mode: str = 'overwrite'
     ) -> bool:
         """
         儲存 JSON 檔案
@@ -52,6 +53,7 @@ class FileHandler:
             ensure_ascii: 是否使用 ASCII 編碼（False 允許中文）
             indent: 縮排空格數 (None 為不格式化)
             create_backup: 是否建立備份（如果檔案已存在）
+            merge_mode: 合併模式 ('overwrite', 'append', 'merge_by_key')
 
         Returns:
             bool: 是否成功
@@ -60,12 +62,38 @@ class FileHandler:
             >>> handler = FileHandler()
             >>> data = {'stock_id': '2330', 'name': '台積電'}
             >>> handler.save_json(data, 'data/stocks/2330.json')
+            >>> # 合併模式 - 追加到 list
+            >>> handler.save_json([{'stock_id': '2454'}], 'data/daily.json', merge_mode='append')
         """
         file_path = Path(file_path)
 
         try:
             # 確保目錄存在
             file_path.parent.mkdir(parents=True, exist_ok=True)
+
+            # 處理合併模式
+            if merge_mode != 'overwrite' and file_path.exists():
+                existing_data = self.load_json(file_path)
+
+                if merge_mode == 'append':
+                    # 追加模式：兩者都必須是 list
+                    if isinstance(existing_data, list) and isinstance(data, list):
+                        data = existing_data + data
+                    else:
+                        logger.warning(f"追加模式要求 list 型態，跳過合併")
+
+                elif merge_mode == 'merge_by_key':
+                    # 合併模式：根據 stock_id 合併
+                    if isinstance(existing_data, list) and isinstance(data, list):
+                        # 建立 stock_id -> data 的對應
+                        merged_dict = {item.get('stock_id'): item for item in existing_data if 'stock_id' in item}
+                        # 更新或新增
+                        for item in data:
+                            if 'stock_id' in item:
+                                merged_dict[item['stock_id']] = item
+                        data = list(merged_dict.values())
+                    else:
+                        logger.warning(f"合併模式要求 list 型態，跳過合併")
 
             # 備份現有檔案
             if create_backup and file_path.exists():
@@ -203,6 +231,7 @@ class FileHandler:
         df: pd.DataFrame,
         file_path: Union[str, Path],
         format: str = 'auto',
+        merge_mode: str = 'overwrite',
         **kwargs
     ) -> bool:
         """
@@ -212,6 +241,7 @@ class FileHandler:
             df: pandas DataFrame
             file_path: 檔案路徑
             format: 格式 ('auto', 'json', 'csv', 'parquet')
+            merge_mode: 合併模式 ('overwrite', 'append', 'merge_by_key')
             **kwargs: 傳遞給對應方法的參數
 
         Returns:
@@ -222,6 +252,8 @@ class FileHandler:
             >>> df = pd.DataFrame({'stock_id': ['2330']})
             >>> handler.save_dataframe(df, 'data/stocks.csv')  # 自動偵測 CSV
             >>> handler.save_dataframe(df, 'data/stocks.json')  # 自動偵測 JSON
+            >>> # 合併模式
+            >>> handler.save_dataframe(df, 'data/daily.json', merge_mode='merge_by_key')
         """
         file_path = Path(file_path)
 
@@ -239,14 +271,37 @@ class FileHandler:
         if format == 'json':
             # DataFrame 轉 JSON
             json_data = df.to_dict(orient='records')
-            return self.save_json(json_data, file_path, **kwargs)
+            return self.save_json(json_data, file_path, merge_mode=merge_mode, **kwargs)
 
         elif format == 'csv':
+            # CSV 不支援合併模式，需要先讀取再合併
+            if merge_mode != 'overwrite' and file_path.exists():
+                existing_df = self.load_csv(file_path)
+                if existing_df is not None:
+                    if merge_mode == 'append':
+                        df = pd.concat([existing_df, df], ignore_index=True)
+                    elif merge_mode == 'merge_by_key':
+                        # 假設使用 stock_id 作為 key
+                        if 'stock_id' in df.columns and 'stock_id' in existing_df.columns:
+                            # 移除舊的相同 stock_id 資料，保留新的
+                            existing_df = existing_df[~existing_df['stock_id'].isin(df['stock_id'])]
+                            df = pd.concat([existing_df, df], ignore_index=True)
             return self.save_csv(df, file_path, **kwargs)
 
         elif format == 'parquet':
             try:
                 file_path.parent.mkdir(parents=True, exist_ok=True)
+
+                # Parquet 合併處理
+                if merge_mode != 'overwrite' and file_path.exists():
+                    existing_df = pd.read_parquet(file_path)
+                    if merge_mode == 'append':
+                        df = pd.concat([existing_df, df], ignore_index=True)
+                    elif merge_mode == 'merge_by_key':
+                        if 'stock_id' in df.columns and 'stock_id' in existing_df.columns:
+                            existing_df = existing_df[~existing_df['stock_id'].isin(df['stock_id'])]
+                            df = pd.concat([existing_df, df], ignore_index=True)
+
                 df.to_parquet(file_path, **kwargs)
                 logger.debug(f"Parquet 儲存成功: {file_path}")
                 return True
