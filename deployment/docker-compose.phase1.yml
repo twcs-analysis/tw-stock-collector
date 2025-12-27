@@ -1,0 +1,49 @@
+# ====================================
+# Phase 1: 資料擷取與儲存
+# ====================================
+#
+# 用途: 僅啟動資料收集服務
+# 資料儲存: 本地 data/ 目錄 (可 commit 到 Git)
+#
+# 使用方式:
+#   docker-compose -f deployment/docker-compose.phase1.yml up -d
+#
+# 注意: Phase 1 主要透過 GitHub Actions 執行
+#       這個 compose 檔案用於本地測試收集流程
+
+version: '3.8'
+
+services:
+  # 資料收集器 (Phase 1)
+  collector:
+    build:
+      context: ..
+      dockerfile: build/Dockerfile
+    image: tw-stock-collector:latest
+    container_name: tw-stock-collector-phase1
+    restart: "no"  # 收集完成後自動停止
+    volumes:
+      # 資料儲存目錄 (供 Git 版本控制)
+      - ../data:/app/data
+      # 日誌目錄
+      - ../logs:/app/logs
+      # 配置檔 (唯讀)
+      - ../config:/app/config:ro
+    env_file:
+      - .env
+    environment:
+      - TZ=Asia/Taipei
+      - PYTHONUNBUFFERED=1
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    # 執行特定日期的收集
+    # 可透過環境變數覆寫
+    command: >
+      python -m scripts.run_collection
+      --date ${COLLECTION_DATE:-today}
+    networks:
+      - stock-network
+
+networks:
+  stock-network:
+    name: ${NETWORK_NAME:-tw-stock-network}
+    driver: bridge

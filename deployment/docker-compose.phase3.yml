@@ -1,0 +1,172 @@
+# ====================================
+# Phase 3: 數據整理與分析
+# ====================================
+#
+# 用途: 啟動分析服務與視覺化儀表板
+# 資料流: PostgreSQL → 技術分析 → 儀表板
+#
+# 使用方式:
+#   # 啟動完整分析環境 (需要 Phase 2 資料庫運行中)
+#   docker-compose -f deployment/docker-compose.phase2.yml -f deployment/docker-compose.phase3.yml up -d
+#
+#   # 僅啟動儀表板 (假設資料庫已在運行)
+#   docker-compose -f deployment/docker-compose.phase3.yml up -d dashboard
+#
+# 前置條件: Phase 2 資料庫已建立並匯入資料
+
+version: '3.8'
+
+services:
+  # 分析引擎 (計算技術指標、籌碼分析)
+  analyzer:
+    build:
+      context: ..
+      dockerfile: build/Dockerfile
+    image: tw-stock-collector:latest
+    container_name: tw-stock-analyzer
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    volumes:
+      # 日誌目錄
+      - ../logs:/app/logs
+      # 配置檔 (唯讀)
+      - ../config:/app/config:ro
+      # 分析結果輸出 (選用)
+      - ../output:/app/output
+    env_file:
+      - .env
+    environment:
+      - TZ=Asia/Taipei
+      - PYTHONUNBUFFERED=1
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=${DB_NAME:-tw_stock}
+      - DB_USER=${DB_USER:-stock_user}
+      - DB_PASSWORD=${DB_PASSWORD:-changeme}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    # 執行分析任務
+    command: >
+      python -m scripts.run_analysis
+      --type all
+      --update-mode incremental
+    networks:
+      - stock-network
+    profiles:
+      - analysis
+
+  # Streamlit 儀表板
+  dashboard:
+    build:
+      context: ..
+      dockerfile: build/Dockerfile.dashboard
+    image: tw-stock-dashboard:latest
+    container_name: tw-stock-dashboard
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    ports:
+      - "${STREAMLIT_PORT:-8501}:8501"
+    volumes:
+      # 配置檔 (唯讀)
+      - ../config:/app/config:ro
+      # Streamlit 快取目錄
+      - streamlit_cache:/app/.streamlit
+    env_file:
+      - .env
+    environment:
+      - TZ=Asia/Taipei
+      - PYTHONUNBUFFERED=1
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=${DB_NAME:-tw_stock}
+      - DB_USER=${DB_USER:-stock_user}
+      - DB_PASSWORD=${DB_PASSWORD:-changeme}
+      - STREAMLIT_SERVER_PORT=8501
+      - STREAMLIT_SERVER_ADDRESS=0.0.0.0
+      - STREAMLIT_THEME_BASE=${DASHBOARD_THEME:-light}
+    networks:
+      - stock-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8501/_stcore/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # Jupyter Notebook (選用,用於互動式分析)
+  jupyter:
+    build:
+      context: ..
+      dockerfile: build/Dockerfile
+    image: tw-stock-collector:latest
+    container_name: tw-stock-jupyter
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    ports:
+      - "${JUPYTER_PORT:-8888}:8888"
+    volumes:
+      # Notebook 目錄
+      - ../notebooks:/app/notebooks
+      # 資料目錄 (唯讀)
+      - ../data:/app/data:ro
+      # 配置檔 (唯讀)
+      - ../config:/app/config:ro
+    env_file:
+      - .env
+    environment:
+      - TZ=Asia/Taipei
+      - PYTHONUNBUFFERED=1
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=${DB_NAME:-tw_stock}
+      - DB_USER=${DB_USER:-stock_user}
+      - DB_PASSWORD=${DB_PASSWORD:-changeme}
+      - JUPYTER_ENABLE_LAB=yes
+    command: >
+      jupyter lab
+      --ip=0.0.0.0
+      --port=8888
+      --no-browser
+      --allow-root
+      --NotebookApp.token=''
+      --NotebookApp.password=''
+    networks:
+      - stock-network
+    profiles:
+      - tools
+
+  # PostgreSQL (參考,通常從 phase2 繼承)
+  postgres:
+    image: postgres:16-alpine
+    container_name: tw-stock-db
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=${DB_NAME:-tw_stock}
+      - POSTGRES_USER=${DB_USER:-stock_user}
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-changeme}
+      - TZ=Asia/Taipei
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    networks:
+      - stock-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-stock_user}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+networks:
+  stock-network:
+    name: ${NETWORK_NAME:-tw-stock-network}
+    driver: bridge
+
+volumes:
+  postgres_data:
+    name: ${POSTGRES_VOLUME:-tw_stock_postgres_data}
+    driver: local
+  streamlit_cache:
+    driver: local

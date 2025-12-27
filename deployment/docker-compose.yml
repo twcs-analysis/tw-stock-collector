@@ -1,0 +1,175 @@
+# ====================================
+# 台股資料收集與分析系統 - 完整版
+# ====================================
+#
+# 包含三個階段的所有服務:
+#   - Phase 1: 資料收集
+#   - Phase 2: 資料庫與匯入
+#   - Phase 3: 分析與儀表板
+#
+# 使用方式:
+#   # 啟動所有基礎服務 (資料庫)
+#   docker-compose -f deployment/docker-compose.yml up -d postgres
+#
+#   # 執行資料收集 (Phase 1)
+#   docker-compose -f deployment/docker-compose.yml run --rm collector
+#
+#   # 執行資料匯入 (Phase 2)
+#   docker-compose -f deployment/docker-compose.yml run --rm importer
+#
+#   # 啟動儀表板 (Phase 3)
+#   docker-compose -f deployment/docker-compose.yml up -d dashboard
+#
+# 建議: 依需求使用分階段的 compose 檔案
+#   - docker-compose.phase1.yml (僅資料收集)
+#   - docker-compose.phase2.yml (資料庫與匯入)
+#   - docker-compose.phase3.yml (分析與儀表板)
+
+version: '3.8'
+
+services:
+  # ====================================
+  # Phase 1: 資料擷取與儲存
+  # ====================================
+
+  # 資料收集器
+  collector:
+    build:
+      context: ..
+      dockerfile: build/Dockerfile
+    image: tw-stock-collector:latest
+    container_name: tw-stock-collector
+    restart: "no"
+    volumes:
+      - ../data:/app/data
+      - ../logs:/app/logs
+      - ../config:/app/config:ro
+    env_file:
+      - .env
+    environment:
+      - TZ=Asia/Taipei
+      - PYTHONUNBUFFERED=1
+    command: python -m scripts.run_collection
+    networks:
+      - stock-network
+    profiles:
+      - phase1
+
+  # ====================================
+  # Phase 2: 資料庫設計與匯入
+  # ====================================
+
+  # PostgreSQL 資料庫
+  postgres:
+    image: postgres:16-alpine
+    container_name: tw-stock-db
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=${DB_NAME:-tw_stock}
+      - POSTGRES_USER=${DB_USER:-stock_user}
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-changeme}
+      - TZ=Asia/Taipei
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ../database/init:/docker-entrypoint-initdb.d:ro
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    networks:
+      - stock-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-stock_user}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # 資料匯入器
+  importer:
+    build:
+      context: ..
+      dockerfile: build/Dockerfile
+    image: tw-stock-collector:latest
+    container_name: tw-stock-importer
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ../data:/app/data:ro
+      - ../logs:/app/logs
+      - ../config:/app/config:ro
+    env_file:
+      - .env
+    environment:
+      - TZ=Asia/Taipei
+      - DB_HOST=postgres
+      - DB_PORT=5432
+    command: python -m scripts.run_import
+    networks:
+      - stock-network
+    profiles:
+      - phase2
+
+  # ====================================
+  # Phase 3: 數據整理與分析
+  # ====================================
+
+  # 分析引擎
+  analyzer:
+    build:
+      context: ..
+      dockerfile: build/Dockerfile
+    image: tw-stock-collector:latest
+    container_name: tw-stock-analyzer
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ../logs:/app/logs
+      - ../config:/app/config:ro
+      - ../output:/app/output
+    env_file:
+      - .env
+    environment:
+      - TZ=Asia/Taipei
+      - DB_HOST=postgres
+      - DB_PORT=5432
+    command: python -m scripts.run_analysis
+    networks:
+      - stock-network
+    profiles:
+      - phase3
+
+  # Streamlit 儀表板
+  dashboard:
+    build:
+      context: ..
+      dockerfile: build/Dockerfile.dashboard
+    image: tw-stock-dashboard:latest
+    container_name: tw-stock-dashboard
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "${STREAMLIT_PORT:-8501}:8501"
+    volumes:
+      - ../config:/app/config:ro
+    env_file:
+      - .env
+    environment:
+      - TZ=Asia/Taipei
+      - DB_HOST=postgres
+      - DB_PORT=5432
+    command: streamlit run scripts/dashboard/app.py
+    networks:
+      - stock-network
+    profiles:
+      - phase3
+
+networks:
+  stock-network:
+    name: ${NETWORK_NAME:-tw-stock-network}
+    driver: bridge
+
+volumes:
+  postgres_data:
+    name: ${POSTGRES_VOLUME:-tw_stock_postgres_data}
+    driver: local
