@@ -29,7 +29,7 @@ class InstitutionalCollector(BaseCollector):
     def collect(
         self,
         date: Union[str, datetime],
-        stock_id: Optional[str] = None,
+        stock_id: str,
         **kwargs
     ) -> pd.DataFrame:
         """
@@ -37,7 +37,7 @@ class InstitutionalCollector(BaseCollector):
 
         Args:
             date: 收集日期
-            stock_id: 股票代碼 (選用，不提供時取得所有股票)
+            stock_id: 股票代碼
             **kwargs: 其他參數
 
         Returns:
@@ -45,41 +45,26 @@ class InstitutionalCollector(BaseCollector):
 
         Examples:
             >>> collector = InstitutionalCollector()
-
-            # 單一股票
             >>> df = collector.collect('2025-01-28', stock_id='2330')
-
-            # 所有股票 (推薦，使用 aggregate API)
-            >>> df = collector.collect('2025-01-28')
         """
         date_str = self._format_date(date)
+        self.logger.info(f"收集法人買賣: {stock_id}, {date_str}")
 
-        if stock_id:
-            self.logger.info(f"收集法人買賣: {stock_id}, {date_str}")
-            # 單一股票
-            df = self.fetch_with_retry(
-                self.dl.taiwan_stock_institutional_investors,
-                stock_id=stock_id,
-                start_date=date_str,
-                end_date=date_str
-            )
-        else:
-            # 所有股票 (aggregate API)
-            self.logger.info(f"收集法人買賣 (所有股票): {date_str}")
-            df = self.fetch_with_retry(
-                self.dl.taiwan_stock_institutional_investors,
-                start_date=date_str,
-                end_date=date_str
-            )
+        df = self.fetch_with_retry(
+            self.dl.taiwan_stock_institutional_investors,
+            stock_id=stock_id,
+            start_date=date_str,
+            end_date=date_str
+        )
 
         if df is None or df.empty:
-            self.logger.warning(f"無資料: {date_str}")
+            self.logger.warning(f"無資料: {stock_id}, {date_str}")
             return pd.DataFrame()
 
         # 資料處理
         df = self._process_data(df)
 
-        self.logger.debug(f"收集完成: {len(df)} 筆")
+        self.logger.debug(f"收集完成: {stock_id}, {len(df)} 筆")
         return df
 
     def _process_data(self, df: pd.DataFrame) -> pd.DataFrame:

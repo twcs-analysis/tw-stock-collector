@@ -1,0 +1,41 @@
+[
+  {
+    "date": "2025-12-26",
+    "stock_id": "2330",
+    "volume": 20806344,
+    "amount": 31326715665,
+    "open": 1505.0,
+    "high": 1510.0,
+    "low": 1495.0,
+    "close": 1510.0,
+    "change_price": 15.0,
+    "transaction_count": 57478,
+    "change_rate": 0.01
+  },
+  {
+    "date": "2025-12-26",
+    "stock_id": "2317",
+    "volume": 28935431,
+    "amount": 6533625977,
+    "open": 225.5,
+    "high": 227.5,
+    "low": 224.5,
+    "close": 225.5,
+    "change_price": 1.5,
+    "transaction_count": 27254,
+    "change_rate": 0.0067
+  },
+  {
+    "date": "2025-12-26",
+    "stock_id": "2454",
+    "volume": 3219060,
+    "amount": 4464817615,
+    "open": 1390.0,
+    "high": 1395.0,
+    "low": 1380.0,
+    "close": 1385.0,
+    "change_price": 5.0,
+    "transaction_count": 11132,
+    "change_rate": 0.0036
+  }
+]
