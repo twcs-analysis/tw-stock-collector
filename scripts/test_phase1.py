@@ -3,14 +3,12 @@
 Phase 1 功能測試腳本
 
 測試所有 Phase 1 的核心功能，包括：
-1. 配置系統
-2. 工具模組
-3. 收集器模組
-4. 執行腳本
+1. 工具模組
+2. 收集器模組
 
 Usage:
     python scripts/test_phase1.py
-    python scripts/test_phase1.py --verbose  # 詳細輸出
+    python scripts/test_phase1.py --skip-api  # 跳過 API 測試
 """
 
 import argparse
@@ -21,21 +19,21 @@ from datetime import datetime, timedelta
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from src.utils import (
-    get_logger,
-    get_global_config,
-    FileHandler,
-    DataValidator,
-    StockListManager,
-    build_file_path
+    is_trading_day,
+    get_latest_trading_day,
+    ensure_dir,
+    save_json,
+    file_exists,
+    get_file_path,
 )
 from src.collectors import (
-    create_price_collector,
-    create_institutional_collector,
-    create_margin_collector,
-    create_lending_collector
+    PriceCollector,
+    MarginCollector,
+    InstitutionalCollector,
+    LendingCollector
 )
 
-# 設定簡單的 logger（不依賴配置檔）
+# 設定簡單的 logger
 import logging
 logging.basicConfig(
     level=logging.INFO,
@@ -95,284 +93,145 @@ class TestRunner:
         return self.failed == 0
 
 
-def test_config_loading():
-    """測試配置載入"""
-    logger.info("測試配置載入...")
+def test_date_utils():
+    """測試日期工具函式"""
+    logger.info("測試日期工具函式...")
 
-    config = get_global_config()
+    # 測試交易日判斷
+    weekday = '2025-01-28'  # 星期二
+    assert is_trading_day(weekday), f"{weekday} 應該是交易日"
 
-    # 檢查必要配置
-    assert hasattr(config, 'finmind'), "缺少 finmind 配置"
-    assert hasattr(config, 'collection'), "缺少 collection 配置"
-    assert hasattr(config, 'storage'), "缺少 storage 配置"
+    # 測試週末
+    weekend = '2025-01-25'  # 星期六
+    assert not is_trading_day(weekend), f"{weekend} 不應該是交易日"
 
-    # 檢查點號語法
-    rate_limit = config.finmind.rate_limit
-    assert rate_limit == 600, f"rate_limit 應為 600，實際為 {rate_limit}"
+    # 測試取得最近交易日
+    latest = get_latest_trading_day()
+    assert latest is not None, "應該能取得最近交易日"
+    assert isinstance(latest, str), "最近交易日應該是字串"
 
-    # 檢查 get 方法
-    base_path = config.get('storage.base_path', 'default')
-    assert base_path == 'data/raw', f"base_path 錯誤: {base_path}"
-
-    logger.info("✓ 配置系統正常")
+    logger.info("✓ 日期工具正常")
 
 
-def test_file_handler():
-    """測試檔案處理器"""
-    logger.info("測試檔案處理器...")
+def test_file_utils():
+    """測試檔案工具函式"""
+    logger.info("測試檔案工具函式...")
 
-    import pandas as pd
     import tempfile
-    import os
+    import json
 
-    handler = FileHandler()
-
-    # 建立測試資料
-    test_data = {
-        'stock_id': ['2330', '2317'],
-        'date': ['2025-01-28', '2025-01-28'],
-        'close': [650, 100]
-    }
-    df = pd.DataFrame(test_data)
-
-    # 測試 JSON 儲存
+    # 測試 ensure_dir
     with tempfile.TemporaryDirectory() as tmpdir:
-        json_path = Path(tmpdir) / 'test.json'
-        success = handler.save_json(df.to_dict('records'), json_path)
-        assert success, "JSON 儲存失敗"
-        assert json_path.exists(), "JSON 檔案不存在"
+        test_dir = Path(tmpdir) / 'test' / 'nested'
+        ensure_dir(str(test_dir))
+        assert test_dir.exists(), "目錄應該被建立"
 
-        # 測試 JSON 讀取
-        loaded = handler.load_json(json_path)
-        assert loaded is not None, "JSON 讀取失敗"
-        assert len(loaded) == 2, f"資料筆數錯誤: {len(loaded)}"
+        # 測試 save_json
+        test_data = {'test': 'data', 'count': 123}
+        json_file = test_dir / 'test.json'
+        save_json(test_data, str(json_file))
+        assert json_file.exists(), "JSON 檔案應該被建立"
 
-        # 測試 CSV 儲存
-        csv_path = Path(tmpdir) / 'test.csv'
-        success = handler.save_csv(df, csv_path)
-        assert success, "CSV 儲存失敗"
-        assert csv_path.exists(), "CSV 檔案不存在"
+        # 驗證內容
+        with open(json_file, 'r', encoding='utf-8') as f:
+            loaded = json.load(f)
+        assert loaded == test_data, "JSON 內容應該一致"
 
-        # 測試 CSV 讀取
-        loaded_df = handler.load_csv(csv_path)
-        assert loaded_df is not None, "CSV 讀取失敗"
-        assert len(loaded_df) == 2, f"CSV 資料筆數錯誤: {len(loaded_df)}"
+        # 測試 file_exists
+        assert file_exists(str(json_file)), "應該檢測到檔案存在"
+        assert not file_exists(str(test_dir / 'nonexist.json')), "應該檢測到檔案不存在"
 
-    logger.info("✓ 檔案處理器正常")
+    logger.info("✓ 檔案工具正常")
 
 
-def test_build_file_path():
-    """測試檔案路徑建立"""
-    logger.info("測試檔案路徑建立...")
+def test_collectors_initialization():
+    """測試收集器初始化"""
+    logger.info("測試收集器初始化...")
 
-    # 測試 date_hierarchy
-    path = build_file_path(
-        base_path='data/raw',
-        data_type='price',
-        date='2025-01-28',
-        stock_id='2330',
-        file_format='json',
-        structure='date_hierarchy'
-    )
-    expected = Path('data/raw/price/2025/01/20250128/2330.json')
-    assert path == expected, f"路徑錯誤: {path} != {expected}"
+    test_date = '2025-01-28'
 
-    # 測試 aggregate
-    path = build_file_path(
-        base_path='data/raw',
-        data_type='institutional',
-        date='2025-01-28',
-        file_format='json',
-        structure='aggregate'
-    )
-    expected = Path('data/raw/institutional/2025/01/2025-01-28.json')
-    assert path == expected, f"Aggregate 路徑錯誤: {path} != {expected}"
+    # 測試各種收集器初始化
+    price_collector = PriceCollector(test_date)
+    assert price_collector.date == test_date, "PriceCollector 日期設定錯誤"
 
-    logger.info("✓ 路徑建立正常")
+    margin_collector = MarginCollector(test_date)
+    assert margin_collector.date == test_date, "MarginCollector 日期設定錯誤"
 
+    inst_collector = InstitutionalCollector(test_date)
+    assert inst_collector.date == test_date, "InstitutionalCollector 日期設定錯誤"
 
-def test_data_validator():
-    """測試資料驗證器"""
-    logger.info("測試資料驗證器...")
+    lending_collector = LendingCollector(test_date)
+    assert lending_collector.date == test_date, "LendingCollector 日期設定錯誤"
 
-    import pandas as pd
-
-    validator = DataValidator()
-
-    # 測試價格資料驗證
-    valid_price_data = pd.DataFrame({
-        'stock_id': ['2330'],
-        'date': ['2025-01-28'],
-        'open': [650],
-        'high': [655],
-        'low': [648],
-        'close': [652],
-        'volume': [50000]
-    })
-
-    result = validator.validate(valid_price_data, 'price', raise_on_error=False)
-    assert result, "有效的價格資料驗證失敗"
-
-    # 測試無效資料（收盤價為負）
-    invalid_price_data = pd.DataFrame({
-        'stock_id': ['2330'],
-        'date': ['2025-01-28'],
-        'close': [-100]
-    })
-
-    result = validator.validate(invalid_price_data, 'price', raise_on_error=False)
-    assert not result, "無效資料應該驗證失敗"
-
-    logger.info("✓ 資料驗證器正常")
-
-
-def test_stock_list_manager():
-    """測試股票清單管理器"""
-    logger.info("測試股票清單管理器...")
-    logger.warning("⚠️  此測試會呼叫 FinMind API，請確保網路連線正常")
-
-    manager = StockListManager()
-
-    # 測試獲取股票清單（使用快取）
-    stocks = manager.get_stock_list(use_cache=True)
-
-    assert stocks is not None, "股票清單為 None"
-    assert not stocks.empty, "股票清單為空"
-    assert len(stocks) > 1000, f"股票數量異常: {len(stocks)}"
-
-    # 測試獲取股票代碼
-    stock_ids = manager.get_stock_ids()
-    assert len(stock_ids) > 0, "股票代碼列表為空"
-    assert '2330' in stock_ids, "股票清單中應包含 2330"
-
-    # 測試搜尋股票
-    results = manager.search_stocks('台積', field='stock_name')
-    assert not results.empty, "搜尋台積電應有結果"
-
-    logger.info(f"✓ 股票清單管理器正常 (共 {len(stocks)} 檔股票)")
-
-
-def test_collectors():
-    """測試收集器（模擬模式）"""
-    logger.info("測試收集器...")
-
-    # 測試價格收集器建立
-    price_collector = create_price_collector()
-    assert price_collector is not None, "價格收集器建立失敗"
+    # 測試 get_data_type
     assert price_collector.get_data_type() == 'price', "資料類型錯誤"
-
-    # 測試法人收集器建立
-    inst_collector = create_institutional_collector()
-    assert inst_collector is not None, "法人收集器建立失敗"
-    assert inst_collector.get_data_type() == 'institutional', "資料類型錯誤"
-
-    # 測試融資融券收集器建立
-    margin_collector = create_margin_collector()
-    assert margin_collector is not None, "融資融券收集器建立失敗"
     assert margin_collector.get_data_type() == 'margin', "資料類型錯誤"
-
-    # 測試借券收集器建立
-    lending_collector = create_lending_collector()
-    assert lending_collector is not None, "借券收集器建立失敗"
+    assert inst_collector.get_data_type() == 'institutional', "資料類型錯誤"
     assert lending_collector.get_data_type() == 'lending', "資料類型錯誤"
 
-    logger.info("✓ 所有收集器建立正常")
+    logger.info("✓ 收集器初始化正常")
 
 
-def test_collector_with_real_api():
-    """測試收集器實際 API 呼叫（單一股票）"""
-    logger.info("測試實際 API 呼叫...")
-    logger.warning("⚠️  此測試會呼叫 FinMind API")
+def test_price_collector_api(skip_api=False):
+    """測試價格收集器 API 呼叫"""
+    if skip_api:
+        logger.info("跳過 API 測試")
+        return
 
-    # 使用昨天的日期（避免當天無資料）
-    test_date = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
+    logger.info("測試價格收集器 API...")
 
-    # 測試價格收集器
-    collector = create_price_collector()
-    try:
-        df = collector.collect(test_date, stock_id='2330')
-        assert df is not None, "收集結果為 None"
+    # 使用昨天的日期（避免今天可能沒資料）
+    yesterday = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
 
-        if not df.empty:
-            logger.info(f"✓ 價格資料收集成功: {len(df)} 筆")
-            # 驗證必要欄位
-            assert 'stock_id' in df.columns, "缺少 stock_id 欄位"
-            assert 'date' in df.columns, "缺少 date 欄位"
-            assert 'close' in df.columns, "缺少 close 欄位"
-        else:
-            logger.warning(f"⚠️  {test_date} 無資料（可能非交易日）")
+    collector = PriceCollector(yesterday)
+    result = collector.collect()
 
-    except Exception as e:
-        logger.error(f"API 呼叫失敗: {e}")
-        raise
+    # 檢查結果結構
+    assert isinstance(result, dict), "結果應該是 dict"
 
+    if result:  # 如果有資料
+        assert 'metadata' in result, "應該有 metadata"
+        assert 'data' in result, "應該有 data"
+        assert isinstance(result['data'], list), "data 應該是 list"
 
-def test_collector_stats():
-    """測試收集器統計功能"""
-    logger.info("測試收集器統計...")
+        if len(result['data']) > 0:
+            # 檢查第一筆資料
+            first_record = result['data'][0]
+            assert 'stock_id' in first_record or '證券代號' in first_record, "應該有股票代號欄位"
 
-    collector = create_price_collector()
-
-    # 檢查初始統計
-    stats = collector.get_stats()
-    assert stats['api_calls'] == 0, "初始 API 呼叫數應為 0"
-    assert stats['total_records'] == 0, "初始記錄數應為 0"
-
-    # 重置統計
-    collector.reset_stats()
-    stats = collector.get_stats()
-    assert stats['api_calls'] == 0, "重置後 API 呼叫數應為 0"
-
-    logger.info("✓ 收集器統計功能正常")
+    logger.info("✓ 價格收集器 API 正常")
 
 
 def main():
     """主函數"""
     parser = argparse.ArgumentParser(description='Phase 1 功能測試')
-    parser.add_argument(
-        '--verbose',
-        action='store_true',
-        help='顯示詳細錯誤訊息'
-    )
-    parser.add_argument(
-        '--skip-api',
-        action='store_true',
-        help='跳過需要 API 的測試'
-    )
-
+    parser.add_argument('--verbose', action='store_true', help='顯示詳細錯誤訊息')
+    parser.add_argument('--skip-api', action='store_true', help='跳過 API 測試（不連線外部）')
     args = parser.parse_args()
 
     print("=" * 70)
     print("Phase 1 功能測試")
     print("=" * 70)
-    print(f"時間: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    print(f"測試時間: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    print(f"跳過 API 測試: {'是' if args.skip_api else '否'}")
     print("=" * 70)
 
     runner = TestRunner(verbose=args.verbose)
 
-    # 配置與工具模組測試
-    runner.test("配置載入", test_config_loading)
-    runner.test("檔案處理器", test_file_handler)
-    runner.test("路徑建立", test_build_file_path)
-    runner.test("資料驗證器", test_data_validator)
+    # 執行測試
+    runner.test("日期工具函式", test_date_utils)
+    runner.test("檔案工具函式", test_file_utils)
+    runner.test("收集器初始化", test_collectors_initialization)
 
-    # 收集器基礎測試
-    runner.test("收集器建立", test_collectors)
-    runner.test("收集器統計", test_collector_stats)
-
-    # API 測試（可選）
     if not args.skip_api:
-        print("\n⚠️  以下測試需要網路連線和 FinMind API")
-        runner.test("股票清單管理器", test_stock_list_manager)
-        runner.test("實際 API 呼叫", test_collector_with_real_api)
-    else:
-        print("\n⚠️  已跳過 API 測試 (使用 --skip-api)")
+        runner.test("價格收集器 API", lambda: test_price_collector_api(args.skip_api))
 
     # 顯示總結
     success = runner.summary()
 
-    return 0 if success else 1
+    # 回傳狀態碼
+    sys.exit(0 if success else 1)
 
 
 if __name__ == '__main__':
-    sys.exit(main())
+    main()
