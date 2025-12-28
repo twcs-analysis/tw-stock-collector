@@ -96,6 +96,9 @@ def save_stock_list(stocks, output_dir):
 
     df = pd.DataFrame(stocks)
 
+    # 確保 stock_id 為字串類型（補零至 4 位數）
+    df['stock_id'] = df['stock_id'].astype(str).str.zfill(4)
+
     # 按股票代碼排序
     df = df.sort_values('stock_id')
 
