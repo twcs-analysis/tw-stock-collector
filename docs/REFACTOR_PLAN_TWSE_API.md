@@ -865,8 +865,9 @@ python scripts/run_collection.py --date 2025-12-26 --types price
 - ✅ TWSEMarginDataSource - 已實作 ([twse_margin_datasource.py](../src/datasources/twse_margin_datasource.py:1-152))
 - ✅ TPEx 融資融券 API - **已突破！**（771 筆）
 - ✅ TPExMarginDataSource - 已實作 ([tpex_margin_datasource.py](../src/datasources/tpex_margin_datasource.py:1-161))
+- ✅ MarginCollector - 已重構 ([margin_collector.py](../src/collectors/margin_collector.py:1-161))
 - ✅ 測試驗證：1,815 檔股票成功收集
-- ⏳ MarginCollector - 待重構
+- ✅ 效能提升：907.5 倍（1,815 請求 → 2 請求）
 
 ### 🎉 TPEx API 突破
 
@@ -921,7 +922,7 @@ python scripts/run_collection.py --date 2025-12-26 --types price
 
 **下一步**:
 1. ✅ PriceCollector - 已完成（TWSE + TPEx 官方 API）
-2. 🚧 MarginCollector - 待重構（TWSE + TPEx 官方 API）
+2. ✅ MarginCollector - 已完成（TWSE + TPEx 官方 API）
 3. ⏳ InstitutionalCollector - 待研究（推測使用 `/web/stock/` 路徑）
 4. ⏳ LendingCollector - 待研究（推測使用 `/web/stock/` 路徑）
 
@@ -955,32 +956,33 @@ python scripts/run_collection.py --date 2025-12-26 --types price
 - [x] 欄位對照表建立
 - [x] 整合測試：1,815 檔股票成功收集
 
-#### 1.3 MarginCollector 重構 🚧
+#### 1.3 MarginCollector 重構 ✅
+- [x] 完全移除 FinMind 依賴
+- [x] 整合 TWSEMarginDataSource 和 TPExMarginDataSource
+- [x] 支援全部股票或單一股票查詢
+- [x] 自動計算券資比
+- [x] 完整錯誤處理與日誌
+- [x] 測試驗證通過
+
+**實作架構**:
 ```python
 class MarginCollector(BaseCollector):
+    """融資融券收集器 - 使用官方 API"""
+
     def __init__(self, config=None, timeout: int = 30):
         super().__init__(config)
-        self.twse_source = TWSEMarginDataSource(timeout=timeout)  # 官方 API
-        self.tpex_source = TPExMarginDataSource(timeout=timeout)  # 官方 API
+        self.twse_source = TWSEMarginDataSource(timeout=timeout)
+        self.tpex_source = TPExMarginDataSource(timeout=timeout)
         self.merger = DataMerger()
 
-    def collect(self, date: Union[str, datetime], stock_id: Optional[str] = None) -> pd.DataFrame:
-        date_str = self._format_date(date)
+    def collect(self, date, stock_id=None):
+        # 收集 TWSE + TPEx 資料
+        twse_df = self.twse_source.get_margin_data(date)
+        tpex_df = self.tpex_source.get_margin_data(date)
 
-        # 收集上市（TWSE 官方 API）
-        twse_df = self.twse_source.get_margin_data(date_str)
-
-        # 收集上櫃（TPEx 官方 API）
-        tpex_df = self.tpex_source.get_margin_data(date_str)
-
-        # 合併
+        # 合併並處理
         merged_df = self.merger.merge_dataframes([twse_df, tpex_df])
-
-        # 過濾特定股票（如果指定）
-        if stock_id:
-            merged_df = merged_df[merged_df['stock_id'] == stock_id]
-
-        return merged_df
+        return self._process_data(merged_df)  # 計算券資比等
 ```
 
 ### Phase 2: 三大法人（Institutional） - 次要
@@ -1052,7 +1054,7 @@ src/
 │   └── tpex_lending_datasource.py          ⏳ 待研究
 ├── collectors/
 │   ├── price_collector.py                  ✅ 已重構（官方 API）
-│   ├── margin_collector.py                 🚧 待重構（官方 API）
+│   ├── margin_collector.py                 ✅ 已重構（官方 API）
 │   ├── institutional_collector.py          ⏳ 待重構
 │   └── lending_collector.py                ⏳ 待重構
 └── utils/
@@ -1069,10 +1071,8 @@ src/
 2. ✅ 完成 TPExMarginDataSource（771 筆） - **成功找到 `/web/stock/` 端點！**
 3. ✅ 測試融資融券資料收集（1,815 筆）
 4. ✅ 匯出資料到 data 目錄
-
-### 🚧 進行中
-5. 重構 MarginCollector 使用官方 API
-6. 更新相關文件
+5. ✅ 重構 MarginCollector 使用官方 API
+6. ✅ 更新相關文件與 API 可用性總表
 
 ### ⏳ 待執行
 7. 研究 TPEx 三大法人 API（推測使用 `/web/stock/` 路徑）
