@@ -28,7 +28,7 @@ class MarginCollector(BaseCollector):
     def collect(
         self,
         date: Union[str, datetime],
-        stock_id: Optional[str] = None,
+        stock_id: str,
         **kwargs
     ) -> pd.DataFrame:
         """
@@ -36,28 +36,20 @@ class MarginCollector(BaseCollector):
 
         Args:
             date: 日期
-            stock_id: 股票代碼 (選用)
+            stock_id: 股票代碼
 
         Returns:
             pd.DataFrame: 融資融券資料
         """
         date_str = self._format_date(date)
+        self.logger.info(f"收集融資融券: {stock_id}, {date_str}")
 
-        if stock_id:
-            self.logger.info(f"收集融資融券: {stock_id}, {date_str}")
-            df = self.fetch_with_retry(
-                self.dl.taiwan_stock_margin_purchase_short_sale,
-                stock_id=stock_id,
-                start_date=date_str,
-                end_date=date_str
-            )
-        else:
-            self.logger.info(f"收集融資融券 (所有股票): {date_str}")
-            df = self.fetch_with_retry(
-                self.dl.taiwan_stock_margin_purchase_short_sale,
-                start_date=date_str,
-                end_date=date_str
-            )
+        df = self.fetch_with_retry(
+            self.dl.taiwan_stock_margin_purchase_short_sale,
+            stock_id=stock_id,
+            start_date=date_str,
+            end_date=date_str
+        )
 
         if df is None or df.empty:
             return pd.DataFrame()

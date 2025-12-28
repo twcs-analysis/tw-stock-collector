@@ -21,25 +21,18 @@ class LendingCollector(BaseCollector):
     def collect(
         self,
         date: Union[str, datetime],
-        stock_id: Optional[str] = None,
+        stock_id: str,
         **kwargs
     ) -> pd.DataFrame:
         """收集借券賣出資料"""
         date_str = self._format_date(date)
 
-        if stock_id:
-            df = self.fetch_with_retry(
-                self.dl.taiwan_stock_securities_lending,
-                stock_id=stock_id,
-                start_date=date_str,
-                end_date=date_str
-            )
-        else:
-            df = self.fetch_with_retry(
-                self.dl.taiwan_stock_securities_lending,
-                start_date=date_str,
-                end_date=date_str
-            )
+        df = self.fetch_with_retry(
+            self.dl.taiwan_stock_securities_lending,
+            stock_id=stock_id,
+            start_date=date_str,
+            end_date=date_str
+        )
 
         return self._process_data(df) if df is not None and not df.empty else pd.DataFrame()
 
