@@ -77,9 +77,12 @@ class BaseCollector(ABC):
         self.logger.info(f"資料已儲存: {file_path}")
         return file_path
 
-    def run(self) -> Dict[str, Any]:
+    def run(self, enable_validation: bool = True) -> Dict[str, Any]:
         """
-        執行收集流程: 記錄開始 → 收集資料 → 儲存 → 記錄結果
+        執行收集流程: 記錄開始 → 收集資料 → 儲存 → 驗證 → 記錄結果
+
+        Args:
+            enable_validation: 是否啟用驗證（預設為 True）
 
         Returns:
             dict: 執行結果
@@ -87,6 +90,7 @@ class BaseCollector(ABC):
                     "status": "success" | "no_data" | "error",
                     "file": "path/to/file.json",  # 僅 success 時
                     "records": 100,  # 僅 success 時
+                    "validation": {...},  # 僅 success 且 enable_validation 時
                     "error": "錯誤訊息"  # 僅 error 時
                 }
         """
@@ -117,6 +121,12 @@ class BaseCollector(ABC):
                 'file': file_path,
                 'records': len(data.get('data', []))
             }
+
+            # 驗證資料（如果啟用）
+            if enable_validation:
+                validation_result = self._validate_data(file_path)
+                result['validation'] = validation_result
+
             log_collection_result(self.logger, data_type, result)
             return result
 
@@ -129,3 +139,63 @@ class BaseCollector(ABC):
             }
             log_collection_result(self.logger, data_type, result)
             return result
+
+    def _validate_data(self, file_path: str) -> Dict[str, Any]:
+        """
+        驗證收集的資料並生成報告
+
+        Args:
+            file_path: 資料檔案路徑
+
+        Returns:
+            dict: 驗證結果摘要
+        """
+        try:
+            # 動態匯入驗證器（避免循環依賴）
+            from ..validators import (
+                PriceValidator,
+                MarginValidator,
+                InstitutionalValidator,
+                LendingValidator
+            )
+
+            # 選擇對應的驗證器
+            validator_map = {
+                'price': PriceValidator,
+                'margin': MarginValidator,
+                'institutional': InstitutionalValidator,
+                'lending': LendingValidator
+            }
+
+            data_type = self.get_data_type()
+            validator_class = validator_map.get(data_type)
+
+            if not validator_class:
+                self.logger.warning(f"找不到 {data_type} 對應的驗證器")
+                return {'status': 'skipped', 'message': '無對應驗證器'}
+
+            # 執行驗證
+            validator = validator_class(file_path)
+            validation_result = validator.validate()
+
+            # 生成報告
+            report_path = validator.generate_report()
+
+            self.logger.info(
+                f"驗證完成 - 狀態: {validation_result.status}, "
+                f"評分: {validation_result.grade} ({validation_result.accuracy:.1f}%)"
+            )
+
+            return {
+                'status': validation_result.status,
+                'grade': validation_result.grade,
+                'accuracy': validation_result.accuracy,
+                'report': report_path,
+                'passed': validation_result.passed_checks,
+                'warned': validation_result.warned_checks,
+                'failed': validation_result.failed_checks
+            }
+
+        except Exception as e:
+            self.logger.error(f"驗證時發生錯誤: {e}", exc_info=True)
+            return {'status': 'error', 'error': str(e)}
