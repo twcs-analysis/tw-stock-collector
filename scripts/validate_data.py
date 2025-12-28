@@ -19,9 +19,9 @@ from src.validators import (
     InstitutionalValidator,
     LendingValidator
 )
-from src.utils.logger import get_logger
+from src.utils.logger import setup_logger
 
-logger = get_logger(__name__)
+logger = setup_logger(__name__)
 
 
 # 資料類型對應的驗證器
