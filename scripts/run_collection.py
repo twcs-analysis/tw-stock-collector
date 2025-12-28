@@ -120,27 +120,22 @@ def main():
     if 'price' in args.types:
         logger.info("")
         logger.info("-" * 70)
-        logger.info("收集價格資料")
+        logger.info("收集價格資料（使用 Aggregate API）")
         logger.info("-" * 70)
 
         collector = create_price_collector(api_token=args.api_token)
         stats['total_collections'] += 1
 
         try:
-            # 收集所有股票
-            df = collector.collect_multiple_stocks(collection_date, stock_ids)
-
-            if not df.empty:
-                # 儲存
-                if collector.save_data(df, collection_date):
-                    stats['success_collections'] += 1
-                    stats['total_records'] += len(df)
-                    logger.info(f"完成: {len(df)} 筆")
-                else:
-                    stats['failed_collections'] += 1
+            # 使用 aggregate API 一次取得所有股票
+            if collector.collect_and_save(collection_date, stock_id=None):
+                stats['success_collections'] += 1
             else:
-                logger.warning("無資料")
                 stats['failed_collections'] += 1
+
+            collector_stats = collector.get_stats()
+            stats['total_records'] += collector_stats.get('total_records', 0)
+            logger.info(f"完成: {collector_stats.get('total_records', 0)} 筆")
 
         except Exception as e:
             logger.error(f"收集失敗: {e}")
@@ -150,27 +145,22 @@ def main():
     if 'institutional' in args.types:
         logger.info("")
         logger.info("-" * 70)
-        logger.info("收集法人買賣資料")
+        logger.info("收集法人買賣資料（使用 Aggregate API）")
         logger.info("-" * 70)
 
         collector = create_institutional_collector(api_token=args.api_token)
         stats['total_collections'] += 1
 
         try:
-            # 收集所有股票
-            df = collector.collect_multiple_stocks(collection_date, stock_ids)
-
-            if not df.empty:
-                # 儲存
-                if collector.save_data(df, collection_date):
-                    stats['success_collections'] += 1
-                    stats['total_records'] += len(df)
-                    logger.info(f"完成: {len(df)} 筆")
-                else:
-                    stats['failed_collections'] += 1
+            # 使用 aggregate API 一次取得所有股票
+            if collector.collect_and_save(collection_date, stock_id=None):
+                stats['success_collections'] += 1
             else:
-                logger.warning("無資料")
                 stats['failed_collections'] += 1
+
+            collector_stats = collector.get_stats()
+            stats['total_records'] += collector_stats.get('total_records', 0)
+            logger.info(f"完成: {collector_stats.get('total_records', 0)} 筆")
 
         except Exception as e:
             logger.error(f"收集失敗: {e}")
@@ -180,27 +170,21 @@ def main():
     if 'margin' in args.types:
         logger.info("")
         logger.info("-" * 70)
-        logger.info("收集融資融券資料")
+        logger.info("收集融資融券資料（使用 Aggregate API）")
         logger.info("-" * 70)
 
         collector = create_margin_collector(api_token=args.api_token)
         stats['total_collections'] += 1
 
         try:
-            # 收集所有股票
-            df = collector.collect_multiple_stocks(collection_date, stock_ids)
-
-            if not df.empty:
-                # 儲存
-                if collector.save_data(df, collection_date):
-                    stats['success_collections'] += 1
-                    stats['total_records'] += len(df)
-                    logger.info(f"完成: {len(df)} 筆")
-                else:
-                    stats['failed_collections'] += 1
+            if collector.collect_and_save(collection_date, stock_id=None):
+                stats['success_collections'] += 1
             else:
-                logger.warning("無資料")
                 stats['failed_collections'] += 1
+
+            collector_stats = collector.get_stats()
+            stats['total_records'] += collector_stats.get('total_records', 0)
+            logger.info(f"完成: {collector_stats.get('total_records', 0)} 筆")
 
         except Exception as e:
             logger.error(f"收集失敗: {e}")
@@ -210,27 +194,21 @@ def main():
     if 'lending' in args.types:
         logger.info("")
         logger.info("-" * 70)
-        logger.info("收集借券賣出資料")
+        logger.info("收集借券賣出資料（使用 Aggregate API）")
         logger.info("-" * 70)
 
         collector = create_lending_collector(api_token=args.api_token)
         stats['total_collections'] += 1
 
         try:
-            # 收集所有股票
-            df = collector.collect_multiple_stocks(collection_date, stock_ids)
-
-            if not df.empty:
-                # 儲存
-                if collector.save_data(df, collection_date):
-                    stats['success_collections'] += 1
-                    stats['total_records'] += len(df)
-                    logger.info(f"完成: {len(df)} 筆")
-                else:
-                    stats['failed_collections'] += 1
+            if collector.collect_and_save(collection_date, stock_id=None):
+                stats['success_collections'] += 1
             else:
-                logger.warning("無資料")
                 stats['failed_collections'] += 1
+
+            collector_stats = collector.get_stats()
+            stats['total_records'] += collector_stats.get('total_records', 0)
+            logger.info(f"完成: {collector_stats.get('total_records', 0)} 筆")
 
         except Exception as e:
             logger.error(f"收集失敗: {e}")
