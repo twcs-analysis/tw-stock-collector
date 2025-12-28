@@ -861,33 +861,38 @@ python scripts/run_collection.py --date 2025-12-26 --types price
 - ✅ 測試驗證：1,946 檔股票成功收集
 
 #### 融資融券（Margin）
-- ✅ TWSE 融資融券 API - 完全可用（1,243 筆）
-- ✅ TWSEMarginDataSource - 已實作 ([twse_margin_datasource.py](../src/datasources/twse_margin_datasource.py:1-166))
-- ⏳ TPEx 融資融券 API - 有問題（回傳 HTML redirect）
-- ⏳ TPExMarginDataSource - 待實作
+- ✅ TWSE 融資融券 API - 完全可用（1,044 筆）
+- ✅ TWSEMarginDataSource - 已實作 ([twse_margin_datasource.py](../src/datasources/twse_margin_datasource.py:1-152))
+- ✅ TPEx 融資融券 API - **已突破！**（771 筆）
+- ✅ TPExMarginDataSource - 已實作 ([tpex_margin_datasource.py](../src/datasources/tpex_margin_datasource.py:1-161))
+- ✅ 測試驗證：1,815 檔股票成功收集
 - ⏳ MarginCollector - 待重構
 
-### ⚠️ 發現的問題
+### 🎉 TPEx API 突破
 
-#### TPEx API 問題
-**現象**: 所有 TPEx OpenAPI 端點回傳 HTTP 302 redirect 並導向 HTML 頁面
+#### 融資融券 API - 問題已解決！
+**發現**: TPEx 融資融券 API 使用 `/web/stock/` 路徑而非 `/openapi/v1/`
 
+**正確端點**:
+- 融資融券餘額: `/web/stock/margin_trading/margin_balance/margin_bal_result.php`
+- 融資融券統計: `/web/stock/margin_trading/margin_sbl/margin_sbl_result.php`
+
+**關鍵發現**:
+1. TPEx 網站使用傳統 PHP 端點，而非 RESTful API
+2. 回傳 JSON 格式，結構為 `{tables: [{fields: [], data: []}]}`
+3. 資料完整，包含 771 檔上櫃股票
+
+**已實作**:
+- ✅ TPExMarginDataSource 完整實作
+- ✅ 完整欄位對照表
+- ✅ 資料驗證通過
+
+### ⚠️ 仍待研究的問題
+
+#### TPEx 其他 API 狀態
 **影響範圍**:
-- `/tpex_margintrading_bal` - 融資融券
-- `/tpex_dealer_trading` - 三大法人
-- `/tpex_sbl_total` - 借券賣出
-
-**可能原因**:
-1. API 端點路徑錯誤或已棄用
-2. 需要特定認證或 Cookies
-3. 需要特定 Headers（User-Agent 等）
-4. API 已遷移到新位置
-
-**測試結果**:
-- 無 Headers: HTML 頁面
-- 瀏覽器 Headers: HTML 頁面
-- curl Headers: HTML 頁面
-- 各種組合: 全部失敗
+- `/tpex_dealer_trading` - 三大法人（可能也使用 `/web/stock/` 路徑）
+- `/tpex_sbl_total` - 借券賣出（可能也使用 `/web/stock/` 路徑）
 
 #### TWSE 其他 API 狀態
 - `/fund/T86` (三大法人) - 回傳空內容
@@ -899,89 +904,83 @@ python scripts/run_collection.py --date 2025-12-26 --types price
 
 | 資料類型 | TWSE API | 狀態 | 筆數 | TPEx API | 狀態 |
 |---------|----------|------|------|----------|------|
-| **價格資料** | `/exchangeReport/STOCK_DAY_ALL` | ✅ | 1,075 | `/tpex_mainboard_quotes` | ✅ 871 |
-| **融資融券** | `/exchangeReport/MI_MARGN` | ✅ | 1,243 | `/tpex_margintrading_bal` | ❌ HTML |
-| **三大法人** | `/fund/T86` | ❌ 空 | 0 | `/tpex_dealer_trading` | ❌ HTML |
-| **借券賣出** | `/exchangeReport/TWT93U` | ❌ 空 | 0 | `/tpex_sbl_total` | ❌ HTML |
+| **價格資料** | `/exchangeReport/STOCK_DAY_ALL` | ✅ | 1,075 | `/openapi/v1/tpex_mainboard_quotes` | ✅ | 871 |
+| **融資融券** | `/exchangeReport/MI_MARGN` | ✅ | 1,044 | `/web/stock/margin_trading/margin_balance/margin_bal_result.php` | ✅ | 771 |
+| **三大法人** | `/fund/T86` | ❌ 空 | 0 | 待研究 (`/web/stock/` 路徑) | ⏳ | ? |
+| **借券賣出** | `/exchangeReport/TWT93U` | ❌ 空 | 0 | 待研究 (`/web/stock/` 路徑) | ⏳ | ? |
 
 ---
 
-## 🎯 實作策略調整
+## 🎯 實作策略更新
 
-### 方案 A：混合模式（推薦）
+### ✅ 成功策略：探索 TPEx `/web/stock/` 路徑
 
-對於上櫃股票，採用混合策略：
-- **上市股票（TWSE）**: 使用官方 API
-- **上櫃股票（TPEx）**:
-  - 價格資料：官方 API ✅
-  - 其他資料：保留 FinMind（暫時）或待研究
+**成果**:
+- ✅ 價格資料：官方 API 完全可用
+- ✅ 融資融券：成功找到 `/web/stock/` 端點
 
-**優點**:
-- 可立即獲得上市股票的全部效能提升
-- 不會中斷現有服務
-- 給予充足時間研究 TPEx API
+**下一步**:
+1. ✅ PriceCollector - 已完成（TWSE + TPEx 官方 API）
+2. 🚧 MarginCollector - 待重構（TWSE + TPEx 官方 API）
+3. ⏳ InstitutionalCollector - 待研究（推測使用 `/web/stock/` 路徑）
+4. ⏳ LendingCollector - 待研究（推測使用 `/web/stock/` 路徑）
 
-**實作優先序**:
-1. ✅ PriceCollector - 已完成（TWSE + TPEx）
-2. 🚧 MarginCollector - 進行中（TWSE + FinMind for TPEx）
-3. ⏳ InstitutionalCollector - 待研究（可能全部使用 FinMind）
-4. ⏳ LendingCollector - 待研究（可能全部使用 FinMind）
+### 💡 TPEx API 模式總結
 
-### 方案 B：深入研究 TPEx
+**發現的模式**:
+- 價格行情：使用 `/openapi/v1/` RESTful API
+- 交易統計（融資融券等）：使用 `/web/stock/` PHP 端點
+- 預期其他統計資料也使用 `/web/stock/` 路徑
 
-**目標**: 找到正確的 TPEx API 端點
-
-**步驟**:
-1. 分析 TPEx 網站實際請求（Browser DevTools）
-2. 檢查是否有其他 API 文檔
-3. 測試不同的端點路徑
-4. 聯繫 TPEx 技術支援（如可行）
-
-**時程**: 預估 4-8 小時
+**探索策略**:
+1. 使用瀏覽器 DevTools 觀察 TPEx 網站實際請求
+2. 找到對應的 `/web/stock/` 端點
+3. 分析 JSON 結構並建立欄位對照表
 
 ---
 
 ## 🔨 詳細實作清單
 
-### Phase 1: 融資融券（Margin） - 優先
+### Phase 1: 融資融券（Margin） - ✅ 已完成資料源
 
 #### 1.1 上市融資融券（TWSE）✅
 - [x] TWSEMarginDataSource 實作
-- [x] API 測試驗證（1,243 筆）
+- [x] API 測試驗證（1,044 筆）
 - [x] 欄位對照表建立
 
-#### 1.2 上櫃融資融券（TPEx）⏳
-**選項 1: 混合模式（推薦）**
-```python
-class TPExMarginDataSource(BaseDataSource):
-    def get_margin_data(self, date, stock_ids=None):
-        """暫時使用 FinMind API"""
-        # TODO: 待 TPEx 官方 API 問題解決後改用
-        return self._fetch_from_finmind(date, stock_ids)
-```
+#### 1.2 上櫃融資融券（TPEx）✅
+- [x] 發現正確 API 端點：`/web/stock/margin_trading/margin_balance/margin_bal_result.php`
+- [x] TPExMarginDataSource 實作
+- [x] API 測試驗證（771 筆）
+- [x] 欄位對照表建立
+- [x] 整合測試：1,815 檔股票成功收集
 
-**選項 2: 繼續研究**
-- 嘗試不同 API 路徑
-- 檢查 TPEx 網站實際請求
-- 測試其他可能的端點
-
-#### 1.3 MarginCollector 重構
+#### 1.3 MarginCollector 重構 🚧
 ```python
 class MarginCollector(BaseCollector):
-    def __init__(self):
-        self.twse_source = TWSEMarginDataSource()  # 官方 API
-        self.tpex_source = TPExMarginDataSource()   # FinMind 或待實作
+    def __init__(self, config=None, timeout: int = 30):
+        super().__init__(config)
+        self.twse_source = TWSEMarginDataSource(timeout=timeout)  # 官方 API
+        self.tpex_source = TPExMarginDataSource(timeout=timeout)  # 官方 API
         self.merger = DataMerger()
 
-    def collect(self, date, stock_id=None):
-        # 收集上市（TWSE 官方 API）
-        twse_df = self.twse_source.get_margin_data(date)
+    def collect(self, date: Union[str, datetime], stock_id: Optional[str] = None) -> pd.DataFrame:
+        date_str = self._format_date(date)
 
-        # 收集上櫃（FinMind 暫時，或等待官方 API）
-        tpex_df = self.tpex_source.get_margin_data(date)
+        # 收集上市（TWSE 官方 API）
+        twse_df = self.twse_source.get_margin_data(date_str)
+
+        # 收集上櫃（TPEx 官方 API）
+        tpex_df = self.tpex_source.get_margin_data(date_str)
 
         # 合併
-        return self.merger.merge_dataframes([twse_df, tpex_df])
+        merged_df = self.merger.merge_dataframes([twse_df, tpex_df])
+
+        # 過濾特定股票（如果指定）
+        if stock_id:
+            merged_df = merged_df[merged_df['stock_id'] == stock_id]
+
+        return merged_df
 ```
 
 ### Phase 2: 三大法人（Institutional） - 次要
@@ -1011,25 +1010,28 @@ class MarginCollector(BaseCollector):
 
 ---
 
-## 📊 效能提升預測
+## 📊 效能提升實績
 
-### 當前實作（混合模式）
+### 已實作（官方 API）
 
-| 資料類型 | 上市（TWSE） | 上櫃（TPEx） | 總提升 |
-|---------|-------------|-------------|--------|
-| **價格** | 1 req（官方） | 1 req（官方） | **973x** |
-| **融資融券** | 1 req（官方） | 871 req（FinMind） | **1.4x** |
-| **三大法人** | 1,075 req（FinMind） | 871 req（FinMind） | **1x** |
-| **借券賣出** | 1,075 req（FinMind） | 871 req（FinMind） | **1x** |
+| 資料類型 | 上市（TWSE） | 上櫃（TPEx） | 總提升 | 狀態 |
+|---------|-------------|-------------|--------|------|
+| **價格** | 1 req（官方） | 1 req（官方） | **973x** | ✅ |
+| **融資融券** | 1 req（官方） | 1 req（官方） | **973x** | ✅ |
+| **三大法人** | ? req（待研究） | ? req（待研究） | **?** | ⏳ |
+| **借券賣出** | ? req（待研究） | ? req（待研究） | **?** | ⏳ |
 
-### 理想狀態（全部官方 API）
+### 效能分析
 
-| 資料類型 | 請求次數 | 提升倍數 |
-|---------|---------|---------|
-| **價格** | 2 | 973x ✅ |
-| **融資融券** | 2 | 973x ⏳ |
-| **三大法人** | 2 | 973x ⏳ |
-| **借券賣出** | 2 | 973x ⏳ |
+#### 價格資料收集
+- **原本**: 1,946 個 API 請求（每檔股票 1 次）
+- **現在**: 2 個 API 請求（TWSE 1 次 + TPEx 1 次）
+- **提升**: 973 倍
+
+#### 融資融券資料收集
+- **原本**: 1,815 個 API 請求（每檔股票 1 次）
+- **現在**: 2 個 API 請求（TWSE 1 次 + TPEx 1 次）
+- **提升**: 907.5 倍
 
 ---
 
@@ -1043,39 +1045,41 @@ src/
 │   ├── twse_datasource.py                  ✅ 已實作（價格）
 │   ├── tpex_datasource.py                  ✅ 已實作（價格）
 │   ├── twse_margin_datasource.py           ✅ 已實作（融資融券）
-│   ├── tpex_margin_datasource.py           ⏳ 待實作（混合模式）
+│   ├── tpex_margin_datasource.py           ✅ 已實作（融資融券）
 │   ├── twse_institutional_datasource.py    ⏳ 待研究
 │   ├── tpex_institutional_datasource.py    ⏳ 待研究
 │   ├── twse_lending_datasource.py          ⏳ 待研究
 │   └── tpex_lending_datasource.py          ⏳ 待研究
 ├── collectors/
 │   ├── price_collector.py                  ✅ 已重構（官方 API）
-│   ├── margin_collector.py                 🚧 進行中（混合模式）
+│   ├── margin_collector.py                 🚧 待重構（官方 API）
 │   ├── institutional_collector.py          ⏳ 待重構
 │   └── lending_collector.py                ⏳ 待重構
 └── utils/
-    └── data_merger.py                      ✅ 已實作
+    ├── data_merger.py                      ✅ 已實作
+    └── stock_list.py                       ❌ 已移除（不再需要）
 ```
 
 ---
 
 ## 🚀 下一步行動
 
-### 立即執行（今天）
-1. ✅ 完成 TWSEMarginDataSource
-2. 🚧 實作 TPExMarginDataSource（混合模式：使用 FinMind）
-3. 🚧 重構 MarginCollector
-4. 🚧 測試融資融券收集器
+### ✅ 已完成
+1. ✅ 完成 TWSEMarginDataSource（1,044 筆）
+2. ✅ 完成 TPExMarginDataSource（771 筆） - **成功找到 `/web/stock/` 端點！**
+3. ✅ 測試融資融券資料收集（1,815 筆）
+4. ✅ 匯出資料到 data 目錄
 
-### 短期（本週）
-5. 研究 TWSE 三大法人 API（/fund/T86）
-6. 研究 TPEx redirect 問題解法
-7. 決定 InstitutionalCollector 實作策略
+### 🚧 進行中
+5. 重構 MarginCollector 使用官方 API
+6. 更新相關文件
 
-### 中期（下週）
-8. 實作 InstitutionalCollector（可能混合模式）
-9. 研究借券賣出 API
-10. 完善文檔與測試
+### ⏳ 待執行
+7. 研究 TPEx 三大法人 API（推測使用 `/web/stock/` 路徑）
+8. 研究 TPEx 借券賣出 API（推測使用 `/web/stock/` 路徑）
+9. 研究 TWSE 其他 API 端點（三大法人、借券賣出）
+10. 實作 InstitutionalCollector
+11. 實作 LendingCollector
 
 ---
 
