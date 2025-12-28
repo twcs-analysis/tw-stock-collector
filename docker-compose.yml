@@ -32,6 +32,14 @@ services:
       - ./cache:/app/cache
     command: >
       sh -c "
+      echo '準備股票清單...' &&
+      if [ -f data/reference/stock_list_reference.csv ]; then
+        echo '使用參考股票清單 (data/reference/stock_list_reference.csv)' &&
+        cp data/reference/stock_list_reference.csv data/stock_list.csv &&
+        echo '已複製參考清單到 data/stock_list.csv'
+      else
+        echo '警告: 找不到參考股票清單，將使用現有 data/stock_list.csv 或從 API 獲取'
+      fi &&
       echo '開始收集資料...' &&
       python scripts/run_collection.py --date $${COLLECTION_DATE} --types $${COLLECTION_TYPES}
       "
@@ -57,6 +65,15 @@ services:
       - ./cache:/app/cache
     command: >
       sh -c "
+      echo '準備股票清單...' &&
+      if [ -f data/reference/stock_list_reference.csv ]; then
+        echo '使用參考股票清單 (data/reference/stock_list_reference.csv)' &&
+        cp data/reference/stock_list_reference.csv data/stock_list.csv &&
+        echo '已複製參考清單到 data/stock_list.csv'
+      else
+        echo '警告: 找不到參考股票清單，將使用現有 data/stock_list.csv 或從 API 獲取'
+      fi &&
+      echo '開始回補資料...' &&
       if [ -n \"$${END_DATE}\" ]; then
         python scripts/backfill.py --start $${START_DATE} --end $${END_DATE} --types $${BACKFILL_TYPES}
       else
