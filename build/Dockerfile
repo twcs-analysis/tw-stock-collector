@@ -19,7 +19,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # 複製程式碼
 COPY src/ ./src/
-COPY scripts/run_collection.py ./scripts/
+COPY scripts/ ./scripts/
 
 # 設定環境變數
 ENV PYTHONUNBUFFERED=1
