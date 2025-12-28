@@ -6,14 +6,13 @@ services:
     image: ghcr.io/twcs-analysis/tw-stock-collector:phase1-latest
     container_name: tw-stock-phase1-test
     environment:
-      - FINMIND_API_TOKEN=${FINMIND_API_TOKEN:-}
       - TZ=Asia/Taipei
     volumes:
       # 掛載資料目錄（保留測試結果）
       - ./data:/app/data
       - ./logs:/app/logs
       - ./cache:/app/cache
-    command: python scripts/test_phase1.py --skip-api
+    command: python scripts/test_refactored_collector.py
     networks:
       - stock-network
 
@@ -22,25 +21,16 @@ services:
     image: ghcr.io/twcs-analysis/tw-stock-collector:phase1-latest
     container_name: tw-stock-phase1-collector
     environment:
-      - FINMIND_API_TOKEN=${FINMIND_API_TOKEN:-}
       - TZ=Asia/Taipei
       - COLLECTION_DATE=${COLLECTION_DATE:-yesterday}
-      - COLLECTION_TYPES=${COLLECTION_TYPES:-price institutional margin lending}
+      - COLLECTION_TYPES=${COLLECTION_TYPES:-price}
     volumes:
       - ./data:/app/data
       - ./logs:/app/logs
       - ./cache:/app/cache
     command: >
       sh -c "
-      echo '準備股票清單...' &&
-      if [ -f data/reference/stock_list_reference.csv ]; then
-        echo '使用參考股票清單 (data/reference/stock_list_reference.csv)' &&
-        cp data/reference/stock_list_reference.csv data/stock_list.csv &&
-        echo '已複製參考清單到 data/stock_list.csv'
-      else
-        echo '警告: 找不到參考股票清單，將使用現有 data/stock_list.csv 或從 API 獲取'
-      fi &&
-      echo '開始收集資料...' &&
+      echo '開始收集資料（使用官方 API，無需股票清單）...' &&
       python scripts/run_collection.py --date $${COLLECTION_DATE} --types $${COLLECTION_TYPES}
       "
     networks:
@@ -53,27 +43,18 @@ services:
     image: ghcr.io/twcs-analysis/tw-stock-collector:phase1-latest
     container_name: tw-stock-phase1-backfill
     environment:
-      - FINMIND_API_TOKEN=${FINMIND_API_TOKEN:-}
       - TZ=Asia/Taipei
       - START_DATE=${START_DATE:-2025-01-01}
       - END_DATE=${END_DATE:-}
       - BACKFILL_DAYS=${BACKFILL_DAYS:-7}
-      - BACKFILL_TYPES=${BACKFILL_TYPES:-price institutional margin lending}
+      - BACKFILL_TYPES=${BACKFILL_TYPES:-price}
     volumes:
       - ./data:/app/data
       - ./logs:/app/logs
       - ./cache:/app/cache
     command: >
       sh -c "
-      echo '準備股票清單...' &&
-      if [ -f data/reference/stock_list_reference.csv ]; then
-        echo '使用參考股票清單 (data/reference/stock_list_reference.csv)' &&
-        cp data/reference/stock_list_reference.csv data/stock_list.csv &&
-        echo '已複製參考清單到 data/stock_list.csv'
-      else
-        echo '警告: 找不到參考股票清單，將使用現有 data/stock_list.csv 或從 API 獲取'
-      fi &&
-      echo '開始回補資料...' &&
+      echo '開始回補資料（使用官方 API）...' &&
       if [ -n \"$${END_DATE}\" ]; then
         python scripts/backfill.py --start $${START_DATE} --end $${END_DATE} --types $${BACKFILL_TYPES}
       else

@@ -1,233 +1,185 @@
 #!/usr/bin/env python3
 """
-執行資料收集
+統一資料收集腳本
 
-收集指定日期的台股資料。
-
-Usage:
-    python scripts/run_collection.py                    # 收集今天的資料
-    python scripts/run_collection.py --date 2025-01-28  # 收集指定日期
-    python scripts/run_collection.py --date yesterday   # 收集昨天
+使用方式:
+    python scripts/run_collection.py --date 2024-12-27 --types price margin institutional lending
+    python scripts/run_collection.py --date 2024-12-27  # 收集所有類型
+    python scripts/run_collection.py  # 使用最近交易日，收集所有類型
 """
 
-import argparse
 import sys
-from datetime import datetime, timedelta
-from pathlib import Path
+import os
+import argparse
+from datetime import datetime
 
-sys.path.insert(0, str(Path(__file__).parent.parent))
+# Add src to path
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
-from src.utils import get_logger, get_global_config, StockListManager
 from src.collectors import (
-    create_price_collector,
-    create_institutional_collector,
-    create_margin_collector,
-    create_lending_collector
+    PriceCollector,
+    MarginCollector,
+    InstitutionalCollector,
+    LendingCollector
 )
-
-logger = get_logger(__name__)
-
-
-def parse_date(date_str: str) -> str:
-    """
-    解析日期字串
-
-    Args:
-        date_str: 日期字串 (today, yesterday, YYYY-MM-DD)
-
-    Returns:
-        str: YYYY-MM-DD 格式的日期
-    """
-    if date_str == 'today':
-        return datetime.now().strftime('%Y-%m-%d')
-    elif date_str == 'yesterday':
-        return (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
-    else:
-        # 驗證日期格式
-        try:
-            datetime.strptime(date_str, '%Y-%m-%d')
-            return date_str
-        except ValueError:
-            raise ValueError(f"無效的日期格式: {date_str}，請使用 YYYY-MM-DD")
+from src.utils import is_trading_day, get_latest_trading_day
 
 
-def main():
-    """主函數"""
-    parser = argparse.ArgumentParser(description='執行台股資料收集')
+# 可用的收集器對應表
+COLLECTORS = {
+    'price': PriceCollector,
+    'margin': MarginCollector,
+    'institutional': InstitutionalCollector,
+    'lending': LendingCollector,
+}
+
+
+def parse_args():
+    """解析命令列參數"""
+    parser = argparse.ArgumentParser(
+        description='台股資料收集統一執行腳本',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+範例:
+  # 收集指定日期的所有資料
+  python scripts/run_collection.py --date 2024-12-27
+
+  # 只收集價格和融資融券資料
+  python scripts/run_collection.py --date 2024-12-27 --types price margin
+
+  # 使用最近交易日
+  python scripts/run_collection.py
+        """
+    )
+
     parser.add_argument(
         '--date',
         type=str,
-        default='today',
-        help='收集日期 (today, yesterday, YYYY-MM-DD)，預設為 today'
+        help='收集日期 (YYYY-MM-DD)，不指定則使用最近交易日'
     )
-    parser.add_argument(
-        '--api-token',
-        type=str,
-        help='FinMind API Token（選用）'
-    )
+
     parser.add_argument(
         '--types',
-        type=str,
         nargs='+',
-        default=['price', 'institutional', 'margin', 'lending'],
-        choices=['price', 'institutional', 'margin', 'lending'],
-        help='要收集的資料類型'
+        choices=list(COLLECTORS.keys()),
+        help='要收集的資料類型（可指定多個），不指定則收集所有類型'
     )
+
     parser.add_argument(
-        '--stocks',
-        type=str,
-        nargs='+',
-        help='指定股票代碼（不指定則收集所有股票）'
+        '--skip-trading-day-check',
+        action='store_true',
+        help='跳過交易日檢查（適用於測試或補資料）'
     )
 
-    args = parser.parse_args()
+    return parser.parse_args()
 
-    # 解析日期
-    try:
-        collection_date = parse_date(args.date)
-    except ValueError as e:
-        logger.error(str(e))
-        return 1
 
-    logger.info("=" * 70)
-    logger.info("台股資料收集")
-    logger.info("=" * 70)
-    logger.info(f"收集日期: {collection_date}")
-    logger.info(f"資料類型: {', '.join(args.types)}")
-    logger.info("=" * 70)
+def main():
+    """主程式"""
+    args = parse_args()
 
-    # 載入配置
-    config = get_global_config()
-
-    # 獲取股票清單
-    if args.stocks:
-        stock_ids = args.stocks
-        logger.info(f"指定股票: {len(stock_ids)} 檔")
+    # 決定收集日期
+    if args.date:
+        date = args.date
     else:
-        stock_manager = StockListManager(api_token=args.api_token)
-        stock_ids = stock_manager.get_stock_ids()
-        logger.info(f"股票清單: {len(stock_ids)} 檔")
+        date = get_latest_trading_day()
+        print(f"未指定日期，使用最近交易日: {date}")
 
-    # 統計資訊
-    stats = {
-        'total_collections': 0,
-        'success_collections': 0,
-        'failed_collections': 0,
-        'total_records': 0
-    }
+    # 檢查是否為交易日
+    if not args.skip_trading_day_check:
+        if not is_trading_day(date):
+            print(f"⚠️  警告: {date} 不是交易日（週末或國定假日）")
+            response = input("是否繼續收集? (y/N): ")
+            if response.lower() != 'y':
+                print("已取消收集")
+                return 1
 
-    # 收集價格資料
-    if 'price' in args.types:
-        logger.info("")
-        logger.info("-" * 70)
-        logger.info("收集價格資料（使用 Aggregate API）")
-        logger.info("-" * 70)
+    # 決定收集類型
+    if args.types:
+        types_to_collect = args.types
+    else:
+        types_to_collect = list(COLLECTORS.keys())
 
-        collector = create_price_collector(api_token=args.api_token)
-        stats['total_collections'] += 1
+    print("=" * 70)
+    print(f"台股資料收集")
+    print("=" * 70)
+    print(f"日期: {date}")
+    print(f"類型: {', '.join(types_to_collect)}")
+    print("=" * 70)
+    print()
 
-        try:
-            # 使用 aggregate API 一次取得所有股票
-            if collector.collect_and_save(collection_date, stock_id=None):
-                stats['success_collections'] += 1
-            else:
-                stats['failed_collections'] += 1
+    # 收集結果統計
+    results = {}
+    success_count = 0
+    no_data_count = 0
+    error_count = 0
 
-            collector_stats = collector.get_stats()
-            stats['total_records'] += collector_stats.get('total_records', 0)
-            logger.info(f"完成: {collector_stats.get('total_records', 0)} 筆")
-
-        except Exception as e:
-            logger.error(f"收集失敗: {e}")
-            stats['failed_collections'] += 1
-
-    # 收集法人買賣資料
-    if 'institutional' in args.types:
-        logger.info("")
-        logger.info("-" * 70)
-        logger.info("收集法人買賣資料（使用 Aggregate API）")
-        logger.info("-" * 70)
-
-        collector = create_institutional_collector(api_token=args.api_token)
-        stats['total_collections'] += 1
+    # 依序收集各類型資料
+    for data_type in types_to_collect:
+        print(f"\n[{data_type.upper()}] 開始收集")
+        print("-" * 70)
 
         try:
-            # 使用 aggregate API 一次取得所有股票
-            if collector.collect_and_save(collection_date, stock_id=None):
-                stats['success_collections'] += 1
-            else:
-                stats['failed_collections'] += 1
+            # 建立收集器
+            collector_class = COLLECTORS[data_type]
+            collector = collector_class(date)
 
-            collector_stats = collector.get_stats()
-            stats['total_records'] += collector_stats.get('total_records', 0)
-            logger.info(f"完成: {collector_stats.get('total_records', 0)} 筆")
+            # 執行收集
+            result = collector.run()
 
-        except Exception as e:
-            logger.error(f"收集失敗: {e}")
-            stats['failed_collections'] += 1
+            # 記錄結果
+            results[data_type] = result
 
-    # 收集融資融券資料
-    if 'margin' in args.types:
-        logger.info("")
-        logger.info("-" * 70)
-        logger.info("收集融資融券資料（使用 Aggregate API）")
-        logger.info("-" * 70)
-
-        collector = create_margin_collector(api_token=args.api_token)
-        stats['total_collections'] += 1
-
-        try:
-            if collector.collect_and_save(collection_date, stock_id=None):
-                stats['success_collections'] += 1
-            else:
-                stats['failed_collections'] += 1
-
-            collector_stats = collector.get_stats()
-            stats['total_records'] += collector_stats.get('total_records', 0)
-            logger.info(f"完成: {collector_stats.get('total_records', 0)} 筆")
+            # 統計
+            if result['status'] == 'success':
+                success_count += 1
+                print(f"✅ 成功: {result.get('records')} 筆資料")
+                print(f"   檔案: {result.get('file')}")
+            elif result['status'] == 'no_data':
+                no_data_count += 1
+                print(f"⚠️  無資料")
+            else:  # error
+                error_count += 1
+                print(f"❌ 失敗: {result.get('error')}")
 
         except Exception as e:
-            logger.error(f"收集失敗: {e}")
-            stats['failed_collections'] += 1
+            error_count += 1
+            results[data_type] = {'status': 'error', 'error': str(e)}
+            print(f"❌ 例外錯誤: {e}")
 
-    # 收集借券賣出資料
-    if 'lending' in args.types:
-        logger.info("")
-        logger.info("-" * 70)
-        logger.info("收集借券賣出資料（使用 Aggregate API）")
-        logger.info("-" * 70)
+        print("-" * 70)
 
-        collector = create_lending_collector(api_token=args.api_token)
-        stats['total_collections'] += 1
+    # 輸出總結
+    print("\n" + "=" * 70)
+    print("收集總結")
+    print("=" * 70)
+    print(f"日期: {date}")
+    print(f"總計: {len(types_to_collect)} 種資料類型")
+    print(f"  成功: {success_count}")
+    print(f"  無資料: {no_data_count}")
+    print(f"  失敗: {error_count}")
+    print("=" * 70)
 
-        try:
-            if collector.collect_and_save(collection_date, stock_id=None):
-                stats['success_collections'] += 1
-            else:
-                stats['failed_collections'] += 1
+    # 詳細結果
+    if success_count > 0:
+        print("\n成功收集的資料:")
+        for data_type, result in results.items():
+            if result['status'] == 'success':
+                print(f"  - {data_type}: {result.get('records')} 筆")
 
-            collector_stats = collector.get_stats()
-            stats['total_records'] += collector_stats.get('total_records', 0)
-            logger.info(f"完成: {collector_stats.get('total_records', 0)} 筆")
+    if error_count > 0:
+        print("\n失敗的資料:")
+        for data_type, result in results.items():
+            if result['status'] == 'error':
+                print(f"  - {data_type}: {result.get('error')}")
 
-        except Exception as e:
-            logger.error(f"收集失敗: {e}")
-            stats['failed_collections'] += 1
-
-    # 總結
-    logger.info("")
-    logger.info("=" * 70)
-    logger.info("收集完成")
-    logger.info("=" * 70)
-    logger.info(f"總收集次數: {stats['total_collections']}")
-    logger.info(f"成功: {stats['success_collections']}")
-    logger.info(f"失敗: {stats['failed_collections']}")
-    logger.info(f"總筆數: {stats['total_records']}")
-    logger.info(f"成功率: {stats['success_collections'] / stats['total_collections'] * 100:.1f}%"
-               if stats['total_collections'] > 0 else "N/A")
-    logger.info("=" * 70)
-
-    return 0 if stats['failed_collections'] == 0 else 1
+    # 回傳狀態碼
+    if error_count > 0:
+        return 1  # 有錯誤
+    elif no_data_count == len(types_to_collect):
+        return 2  # 全部無資料
+    else:
+        return 0  # 成功
 
 
 if __name__ == '__main__':

@@ -92,7 +92,6 @@ jobs:
 
       - name: Run backfill
         env:
-          FINMIND_API_TOKEN: ${{ secrets.FINMIND_API_TOKEN }}
           START_DATE: ${{ steps.dates.outputs.start_date }}
           END_DATE: ${{ steps.dates.outputs.end_date }}
           BACKFILL_TYPES: ${{ github.event.inputs.types }}
@@ -104,7 +103,6 @@ jobs:
           echo "批次大小: ${BATCH_SIZE}"
 
           docker run --rm \
-            -e FINMIND_API_TOKEN="${FINMIND_API_TOKEN}" \
             -e START_DATE="${START_DATE}" \
             -e END_DATE="${END_DATE}" \
             -e BACKFILL_TYPES="${BACKFILL_TYPES}" \

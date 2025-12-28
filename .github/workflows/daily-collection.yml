@@ -62,12 +62,10 @@ jobs:
 
       - name: Run data collection
         env:
-          FINMIND_API_TOKEN: ${{ secrets.FINMIND_API_TOKEN }}
           COLLECTION_DATE: ${{ steps.params.outputs.date }}
           COLLECTION_TYPES: ${{ steps.params.outputs.types }}
         run: |
           docker run --rm \
-            -e FINMIND_API_TOKEN="${FINMIND_API_TOKEN}" \
             -e COLLECTION_DATE="${COLLECTION_DATE}" \
             -e COLLECTION_TYPES="${COLLECTION_TYPES}" \
             -e TZ=Asia/Taipei \

@@ -7,8 +7,12 @@ import requests
 import pandas as pd
 from typing import Optional, List
 import logging
+import urllib3
 
 from .base_datasource import BaseDataSource
+
+# 關閉 SSL 警告
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +41,7 @@ class TPExDataSource(BaseDataSource):
 
         try:
             logger.info(f"查詢 TPEx API: {url}")
-            response = self.session.get(url, timeout=self.timeout)
+            response = self.session.get(url, timeout=self.timeout, verify=False)
             response.raise_for_status()
             data = response.json()
 
