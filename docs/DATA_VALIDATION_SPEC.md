@@ -162,6 +162,38 @@ required_fields = [
 ]
 ```
 
+**中英文欄位對應**（API 回傳中文 → 標準化英文欄位）：
+
+| 中文欄位 | 英文欄位 | 說明 |
+|---------|---------|------|
+| 證券代號 | stock_id | 股票代碼（4 位數字） |
+| 證券名稱 | stock_name | 股票名稱（已去除前後空白） |
+| 外陸資買進股數(不含外資自營商) | foreign_main_buy | 外資主力買進 |
+| 外陸資賣出股數(不含外資自營商) | foreign_main_sell | 外資主力賣出 |
+| 外陸資買賣超股數(不含外資自營商) | foreign_main_net | 外資主力買賣超 |
+| 外資自營商買進股數 | foreign_dealer_buy | 外資自營商買進 |
+| 外資自營商賣出股數 | foreign_dealer_sell | 外資自營商賣出 |
+| 外資自營商買賣超股數 | foreign_dealer_net | 外資自營商買賣超 |
+| 投信買進股數 | trust_buy | 投信買進 |
+| 投信賣出股數 | trust_sell | 投信賣出 |
+| 投信買賣超股數 | trust_net | 投信買賣超 |
+| 自營商買進股數(自行買賣) | dealer_self_buy | 自營商自行買賣買進 |
+| 自營商賣出股數(自行買賣) | dealer_self_sell | 自營商自行買賣賣出 |
+| 自營商買賣超股數(自行買賣) | dealer_self_net | 自營商自行買賣買賣超 |
+| 自營商買進股數(避險) | dealer_hedge_buy | 自營商避險買進 |
+| 自營商賣出股數(避險) | dealer_hedge_sell | 自營商避險賣出 |
+| 自營商買賣超股數(避險) | dealer_hedge_net | 自營商避險買賣超 |
+| 自營商買賣超股數 | dealer_net_total | 自營商買賣超總計 |
+| 三大法人買賣超股數 | total_net | 三大法人買賣超合計 |
+
+**計算欄位**（由程式自動計算）：
+- `foreign_buy` = foreign_main_buy + foreign_dealer_buy （外資總買進）
+- `foreign_sell` = foreign_main_sell + foreign_dealer_sell （外資總賣出）
+- `foreign_net` = foreign_main_net + foreign_dealer_net （外資總買賣超）
+- `dealer_buy` = dealer_self_buy + dealer_hedge_buy （自營商總買進）
+- `dealer_sell` = dealer_self_sell + dealer_hedge_sell （自營商總賣出）
+- `dealer_net` = dealer_self_net + dealer_hedge_net （自營商總買賣超）
+
 ##### Margin (融資融券)
 ```python
 required_fields = [
@@ -187,6 +219,36 @@ required_fields = [
     'type'                     # 市場類型
 ]
 ```
+
+**中英文欄位對應**（API 回傳中文 → 標準化英文欄位）：
+
+TWSE TWT93U API 回傳 15 個欄位，包含融券與借券資料：
+
+| 順序 | 中文欄位 | 英文欄位 | 說明 |
+|-----|---------|---------|------|
+| 1 | 代號 | stock_id | 股票代碼（4 位數字） |
+| 2 | 名稱 | stock_name | 股票名稱（已去除前後空白） |
+| 3 | 前日餘額 | margin_prev_balance | 融券前日餘額 |
+| 4 | 賣出 | margin_sell | 融券賣出 |
+| 5 | 買進 | margin_buy | 融券買進 |
+| 6 | 現券 | margin_securities | 融券現券 |
+| 7 | 今日餘額 | margin_today_balance | 融券今日餘額 |
+| 8 | 次一營業日限額 | margin_next_day_limit | 融券次一營業日限額 |
+| 9 | 前日餘額 | prev_balance | 借券前日餘額 |
+| 10 | 當日賣出 | daily_sell | 借券當日賣出 |
+| 11 | 當日還券 | daily_return | 借券當日還券 |
+| 12 | 當日調整 | daily_adjust | 借券當日調整 |
+| 13 | 當日餘額 | lending_balance | 借券當日餘額 |
+| 14 | 次一營業日可限額 | next_day_available | 借券次一營業日可限額 |
+| 15 | 備註 | note | 備註 |
+
+**計算欄位**（由程式自動計算）：
+- `lending_change` = lending_balance - prev_balance （借券變化量）
+
+**注意事項**：
+- API 回傳的「前日餘額」欄位出現兩次（位置 3 和位置 9），分別代表融券和借券
+- 使用直接欄位順序重新命名，而非 dict mapping
+- 融券相關欄位（margin_*）僅供參考，主要使用借券相關欄位
 
 #### 3.3 空值檢查
 
