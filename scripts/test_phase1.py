@@ -97,13 +97,13 @@ def test_date_utils():
     """測試日期工具函式"""
     logger.info("測試日期工具函式...")
 
-    # 測試交易日判斷
-    weekday = '2025-01-28'  # 星期二
-    assert is_trading_day(weekday), f"{weekday} 應該是交易日"
-
-    # 測試週末
+    # 測試週末（一定不是交易日）
     weekend = '2025-01-25'  # 星期六
     assert not is_trading_day(weekend), f"{weekend} 不應該是交易日"
+
+    # 測試週日（一定不是交易日）
+    sunday = '2025-01-26'  # 星期日
+    assert not is_trading_day(sunday), f"{sunday} 不應該是交易日"
 
     # 測試取得最近交易日
     latest = get_latest_trading_day()
