@@ -162,8 +162,8 @@ class StockListManager:
                 df = df[df['type'].isin(include_types)]
                 logger.info(f"僅保留 {include_types}: {original_count} -> {len(df)}")
 
-        # 只保留上市上櫃股票
-        df = df[df['industry_category'].isin(['TWSE', 'OTC'])].copy()
+        # 只保留上市上櫃股票 (使用 type 欄位: twse=上市, tpex=上櫃)
+        df = df[df['type'].isin(['twse', 'tpex'])].copy()
 
         # 只保留活躍股票
         df = df[df['stock_id'].notna()].copy()
