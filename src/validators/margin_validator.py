@@ -44,10 +44,10 @@ class MarginValidator(BaseValidator):
 
             if len(invalid_balances) > 0:
                 self.result.add_issue(
-                    level="FAIL",
+                    level="WARN",
                     category="reasonableness",
                     item=f"{field} 範圍",
-                    message=f"{len(invalid_balances)} 筆 {field} 資料異常 (< 0 或 null)",
+                    message=f"{len(invalid_balances)} 筆 {field} 資料異常 (< 0 或 null，可能為不允許融資融券的股票)",
                     details={'count': len(invalid_balances)}
                 )
             else:

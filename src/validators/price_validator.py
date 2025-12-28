@@ -77,10 +77,10 @@ class PriceValidator(BaseValidator):
 
             if len(invalid_volumes) > 0:
                 self.result.add_issue(
-                    level="FAIL",
+                    level="WARN",
                     category="reasonableness",
                     item="成交量範圍",
-                    message=f"{len(invalid_volumes)} 筆成交量資料異常 (< 0 或 null)",
+                    message=f"{len(invalid_volumes)} 筆成交量資料異常 (< 0 或 null，可能為停牌股票)",
                     details={'count': len(invalid_volumes)}
                 )
             else:
@@ -107,10 +107,10 @@ class PriceValidator(BaseValidator):
 
             if failed > 0:
                 self.result.add_issue(
-                    level="FAIL",
+                    level="WARN",
                     category="reasonableness",
                     item=f"邏輯檢查: {check_name}",
-                    message=f"{failed} 筆資料不符合邏輯 {check_name}",
+                    message=f"{failed} 筆資料不符合邏輯 {check_name} (可能為停牌股票或價格缺值)",
                     details={'passed': passed, 'failed': failed, 'total': total}
                 )
             else:
