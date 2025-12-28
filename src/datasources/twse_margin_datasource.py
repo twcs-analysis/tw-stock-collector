@@ -113,13 +113,20 @@ class TWSEMarginDataSource:
                     # 轉為數值
                     df[col] = pd.to_numeric(df[col], errors='coerce')
 
+            # 計算 margin_change 和 short_change
+            if 'margin_balance' in df.columns and 'margin_balance_prev' in df.columns:
+                df['margin_change'] = df['margin_balance'] - df['margin_balance_prev']
+
+            if 'short_balance' in df.columns and 'short_balance_prev' in df.columns:
+                df['short_change'] = df['short_balance'] - df['short_balance_prev']
+
             # 只保留必要欄位
             keep_cols = [
                 'date', 'stock_id', 'stock_name', 'type',
                 'margin_buy', 'margin_sell', 'margin_cash_repay',
-                'margin_balance_prev', 'margin_balance', 'margin_quota',
+                'margin_balance_prev', 'margin_balance', 'margin_quota', 'margin_change',
                 'short_covering', 'short_sell', 'short_repay',
-                'short_balance_prev', 'short_balance', 'short_quota',
+                'short_balance_prev', 'short_balance', 'short_quota', 'short_change',
                 'offset'
             ]
 
