@@ -17,6 +17,9 @@ PyYAML>=6.0
 # HTTP 請求（官方 API）
 requests>=2.31.0
 
+# HTML 解析 (TPEx 資料需要)
+lxml>=4.9.0
+
 # JSON 日誌 (選用)
 python-json-logger>=2.0.0
 
