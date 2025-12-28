@@ -10,9 +10,9 @@ class InstitutionalValidator(BaseValidator):
 
     DATA_TYPE = "institutional"
     DATA_TYPE_NAME = "三大法人"
-    MIN_RECORDS = 800
-    EXPECTED_RECORDS = 1027
-    MAX_RECORDS = 1500
+    MIN_RECORDS = 1500
+    EXPECTED_RECORDS = 1753
+    MAX_RECORDS = 2000
 
     REQUIRED_FIELDS = [
         'date',
