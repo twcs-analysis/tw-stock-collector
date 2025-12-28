@@ -82,6 +82,35 @@ class LendingCollector(BaseCollector):
                 df = df[df['代號'].astype(str).str.len() == 4]
                 df = df[df['代號'].astype(str).str.isdigit()]
 
+            # 轉換欄位名稱（中文 → 英文）
+            column_mapping = {
+                '代號': 'stock_id',
+                '名稱': 'stock_name',
+                '前日餘額': 'prev_balance',
+                '賣出': 'sell',
+                '買進': 'buy',
+                '現券': 'securities',
+                '今日餘額': 'today_balance',
+                '次一營業日限額': 'next_day_limit',
+                '當日賣出': 'daily_sell',
+                '當日還券': 'daily_return',
+                '當日調整': 'daily_adjust',
+                '當日餘額': 'lending_balance',
+                '次一營業日可限額': 'next_day_available',
+                '備註': 'note'
+            }
+            df = df.rename(columns=column_mapping)
+
+            # 計算借券變化量 (當日餘額 - 前日餘額)
+            if 'lending_balance' in df.columns and 'prev_balance' in df.columns:
+                # 轉換為數值（去除逗號）
+                df['lending_balance'] = pd.to_numeric(df['lending_balance'].astype(str).str.replace(',', ''), errors='coerce')
+                df['prev_balance'] = pd.to_numeric(df['prev_balance'].astype(str).str.replace(',', ''), errors='coerce')
+                df['lending_change'] = df['lending_balance'] - df['prev_balance']
+
+            # 加入 type 欄位（借券資料包含上市+上櫃，無法明確區分來源）
+            df['type'] = 'twse'  # 預設為 twse，因為 API 來自 TWSE
+
             total_count = len(df)
             self.logger.info(f"借券賣出: {total_count} 檔（上市+上櫃）")
 

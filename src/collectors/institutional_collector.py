@@ -68,6 +68,48 @@ class InstitutionalCollector(BaseCollector):
                 df = df[df['證券代號'].astype(str).str.len() == 4]
                 df = df[df['證券代號'].astype(str).str.isdigit()]
 
+                # 轉換欄位名稱（中文 → 英文）
+                column_mapping = {
+                    '證券代號': 'stock_id',
+                    '證券名稱': 'stock_name',
+                    '外陸資買進股數(不含外資自營商)': 'foreign_main_buy',
+                    '外陸資賣出股數(不含外資自營商)': 'foreign_main_sell',
+                    '外陸資買賣超股數(不含外資自營商)': 'foreign_main_net',
+                    '外資自營商買進股數': 'foreign_dealer_buy',
+                    '外資自營商賣出股數': 'foreign_dealer_sell',
+                    '外資自營商買賣超股數': 'foreign_dealer_net',
+                    '投信買進股數': 'trust_buy',
+                    '投信賣出股數': 'trust_sell',
+                    '投信買賣超股數': 'trust_net',
+                    '自營商買賣超股數': 'dealer_net_total',
+                    '自營商買進股數(自行買賣)': 'dealer_self_buy',
+                    '自營商賣出股數(自行買賣)': 'dealer_self_sell',
+                    '自營商買賣超股數(自行買賣)': 'dealer_self_net',
+                    '自營商買進股數(避險)': 'dealer_hedge_buy',
+                    '自營商賣出股數(避險)': 'dealer_hedge_sell',
+                    '自營商買賣超股數(避險)': 'dealer_hedge_net',
+                    '三大法人買賣超股數': 'total_net'
+                }
+                df = df.rename(columns=column_mapping)
+
+                # 計算外資總買賣超 (外資主力 + 外資自營商)
+                if 'foreign_main_net' in df.columns and 'foreign_dealer_net' in df.columns:
+                    df['foreign_buy'] = pd.to_numeric(df.get('foreign_main_buy', 0), errors='coerce').fillna(0) + \
+                                       pd.to_numeric(df.get('foreign_dealer_buy', 0), errors='coerce').fillna(0)
+                    df['foreign_sell'] = pd.to_numeric(df.get('foreign_main_sell', 0), errors='coerce').fillna(0) + \
+                                        pd.to_numeric(df.get('foreign_dealer_sell', 0), errors='coerce').fillna(0)
+                    df['foreign_net'] = pd.to_numeric(df.get('foreign_main_net', 0), errors='coerce').fillna(0) + \
+                                       pd.to_numeric(df.get('foreign_dealer_net', 0), errors='coerce').fillna(0)
+
+                # 自營商買賣超
+                if 'dealer_self_net' in df.columns and 'dealer_hedge_net' in df.columns:
+                    df['dealer_buy'] = pd.to_numeric(df.get('dealer_self_buy', 0), errors='coerce').fillna(0) + \
+                                      pd.to_numeric(df.get('dealer_hedge_buy', 0), errors='coerce').fillna(0)
+                    df['dealer_sell'] = pd.to_numeric(df.get('dealer_self_sell', 0), errors='coerce').fillna(0) + \
+                                       pd.to_numeric(df.get('dealer_hedge_sell', 0), errors='coerce').fillna(0)
+                    df['dealer_net'] = pd.to_numeric(df.get('dealer_self_net', 0), errors='coerce').fillna(0) + \
+                                      pd.to_numeric(df.get('dealer_hedge_net', 0), errors='coerce').fillna(0)
+
                 df['date'] = self.date
                 df['type'] = 'twse'
 
@@ -98,8 +140,24 @@ class InstitutionalCollector(BaseCollector):
                 df = df[df[first_col].astype(str).str.len() == 4]
                 df = df[df[first_col].astype(str).str.isdigit()]
 
+                # 重新命名第一欄為 stock_id
+                df = df.rename(columns={first_col: 'stock_id'})
+
+                # TPEx 資料的欄位結構與 TWSE 不同，需要根據實際情況調整
+                # 通常 TPEx HTML table 的欄位也是中文，需要轉換
+                # 這裡暫時保留原有欄位名稱，後續可根據實際資料調整
+
                 df['date'] = self.date
                 df['type'] = 'tpex'
+                df['stock_name'] = ''  # TPEx 資料可能沒有股票名稱，需要補上
+
+                # 如果沒有標準欄位，設定預設值
+                required_fields = ['foreign_buy', 'foreign_sell', 'foreign_net',
+                                 'trust_buy', 'trust_sell', 'trust_net',
+                                 'dealer_buy', 'dealer_sell', 'dealer_net']
+                for field in required_fields:
+                    if field not in df.columns:
+                        df[field] = 0
 
                 tpex_count = len(df)
                 self.logger.info(f"TPEx: {tpex_count} 檔")

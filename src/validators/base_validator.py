@@ -12,9 +12,9 @@ from pathlib import Path
 from typing import Dict, List, Optional, Any
 import pandas as pd
 
-from ..utils.logger import get_logger
+from ..utils.logger import setup_logger
 
-logger = get_logger(__name__)
+logger = setup_logger(__name__)
 
 
 @dataclass
