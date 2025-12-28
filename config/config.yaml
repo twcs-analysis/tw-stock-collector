@@ -3,21 +3,16 @@
 # ====================================
 
 # ====================================
-# FinMind API 設定
+# 官方 API 設定（TWSE/TPEx）
 # ====================================
-finmind:
-  # API Token (選用，免費版可不填)
-  # 建議透過環境變數設定: FINMIND_API_TOKEN
-  api_token: ${FINMIND_API_TOKEN:}
-
-  # API 速率限制 (requests/minute)
-  rate_limit: 600
+official_api:
+  # API 請求逾時設定
+  timeout: 30  # 秒
 
   # 請求重試設定
   retry:
     max_attempts: 3        # 最大重試次數
-    wait_seconds: 10       # 重試間隔 (秒)
-    backoff_factor: 2      # 指數退避係數
+    wait_seconds: 5        # 重試間隔 (秒)
 
 # ====================================
 # 資料收集設定

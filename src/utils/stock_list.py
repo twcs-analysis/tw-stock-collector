@@ -2,10 +2,11 @@
 股票清單管理模組
 
 提供股票清單的：
-- 從 FinMind API 獲取
-- 本地快取管理
+- 從本地檔案讀取
+- 快取管理
 - 過濾與篩選
-- 自動更新
+
+注意：不再使用 FinMind API，改用本地 stock_list_reference.csv
 """
 
 import re
@@ -13,7 +14,6 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import List, Optional, Set
 import pandas as pd
-from FinMind.data import DataLoader
 
 from .logger import get_logger
 from .config import get_global_config
@@ -23,28 +23,21 @@ logger = get_logger(__name__)
 
 
 class StockListManager:
-    """股票清單管理器"""
+    """股票清單管理器（使用本地檔案）"""
 
     def __init__(
         self,
-        config: Optional[any] = None,
-        api_token: Optional[str] = None
+        config: Optional[any] = None
     ):
         """
         Args:
             config: 配置實例
-            api_token: FinMind API Token (選用)
         """
         if config is None:
             config = get_global_config()
 
         self.config = config
         self.file_handler = FileHandler(config)
-
-        # FinMind DataLoader
-        self.dl = DataLoader()
-        if api_token:
-            self.dl.login_by_token(api_token=api_token)
 
         # 快取
         self._cache: Optional[pd.DataFrame] = None

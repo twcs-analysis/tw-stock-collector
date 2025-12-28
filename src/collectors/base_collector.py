@@ -2,7 +2,7 @@
 基礎收集器類別
 
 所有資料收集器的抽象基礎類別，提供：
-- FinMind API 整合
+- 官方 API 整合（TWSE/TPEx）
 - 重試機制
 - 日誌記錄
 - 效能監控
@@ -14,8 +14,6 @@ from abc import ABC, abstractmethod
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Union
 import pandas as pd
-from FinMind.data import DataLoader
-from tenacity import retry, stop_after_attempt, wait_fixed, retry_if_exception_type
 
 from ..utils import (
     get_logger,
@@ -42,13 +40,11 @@ class BaseCollector(ABC):
 
     def __init__(
         self,
-        config: Optional[Any] = None,
-        api_token: Optional[str] = None
+        config: Optional[Any] = None
     ):
         """
         Args:
             config: 配置實例
-            api_token: FinMind API Token (選用)
         """
         if config is None:
             config = get_global_config()
@@ -56,11 +52,6 @@ class BaseCollector(ABC):
         self.config = config
         self.file_handler = FileHandler(config)
         self.validator = DataValidator(config)
-
-        # FinMind DataLoader
-        self.dl = DataLoader()
-        if api_token:
-            self.dl.login_by_token(api_token=api_token)
 
         # Logger
         self.logger = get_logger(self.__class__.__name__)
@@ -108,78 +99,6 @@ class BaseCollector(ABC):
         """
         pass
 
-    def fetch_with_retry(
-        self,
-        fetch_func,
-        *args,
-        **kwargs
-    ) -> pd.DataFrame:
-        """
-        帶重試機制的 API 呼叫
-
-        Args:
-            fetch_func: API 呼叫函數
-            *args, **kwargs: 傳遞給函數的參數
-
-        Returns:
-            pd.DataFrame: API 返回的資料
-
-        Raises:
-            CollectorError: API 呼叫失敗
-        """
-        retry_config = self.config.finmind.retry
-
-        @retry(
-            stop=stop_after_attempt(retry_config.max_attempts),
-            wait=wait_fixed(retry_config.wait_seconds),
-            retry=retry_if_exception_type(Exception),
-            reraise=True
-        )
-        def _fetch():
-            self.stats['api_calls'] += 1
-            start_time = time.time()
-
-            try:
-                df = fetch_func(*args, **kwargs)
-                elapsed = time.time() - start_time
-
-                self.logger.debug(
-                    f"API 呼叫成功: {fetch_func.__name__}, "
-                    f"耗時 {elapsed:.2f}s, 筆數 {len(df) if df is not None else 0}"
-                )
-
-                return df
-
-            except KeyError as e:
-                # KeyError 通常表示 API 返回沒有 data 欄位(非交易日或無資料)
-                # 這是正常情況,不需要重試,直接返回空 DataFrame
-                elapsed = time.time() - start_time
-                if 'data' in str(e):
-                    self.logger.info(
-                        f"查詢日期無資料(可能是非交易日): {fetch_func.__name__}, "
-                        f"耗時 {elapsed:.2f}s"
-                    )
-                    return pd.DataFrame()
-                else:
-                    # 其他 KeyError 還是要報錯
-                    raise
-
-            except Exception as e:
-                elapsed = time.time() - start_time
-                self.logger.warning(
-                    f"API 呼叫失敗: {fetch_func.__name__}, "
-                    f"耗時 {elapsed:.2f}s, 錯誤: {e}"
-                )
-                raise
-
-        try:
-            return _fetch()
-        except KeyError:
-            # KeyError 已經在 _fetch 中處理了,這裡直接返回空 DataFrame
-            return pd.DataFrame()
-        except Exception as e:
-            self.logger.error(f"API 呼叫最終失敗: {e}", exc_info=True)
-            raise CollectorError(f"API 呼叫失敗: {e}") from e
 
     def save_data(
         self,

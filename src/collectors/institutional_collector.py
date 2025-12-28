@@ -1,153 +1,128 @@
 """
-法人買賣收集器
-
-收集三大法人買賣超資料：
-- 外資買賣超
-- 投信買賣超
-- 自營商買賣超
-
-使用 aggregate API 一次取得所有股票的資料
+三大法人資料收集器
 """
 
 from datetime import datetime
-from typing import Optional, Union
-import pandas as pd
+from typing import Dict, Any
 
-from .base_collector import BaseCollector, CollectorError
-from ..utils import get_logger
-
-logger = get_logger(__name__)
+from .base import BaseCollector
 
 
 class InstitutionalCollector(BaseCollector):
-    """法人買賣收集器"""
+    """
+    三大法人資料收集器
+
+    使用官方 API 收集 TWSE 和 TPEx 三大法人資料
+    使用 collect_institutional_data.py 的邏輯
+    """
+
+    def __init__(self, date: str):
+        """
+        初始化三大法人收集器
+
+        Args:
+            date: 收集日期 (YYYY-MM-DD)
+        """
+        super().__init__(date)
 
     def get_data_type(self) -> str:
-        """返回資料類型"""
-        return 'institutional'
+        """取得資料類型"""
+        return "institutional"
 
-    def collect(
-        self,
-        date: Union[str, datetime],
-        stock_id: str,
-        **kwargs
-    ) -> pd.DataFrame:
+    def collect(self) -> Dict[str, Any]:
         """
-        收集法人買賣資料
-
-        Args:
-            date: 收集日期
-            stock_id: 股票代碼
-            **kwargs: 其他參數
+        收集三大法人資料
 
         Returns:
-            pd.DataFrame: 法人買賣資料
-
-        Examples:
-            >>> collector = InstitutionalCollector()
-            >>> df = collector.collect('2025-01-28', stock_id='2330')
+            dict: 包含 metadata 和 data 的字典
         """
-        date_str = self._format_date(date)
-        self.logger.info(f"收集法人買賣: {stock_id}, {date_str}")
+        import requests
+        import pandas as pd
+        from io import StringIO
+        from ..utils import to_roc_date
 
-        df = self.fetch_with_retry(
-            self.dl.taiwan_stock_institutional_investors,
-            stock_id=stock_id,
-            start_date=date_str,
-            end_date=date_str
-        )
+        all_data = []
+        total_count = 0
 
-        if df is None or df.empty:
-            self.logger.warning(f"無資料: {stock_id}, {date_str}")
-            return pd.DataFrame()
+        # 收集 TWSE 資料
+        self.logger.info("收集 TWSE（上市）三大法人資料")
+        try:
+            twse_date = self.date.replace('-', '')
+            url = f"https://www.twse.com.tw/fund/T86?response=csv&date={twse_date}&selectType=ALLBUT0999"
 
-        # 資料處理
-        df = self._process_data(df)
+            response = requests.get(url, timeout=30, verify=False)
+            response.encoding = 'cp950'  # Big5
 
-        self.logger.debug(f"收集完成: {stock_id}, {len(df)} 筆")
-        return df
+            lines = response.text.split('\n')
+            start_idx = None
+            for i, line in enumerate(lines):
+                if '證券代號' in line:
+                    start_idx = i
+                    break
 
-    def _process_data(self, df: pd.DataFrame) -> pd.DataFrame:
-        """
-        處理原始資料
+            if start_idx is not None:
+                data_content = '\n'.join(lines[start_idx:])
+                df = pd.read_csv(StringIO(data_content))
 
-        Args:
-            df: 原始 DataFrame
+                # 只保留 4 位數字的股票代碼
+                df = df[df['證券代號'].astype(str).str.len() == 4]
+                df = df[df['證券代號'].astype(str).str.isdigit()]
 
-        Returns:
-            pd.DataFrame: 處理後的 DataFrame
-        """
-        # FinMind 返回的欄位:
-        # date, stock_id, name,
-        # Foreign_Investor_Buy, Foreign_Investor_Sell, Foreign_Investor_Net,
-        # Investment_Trust_Buy, Investment_Trust_Sell, Investment_Trust_Net,
-        # Dealer_self_Buy, Dealer_self_Sell, Dealer_self_Net,
-        # Dealer_Hedging_Buy, Dealer_Hedging_Sell, Dealer_Hedging_Net
+                df['date'] = self.date
+                df['type'] = 'twse'
 
-        # 重新命名為更簡潔的名稱
-        column_mapping = {
-            'date': 'date',
-            'stock_id': 'stock_id',
-            'name': 'stock_name',
-            # 外資
-            'Foreign_Investor_Buy': 'foreign_buy',
-            'Foreign_Investor_Sell': 'foreign_sell',
-            'Foreign_Investor_Net': 'foreign_net',
-            # 投信
-            'Investment_Trust_Buy': 'trust_buy',
-            'Investment_Trust_Sell': 'trust_sell',
-            'Investment_Trust_Net': 'trust_net',
-            # 自營商 (自行買賣)
-            'Dealer_self_Buy': 'dealer_self_buy',
-            'Dealer_self_Sell': 'dealer_self_sell',
-            'Dealer_self_Net': 'dealer_self_net',
-            # 自營商 (避險)
-            'Dealer_Hedging_Buy': 'dealer_hedging_buy',
-            'Dealer_Hedging_Sell': 'dealer_hedging_sell',
-            'Dealer_Hedging_Net': 'dealer_hedging_net'
+                twse_count = len(df)
+                self.logger.info(f"TWSE: {twse_count} 檔")
+                all_data.extend(df.to_dict('records'))
+                total_count += twse_count
+
+        except Exception as e:
+            self.logger.error(f"TWSE 收集失敗: {e}")
+
+        # 收集 TPEx 資料
+        self.logger.info("收集 TPEx（上櫃）三大法人資料")
+        try:
+            roc_date = to_roc_date(self.date)
+            url = f"https://www.tpex.org.tw/web/stock/3insti/daily_trade/3itrade_hedge_result.php?d={roc_date}&l=zh-tw&o=htm"
+
+            tables = pd.read_html(url)
+            if tables and len(tables) > 0:
+                df = tables[0]
+
+                # 扁平化 MultiIndex 欄位
+                if isinstance(df.columns, pd.MultiIndex):
+                    df.columns = ['_'.join(map(str, col)).strip() for col in df.columns.values]
+
+                # 只保留 4 位數字的股票代碼（假設第一欄是股票代碼）
+                first_col = df.columns[0]
+                df = df[df[first_col].astype(str).str.len() == 4]
+                df = df[df[first_col].astype(str).str.isdigit()]
+
+                df['date'] = self.date
+                df['type'] = 'tpex'
+
+                tpex_count = len(df)
+                self.logger.info(f"TPEx: {tpex_count} 檔")
+                all_data.extend(df.to_dict('records'))
+                total_count += tpex_count
+
+        except Exception as e:
+            self.logger.error(f"TPEx 收集失敗: {e}")
+
+        if not all_data:
+            self.logger.warning("無資料（可能是非交易日）")
+            return {}
+
+        # 建立回傳結果
+        result = {
+            "metadata": {
+                "date": self.date,
+                "collected_at": datetime.now().isoformat(),
+                "total_count": total_count,
+                "source": "TWSE T86 + TPEx Official API"
+            },
+            "data": all_data
         }
 
-        existing_cols = {k: v for k, v in column_mapping.items() if k in df.columns}
-        df = df.rename(columns=existing_cols)
-
-        # 計算自營商合計
-        if all(col in df.columns for col in ['dealer_self_net', 'dealer_hedging_net']):
-            df['dealer_net'] = df['dealer_self_net'] + df['dealer_hedging_net']
-
-        # 確保數值類型
-        numeric_cols = [
-            'foreign_buy', 'foreign_sell', 'foreign_net',
-            'trust_buy', 'trust_sell', 'trust_net',
-            'dealer_self_buy', 'dealer_self_sell', 'dealer_self_net',
-            'dealer_hedging_buy', 'dealer_hedging_sell', 'dealer_hedging_net',
-            'dealer_net'
-        ]
-
-        for col in numeric_cols:
-            if col in df.columns:
-                df[col] = pd.to_numeric(df[col], errors='coerce')
-
-        # 排序
-        if all(col in df.columns for col in ['date', 'stock_id']):
-            df = df.sort_values(['date', 'stock_id']).reset_index(drop=True)
-
-        return df
-
-
-def create_institutional_collector(api_token: Optional[str] = None) -> InstitutionalCollector:
-    """
-    建立法人買賣收集器實例 (便利函數)
-
-    Args:
-        api_token: FinMind API Token
-
-    Returns:
-        InstitutionalCollector 實例
-
-    Examples:
-        >>> collector = create_institutional_collector()
-        >>> # 推薦：一次取得所有股票
-        >>> df = collector.collect('2025-01-28')
-        >>> df.to_csv('data/institutional_2025-01-28.csv', index=False)
-    """
-    return InstitutionalCollector(api_token=api_token)
+        self.logger.info(f"收集完成: 總計 {total_count} 檔")
+        return result
