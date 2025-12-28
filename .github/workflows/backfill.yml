@@ -115,6 +115,69 @@ jobs:
               --types ${BACKFILL_TYPES} \
               --batch-size ${BATCH_SIZE}
 
+      - name: Set up Python for validation
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install validation dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run data validation
+        id: validation
+        env:
+          START_DATE: ${{ steps.dates.outputs.start_date }}
+          END_DATE: ${{ steps.dates.outputs.end_date }}
+          BACKFILL_TYPES: ${{ github.event.inputs.types }}
+        run: |
+          echo "🔍 開始驗證回補資料..."
+
+          # 驗證所有回補的日期和類型
+          VALIDATION_FAILED=0
+          VALIDATION_SUMMARY=""
+
+          # 計算日期範圍內的所有日期
+          current_date="${START_DATE}"
+          while [ "$current_date" != $(date -d "${END_DATE} + 1 day" +%Y-%m-%d 2>/dev/null || date -j -v+1d -f "%Y-%m-%d" "${END_DATE}" +%Y-%m-%d) ]; do
+            for TYPE in ${BACKFILL_TYPES}; do
+              YEAR=$(date -d "${current_date}" +%Y 2>/dev/null || date -j -f "%Y-%m-%d" "${current_date}" +%Y)
+              MONTH=$(date -d "${current_date}" +%m 2>/dev/null || date -j -f "%Y-%m-%d" "${current_date}" +%m)
+              DATA_FILE="data/raw/${TYPE}/${YEAR}/${MONTH}/${current_date}.json"
+
+              if [ -f "${DATA_FILE}" ]; then
+                echo "驗證 ${TYPE} ${current_date}..."
+
+                if python scripts/validate_data.py --file "${DATA_FILE}" --type "${TYPE}" --quiet; then
+                  echo "✅ ${TYPE} ${current_date} 驗證通過"
+                  VALIDATION_SUMMARY="${VALIDATION_SUMMARY}\n✅ ${TYPE} ${current_date}"
+                else
+                  echo "⚠️ ${TYPE} ${current_date} 驗證失敗"
+                  VALIDATION_SUMMARY="${VALIDATION_SUMMARY}\n⚠️ ${TYPE} ${current_date}"
+                  VALIDATION_FAILED=1
+                fi
+              fi
+            done
+
+            # 移到下一天
+            current_date=$(date -d "${current_date} + 1 day" +%Y-%m-%d 2>/dev/null || date -j -v+1d -f "%Y-%m-%d" "${current_date}" +%Y-%m-%d)
+          done
+
+          echo ""
+          echo "=== 驗證摘要 ==="
+          echo -e "${VALIDATION_SUMMARY}"
+
+          # 將驗證結果保存到輸出
+          echo "validation_summary<<EOF" >> $GITHUB_OUTPUT
+          echo -e "${VALIDATION_SUMMARY}" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+          if [ ${VALIDATION_FAILED} -eq 1 ]; then
+            echo "::warning::部分資料驗證失敗，請檢查驗證報告"
+          fi
+
       - name: Generate backfill summary
         id: summary
         run: |
@@ -167,6 +230,7 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
+            const validationSummary = `${{ steps.validation.outputs.validation_summary }}`;
             const summary = `## ✅ Historical Data Backfill Completed
 
             **Period:** ${{ steps.dates.outputs.start_date }} to ${{ steps.dates.outputs.end_date }}
@@ -174,6 +238,9 @@ jobs:
             **Batch Size:** ${{ github.event.inputs.batch_size }}
 
             **Workflow:** [Run #${{ github.run_number }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+
+            ### 📊 驗證結果
+            ${validationSummary}
 
             Check the artifacts for detailed logs.`;
 
