@@ -92,23 +92,34 @@ class InstitutionalCollector(BaseCollector):
                 }
                 df = df.rename(columns=column_mapping)
 
+                # Trim stock_name 空白
+                if 'stock_name' in df.columns:
+                    df['stock_name'] = df['stock_name'].str.strip()
+
+                # 轉換所有數值欄位（去除逗號並轉為數值）
+                numeric_columns = [
+                    'foreign_main_buy', 'foreign_main_sell', 'foreign_main_net',
+                    'foreign_dealer_buy', 'foreign_dealer_sell', 'foreign_dealer_net',
+                    'trust_buy', 'trust_sell', 'trust_net',
+                    'dealer_self_buy', 'dealer_self_sell', 'dealer_self_net',
+                    'dealer_hedge_buy', 'dealer_hedge_sell', 'dealer_hedge_net',
+                    'dealer_net_total', 'total_net'
+                ]
+                for col in numeric_columns:
+                    if col in df.columns:
+                        df[col] = pd.to_numeric(df[col].astype(str).str.replace(',', ''), errors='coerce').fillna(0)
+
                 # 計算外資總買賣超 (外資主力 + 外資自營商)
                 if 'foreign_main_net' in df.columns and 'foreign_dealer_net' in df.columns:
-                    df['foreign_buy'] = pd.to_numeric(df.get('foreign_main_buy', 0), errors='coerce').fillna(0) + \
-                                       pd.to_numeric(df.get('foreign_dealer_buy', 0), errors='coerce').fillna(0)
-                    df['foreign_sell'] = pd.to_numeric(df.get('foreign_main_sell', 0), errors='coerce').fillna(0) + \
-                                        pd.to_numeric(df.get('foreign_dealer_sell', 0), errors='coerce').fillna(0)
-                    df['foreign_net'] = pd.to_numeric(df.get('foreign_main_net', 0), errors='coerce').fillna(0) + \
-                                       pd.to_numeric(df.get('foreign_dealer_net', 0), errors='coerce').fillna(0)
+                    df['foreign_buy'] = df['foreign_main_buy'] + df['foreign_dealer_buy']
+                    df['foreign_sell'] = df['foreign_main_sell'] + df['foreign_dealer_sell']
+                    df['foreign_net'] = df['foreign_main_net'] + df['foreign_dealer_net']
 
                 # 自營商買賣超
                 if 'dealer_self_net' in df.columns and 'dealer_hedge_net' in df.columns:
-                    df['dealer_buy'] = pd.to_numeric(df.get('dealer_self_buy', 0), errors='coerce').fillna(0) + \
-                                      pd.to_numeric(df.get('dealer_hedge_buy', 0), errors='coerce').fillna(0)
-                    df['dealer_sell'] = pd.to_numeric(df.get('dealer_self_sell', 0), errors='coerce').fillna(0) + \
-                                       pd.to_numeric(df.get('dealer_hedge_sell', 0), errors='coerce').fillna(0)
-                    df['dealer_net'] = pd.to_numeric(df.get('dealer_self_net', 0), errors='coerce').fillna(0) + \
-                                      pd.to_numeric(df.get('dealer_hedge_net', 0), errors='coerce').fillna(0)
+                    df['dealer_buy'] = df['dealer_self_buy'] + df['dealer_hedge_buy']
+                    df['dealer_sell'] = df['dealer_self_sell'] + df['dealer_hedge_sell']
+                    df['dealer_net'] = df['dealer_self_net'] + df['dealer_hedge_net']
 
                 df['date'] = self.date
                 df['type'] = 'twse'
