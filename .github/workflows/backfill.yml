@@ -103,15 +103,13 @@ jobs:
           echo "批次大小: ${BATCH_SIZE}"
 
           docker run --rm \
-            -e START_DATE="${START_DATE}" \
-            -e END_DATE="${END_DATE}" \
-            -e BACKFILL_TYPES="${BACKFILL_TYPES}" \
+            --entrypoint python \
             -e TZ=Asia/Taipei \
             -v ${{ github.workspace }}/data:/app/data \
             -v ${{ github.workspace }}/logs:/app/logs \
             -v ${{ github.workspace }}/cache:/app/cache \
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:phase1-latest \
-            python scripts/backfill.py \
+            /app/scripts/backfill.py \
               --start ${START_DATE} \
               --end ${END_DATE} \
               --types ${BACKFILL_TYPES} \
