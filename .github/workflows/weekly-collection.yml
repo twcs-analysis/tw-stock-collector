@@ -64,7 +64,6 @@ jobs:
 
       - name: Collect revenue data (月營收)
         if: success() || failure()
-        env:
         run: |
           # 月營收通常在每月 10 日前公布
           CURRENT_DAY=$(date +%d)
