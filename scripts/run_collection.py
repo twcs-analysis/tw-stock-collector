@@ -71,6 +71,12 @@ def parse_args():
         help='跳過交易日檢查（適用於測試或補資料）'
     )
 
+    parser.add_argument(
+        '--no-validation',
+        action='store_true',
+        help='跳過資料驗證（預設會進行驗證）'
+    )
+
     return parser.parse_args()
 
 
@@ -105,6 +111,7 @@ def main():
     print("=" * 70)
     print(f"日期: {date}")
     print(f"類型: {', '.join(types_to_collect)}")
+    print(f"驗證: {'關閉' if args.no_validation else '開啟'}")
     print("=" * 70)
     print()
 
@@ -124,8 +131,9 @@ def main():
             collector_class = COLLECTORS[data_type]
             collector = collector_class(date)
 
-            # 執行收集
-            result = collector.run()
+            # 執行收集（包含驗證）
+            enable_validation = not args.no_validation
+            result = collector.run(enable_validation=enable_validation)
 
             # 記錄結果
             results[data_type] = result
@@ -135,6 +143,24 @@ def main():
                 success_count += 1
                 print(f"✅ 成功: {result.get('records')} 筆資料")
                 print(f"   檔案: {result.get('file')}")
+
+                # 顯示驗證結果
+                if 'validation' in result:
+                    validation = result['validation']
+                    if validation.get('status') == 'PASS':
+                        print(f"   驗證: ✅ {validation.get('status')} ({validation.get('grade')}, {validation.get('accuracy'):.1f}%)")
+                    elif validation.get('status') == 'WARN':
+                        print(f"   驗證: ⚠️  {validation.get('status')} ({validation.get('grade')}, {validation.get('accuracy'):.1f}%)")
+                    elif validation.get('status') == 'FAIL':
+                        print(f"   驗證: ❌ {validation.get('status')} ({validation.get('grade')}, {validation.get('accuracy'):.1f}%)")
+                    elif validation.get('status') == 'error':
+                        print(f"   驗證: ❌ 錯誤: {validation.get('error')}")
+                    else:
+                        print(f"   驗證: ⏭️  {validation.get('message', '已跳過')}")
+
+                    if validation.get('report'):
+                        print(f"   報告: {validation.get('report')}")
+
             elif result['status'] == 'no_data':
                 no_data_count += 1
                 print(f"⚠️  無資料")
