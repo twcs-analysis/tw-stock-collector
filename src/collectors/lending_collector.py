@@ -74,38 +74,52 @@ class LendingCollector(BaseCollector):
             # 建立 DataFrame
             df = pd.DataFrame(rows, columns=fields)
 
-            # 加入日期
-            df['date'] = self.date
-
             # 只保留 4 位數字的股票代碼
             if '代號' in df.columns:
                 df = df[df['代號'].astype(str).str.len() == 4]
                 df = df[df['代號'].astype(str).str.isdigit()]
 
-            # 轉換欄位名稱（中文 → 英文）
-            column_mapping = {
-                '代號': 'stock_id',
-                '名稱': 'stock_name',
-                '前日餘額': 'prev_balance',
-                '賣出': 'sell',
-                '買進': 'buy',
-                '現券': 'securities',
-                '今日餘額': 'today_balance',
-                '次一營業日限額': 'next_day_limit',
-                '當日賣出': 'daily_sell',
-                '當日還券': 'daily_return',
-                '當日調整': 'daily_adjust',
-                '當日餘額': 'lending_balance',
-                '次一營業日可限額': 'next_day_available',
-                '備註': 'note'
-            }
-            df = df.rename(columns=column_mapping)
+            # 依據 API 回傳的欄位順序重新命名
+            # fields: ["代號","名稱","前日餘額","賣出","買進","現券","今日餘額","次一營業日限額",
+            #          "前日餘額","當日賣出","當日還券","當日調整","當日餘額","次一營業日可限額","備註"]
+            # 第1組是融券，第2組是借券
+            expected_columns = [
+                'stock_id', 'stock_name',
+                'margin_prev_balance', 'margin_sell', 'margin_buy', 'margin_securities',
+                'margin_today_balance', 'margin_next_day_limit',
+                'prev_balance', 'daily_sell', 'daily_return', 'daily_adjust',
+                'lending_balance', 'next_day_available', 'note'
+            ]
+            if len(fields) == len(expected_columns):
+                df.columns = expected_columns
+            else:
+                # 如果欄位數量不符，使用原來的 mapping 方式
+                column_mapping = {
+                    '代號': 'stock_id',
+                    '名稱': 'stock_name',
+                    '備註': 'note'
+                }
+                df = df.rename(columns=column_mapping)
+
+            # 加入日期
+            df['date'] = self.date
+
+            # Trim stock_name 空白
+            if 'stock_name' in df.columns:
+                df['stock_name'] = df['stock_name'].str.strip()
+
+            # 轉換數值欄位（去除逗號並轉為數值）
+            numeric_columns = ['prev_balance', 'sell', 'buy', 'securities', 'today_balance',
+                              'next_day_limit', 'daily_sell', 'daily_return', 'daily_adjust',
+                              'lending_balance', 'next_day_available']
+            for col in numeric_columns:
+                if col in df.columns:
+                    # 確保先轉為 str 才能使用 str.replace
+                    df[col] = df[col].astype(str).str.replace(',', '')
+                    df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
 
             # 計算借券變化量 (當日餘額 - 前日餘額)
             if 'lending_balance' in df.columns and 'prev_balance' in df.columns:
-                # 轉換為數值（去除逗號）
-                df['lending_balance'] = pd.to_numeric(df['lending_balance'].astype(str).str.replace(',', ''), errors='coerce')
-                df['prev_balance'] = pd.to_numeric(df['prev_balance'].astype(str).str.replace(',', ''), errors='coerce')
                 df['lending_change'] = df['lending_balance'] - df['prev_balance']
 
             # 加入 type 欄位（借券資料包含上市+上櫃，無法明確區分來源）
