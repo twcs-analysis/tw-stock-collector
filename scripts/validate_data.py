@@ -53,13 +53,14 @@ def get_data_file_path(data_type: str, date: str, base_dir: str = 'data/raw') ->
     return file_path
 
 
-def validate_file(file_path: str, data_type: str = None) -> bool:
+def validate_file(file_path: str, data_type: str = None, quiet: bool = False) -> bool:
     """
     驗證單一檔案
 
     Args:
         file_path: 檔案路徑
         data_type: 資料類型，若為 None 則從路徑推測
+        quiet: 靜默模式，不輸出詳細訊息
 
     Returns:
         bool: 驗證是否通過
@@ -74,10 +75,12 @@ def validate_file(file_path: str, data_type: str = None) -> bool:
                 break
 
     if data_type is None or data_type not in VALIDATORS:
-        logger.error(f"無法推測資料類型或不支援的類型: {data_type}")
+        if not quiet:
+            logger.error(f"無法推測資料類型或不支援的類型: {data_type}")
         return False
 
-    logger.info(f"開始驗證: {file_path}")
+    if not quiet:
+        logger.info(f"開始驗證: {file_path}")
 
     # 建立驗證器
     validator_class = VALIDATORS[data_type]
@@ -89,8 +92,9 @@ def validate_file(file_path: str, data_type: str = None) -> bool:
     # 生成報告
     report_path = validator.generate_report()
 
-    logger.info(f"驗證完成 - 狀態: {result.status}, 評分: {result.grade} ({result.accuracy:.1f}%)")
-    logger.info(f"驗證報告: {report_path}")
+    if not quiet:
+        logger.info(f"驗證完成 - 狀態: {result.status}, 評分: {result.grade} ({result.accuracy:.1f}%)")
+        logger.info(f"驗證報告: {report_path}")
 
     return result.status != 'FAIL'
 
@@ -188,6 +192,19 @@ def main():
     )
 
     parser.add_argument(
+        '--type',
+        type=str,
+        choices=list(VALIDATORS.keys()),
+        help='資料類型（與 --file 搭配使用，可省略會自動推測）'
+    )
+
+    parser.add_argument(
+        '--quiet',
+        action='store_true',
+        help='靜默模式，只回傳狀態碼不輸出詳細訊息'
+    )
+
+    parser.add_argument(
         '--date',
         type=str,
         help='要驗證的日期 (YYYY-MM-DD)'
@@ -225,7 +242,7 @@ def main():
     # 驗證參數
     if args.file:
         # 驗證單一檔案
-        success = validate_file(args.file)
+        success = validate_file(args.file, getattr(args, 'type', None), args.quiet)
         sys.exit(0 if success else 1)
 
     elif args.date:
