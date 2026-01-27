@@ -7,6 +7,7 @@ from .price_collector import PriceCollector
 from .margin_collector import MarginCollector
 from .institutional_collector import InstitutionalCollector
 from .lending_collector import LendingCollector
+from .top20_volume_collector import Top20VolumeCollector
 
 __all__ = [
     'BaseCollector',
@@ -14,4 +15,5 @@ __all__ = [
     'MarginCollector',
     'InstitutionalCollector',
     'LendingCollector',
+    'Top20VolumeCollector',
 ]

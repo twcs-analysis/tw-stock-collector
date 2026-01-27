@@ -304,6 +304,7 @@ cat data/raw/price/2024/12/2024-12-27.json | jq '.data | length'
 ### 核心文件
 - **[資料目錄說明](data/README.md)** - 資料結構與格式詳細說明
 - **[資料驗證規範](docs/DATA_VALIDATION_SPEC.md)** - 完整驗證標準與抽樣機制
+- **[TWSE API 參考文件](docs/TWSE_API_REFERENCE.md)** - 證交所 OpenAPI 完整端點說明
 
 ### 規格書
 - **[Phase 1: 資料擷取與儲存](docs/specifications/PHASE1_DATA_COLLECTION.md)** - GitHub Actions 自動化收集

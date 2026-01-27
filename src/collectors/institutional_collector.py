@@ -138,7 +138,10 @@ class InstitutionalCollector(BaseCollector):
             roc_date = to_roc_date(self.date)
             url = f"https://www.tpex.org.tw/web/stock/3insti/daily_trade/3itrade_hedge_result.php?d={roc_date}&l=zh-tw&o=htm"
 
-            tables = pd.read_html(url)
+            # 使用 requests 先取得 HTML，避免 SSL 憑證問題
+            response = requests.get(url, timeout=30, verify=False)
+            response.encoding = 'utf-8'
+            tables = pd.read_html(StringIO(response.text))
             if tables and len(tables) > 0:
                 df = tables[0]
 

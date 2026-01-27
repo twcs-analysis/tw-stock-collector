@@ -4,6 +4,24 @@
 
 ## [Unreleased]
 
+### 新增
+- 新增成交量前 20 名資料收集器 (`Top20VolumeCollector`)
+  - 使用 TWSE OpenAPI `/exchangeReport/MI_INDEX20`
+  - 收集每日成交量排名前 20 名股票資訊
+  - 包含價格、成交量、成交金額等完整資訊
+- 新增 TWSE API 參考文件 (`docs/TWSE_API_REFERENCE.md`)
+  - 記錄 TWSE OpenAPI 143 個端點
+  - 包含本專案已使用和值得收集的 API
+- 新增成交量前 20 名使用說明 (`docs/TOP20_VOLUME_USAGE.md`)
+  - 包含資料欄位說明、使用範例、分析範例
+- 新增測試腳本 (`scripts/test_top20_volume.py`)
+
+### 修改
+- 更新 `README.md` 加入 TWSE API 參考文件連結
+- 更新 `data/README.md` 加入成交量前 20 名資料說明
+- 修正 `institutional_collector.py` TPEx 資料收集的 SSL 憑證問題
+  - 使用 requests 先取得 HTML 再解析，避免 pandas.read_html 的憑證錯誤
+
 ### 計劃功能
 - 實作 FinMind 資料收集器
 - 建立資料庫初始化腳本

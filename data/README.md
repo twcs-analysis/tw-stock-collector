@@ -41,6 +41,7 @@ raw/
 | **三大法人** | `institutional/` | 外資、投信、自營商的買賣超金額與張數 | ~1 MB |
 | **融資融券** | `margin/` | 融資/融券餘額、增減、使用率 | ~900 KB |
 | **借券賣出** | `lending/` | 借券賣出餘額、增減 | ~450 KB |
+| **成交量前20** | `top20_volume/` | 每日成交量前 20 名股票資訊 | ~5 KB |
 
 ### 檔案格式範例
 
@@ -182,6 +183,22 @@ python scripts/run_collection.py --date 2025-12-28 --types price margin
 
 **融券相關欄位**（供參考，主要使用借券欄位）：
 - `margin_*`: 融券相關欄位（同一 API 回傳）
+
+### 成交量前 20 名 (top20_volume)
+
+| 欄位名稱 | 資料型態 | 說明 | 單位 |
+|---------|---------|------|------|
+| `rank` | integer | 成交量排名 | - |
+| `volume` | integer | 成交量 | 股 |
+| `amount` | float | 成交金額 | 元 |
+| `transaction_count` | integer | 成交筆數 | 筆 |
+| `open` | float | 開盤價 | 元 |
+| `high` | float | 最高價 | 元 |
+| `low` | float | 最低價 | 元 |
+| `close` | float | 收盤價 | 元 |
+| `change` | float | 漲跌價差 | 元 |
+
+**資料來源**: TWSE OpenAPI `/exchangeReport/MI_INDEX20`
 
 ## 🔄 中英文欄位對應
 
