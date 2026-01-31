@@ -207,6 +207,10 @@ tw-stock-collector/
 │   ├── DATA_VALIDATION_SPEC.md  # 資料驗證規範
 │   └── specifications/          # 詳細規格書
 │
+├── transcripts/                 # 教學影片逐字稿
+│   ├── raw/                     # 原始逐字稿
+│   └── notes/                   # 重點整理
+│
 └── build/                       # Docker 建置檔案
     └── Dockerfile               # Phase 1 Docker 映像檔
 ```

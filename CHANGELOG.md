@@ -5,6 +5,11 @@
 ## [Unreleased]
 
 ### 新增
+- 新增教學影片逐字稿目錄 (`transcripts/`)
+  - 包含 29 集技術分析教學影片原始逐字稿
+  - 建立 `raw/` 存放原始逐字稿
+  - 建立 `notes/` 用於存放重點整理
+  - 新增 transcripts/README.md 說明文件
 - 新增成交量前 20 名資料收集器 (`Top20VolumeCollector`)
   - 使用 TWSE OpenAPI `/exchangeReport/MI_INDEX20`
   - 收集每日成交量排名前 20 名股票資訊
