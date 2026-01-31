@@ -8,8 +8,12 @@
 - 新增教學影片逐字稿目錄 (`transcripts/`)
   - 包含 29 集技術分析教學影片原始逐字稿
   - 建立 `raw/` 存放原始逐字稿
-  - 建立 `notes/` 用於存放重點整理
-  - 新增 transcripts/README.md 說明文件
+  - 建立 `notes/` 用於存放重點整理（29 個 Markdown 檔案）
+  - 完整的主題索引與學習路徑（技術指標、K線、型態學等）
+  - 每份筆記包含核心重點、實戰案例、技術分析 Prompt（4種）、延伸學習、關鍵金句
+  - 提供初學者→進階→高手的學習路徑
+  - 依交易週期分類（當沖、短線、波段、長線）
+  - 新增 transcripts/README.md 完整使用指南
 - 新增成交量前 20 名資料收集器 (`Top20VolumeCollector`)
   - 使用 TWSE OpenAPI `/exchangeReport/MI_INDEX20`
   - 收集每日成交量排名前 20 名股票資訊
