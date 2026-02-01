@@ -6,13 +6,31 @@
 
 ```
 deployment/
-├── stock-data-collector/   # 資料收集服務部署
+├── deploy.sh                   # 🚀 部署腳本（主要入口）
+├── stock-data-collector/       # 資料收集服務部署
 │   ├── docker-compose.yml
 │   ├── .env.example
 │   ├── .dockerignore
 │   └── README.md
 │
-└── README.md              # 本文件
+└── README.md                   # 本文件
+```
+
+## 🎯 快速部署
+
+使用 `deploy.sh` 腳本快速部署服務:
+
+```bash
+cd deployment
+
+# 方法 1: 互動式選擇（推薦）
+./deploy.sh
+
+# 方法 2: 直接指定服務
+./deploy.sh stock-data-collector
+
+# 方法 3: 列出所有可用服務
+./deploy.sh --list
 ```
 
 ## 🚀 模組說明
