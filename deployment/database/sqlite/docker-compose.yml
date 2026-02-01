@@ -1,0 +1,49 @@
+# ====================================
+# SQLite 資料庫服務（開發/測試環境）
+# ====================================
+#
+# 用途: 本地開發與測試用的 SQLite 資料庫
+# 注意: 生產環境建議使用 PostgreSQL
+#
+# 使用方式:
+#   cd deployment/database/sqlite
+#   docker-compose up -d
+#
+# 管理指令:
+#   docker-compose exec db-init sh  # 進入容器
+#   docker-compose logs -f          # 查看日誌
+
+services:
+  # SQLite 初始化容器
+  # 注意: SQLite 是檔案型資料庫，不需要常駐服務
+  db-init:
+    image: alpine:latest
+    container_name: tw-stock-sqlite-init
+    working_dir: /app
+
+    volumes:
+      # SQLite 資料庫檔案
+      - ../../../database/sqlite:/app/database/sqlite
+
+      # Schema 檔案
+      - ../../../database/schemas:/app/database/schemas:ro
+
+    command: >
+      sh -c "
+        apk add --no-cache sqlite &&
+        echo '初始化 SQLite 資料庫...' &&
+        sqlite3 /app/database/sqlite/dev.db < /app/database/schemas/common/01-tables.sql &&
+        sqlite3 /app/database/sqlite/dev.db < /app/database/schemas/common/02-indexes.sql &&
+        sqlite3 /app/database/sqlite/dev.db < /app/database/schemas/sqlite/01-pragmas.sql &&
+        echo '資料庫初始化完成！' &&
+        echo '資料庫位置: database/sqlite/dev.db' &&
+        tail -f /dev/null
+      "
+
+    networks:
+      - stock-network
+
+networks:
+  stock-network:
+    name: ${NETWORK_NAME:-tw-stock-network}
+    driver: bridge

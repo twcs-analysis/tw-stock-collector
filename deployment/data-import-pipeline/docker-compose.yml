@@ -1,0 +1,135 @@
+# ====================================
+# 資料匯入管道 (Data Import Pipeline)
+# ====================================
+#
+# 用途: 完整的資料收集 → 匯入 → 儲存管道
+# 包含: PostgreSQL + 資料收集器 + 資料匯入器
+#
+# 使用方式:
+#   cd deployment/data-import-pipeline
+#   docker-compose up -d
+#
+# 管理指令:
+#   docker-compose logs -f              # 查看所有服務日誌
+#   docker-compose ps                   # 查看服務狀態
+#   docker-compose down                 # 停止所有服務
+
+services:
+  # ==========================================
+  # 1. PostgreSQL 資料庫
+  # ==========================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: tw-stock-postgres
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-tw_stock}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?請在 .env 設定 POSTGRES_PASSWORD}
+      TZ: Asia/Taipei
+      PGTZ: Asia/Taipei
+
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ../../database/schemas/common/01-tables.sql:/docker-entrypoint-initdb.d/01-tables.sql:ro
+      - ../../database/schemas/common/02-indexes.sql:/docker-entrypoint-initdb.d/02-indexes.sql:ro
+      - ../../database/schemas/postgresql/02-sequences.sql:/docker-entrypoint-initdb.d/03-sequences.sql:ro
+      - ../../database/schemas/postgresql/03-triggers.sql:/docker-entrypoint-initdb.d/04-triggers.sql:ro
+      - ../../database/backups:/backups
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-tw_stock}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+    networks:
+      - stock-network
+
+  # ==========================================
+  # 2. 資料收集器 (Data Collector)
+  # ==========================================
+  collector:
+    build:
+      context: ../..
+      dockerfile: build/data-collector/Dockerfile
+    image: tw-stock-collector:latest
+    container_name: tw-stock-collector
+    restart: "no"  # 收集完成後自動停止
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+    volumes:
+      - ../../data:/app/data
+      - ../../config:/app/config:ro
+
+    environment:
+      TZ: Asia/Taipei
+      PYTHONUNBUFFERED: 1
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+
+    # 收集資料的參數
+    # 可透過 .env 的 COLLECTOR_ARGS 覆寫
+    command: ${COLLECTOR_ARGS:-}
+
+    networks:
+      - stock-network
+
+  # ==========================================
+  # 3. 資料匯入器 (Data Importer)
+  # ==========================================
+  importer:
+    build:
+      context: ../..
+      dockerfile: build/data-importer/Dockerfile
+    image: tw-stock-importer:latest
+    container_name: tw-stock-importer
+    restart: "no"  # 匯入完成後自動停止
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+      collector:
+        condition: service_completed_successfully
+
+    volumes:
+      - ../../data:/app/data:ro
+      - ../../config:/app/config:ro
+
+    environment:
+      # 資料庫連線設定
+      DB_TYPE: postgresql
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${POSTGRES_DB:-tw_stock}
+      DB_USER: ${POSTGRES_USER:-postgres}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+
+      # 應用程式設定
+      TZ: Asia/Taipei
+      PYTHONUNBUFFERED: 1
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+
+    # 匯入資料的參數
+    # 可透過 .env 的 IMPORTER_ARGS 覆寫
+    command: ${IMPORTER_ARGS:-}
+
+    networks:
+      - stock-network
+
+volumes:
+  postgres-data:
+    name: tw-stock-postgres-data
+    driver: local
+
+networks:
+  stock-network:
+    name: ${NETWORK_NAME:-tw-stock-network}
+    driver: bridge

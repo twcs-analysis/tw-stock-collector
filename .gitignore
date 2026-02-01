@@ -40,9 +40,18 @@ env/
 *.db
 *.sqlite
 *.sqlite3
+*.db-shm
+*.db-wal
+
+# Database files (specific locations)
+database/sqlite/*.db
+database/sqlite/*.db-*
+database/backups/*
+!database/backups/.gitkeep
 
 # Logs
 *.log
+logs/
 
 # Data files
 data/*.csv
@@ -53,6 +62,13 @@ data/*.parquet
 # Configuration (keep examples)
 config/database.yaml
 !config/*.example
+!config/*.example.yaml
+
+# Deployment environment files
+deployment/*/.env
+deployment/**/.env
+!deployment/*/.env.example
+!deployment/**/.env.example
 
 # Jupyter Notebook
 .ipynb_checkpoints

@@ -6,14 +6,29 @@
 
 ```
 deployment/
-├── deploy.sh                   # 🚀 部署腳本（主要入口）
-├── stock-data-collector/       # 資料收集服務部署
+├── deploy.sh                         # 🚀 部署腳本（主要入口）
+│
+├── stock-data-collector/             # Phase 1: 資料收集服務
 │   ├── docker-compose.yml
 │   ├── .env.example
-│   ├── .dockerignore
 │   └── README.md
 │
-└── README.md                   # 本文件
+├── database/                         # 資料庫服務
+│   ├── postgresql/                   # PostgreSQL (生產環境)
+│   │   ├── docker-compose.yml
+│   │   ├── .env.example
+│   │   └── README.md
+│   └── sqlite/                       # SQLite (開發/測試)
+│       ├── docker-compose.yml
+│       ├── .env.example
+│       └── README.md
+│
+├── data-import-pipeline/             # 資料匯入管道
+│   ├── docker-compose.yml            # Collector + Importer + DB
+│   ├── .env.example
+│   └── README.md
+│
+└── README.md                         # 本文件
 ```
 
 ## 🎯 快速部署
@@ -33,10 +48,19 @@ cd deployment
 ./deploy.sh --list
 ```
 
-## 🚀 模組說明
+## 🚀 服務模組說明
 
-### stock-data-collector
-台股資料收集服務,負責從證交所和櫃買中心收集資料。
+### 1. stock-data-collector
+台股資料收集服務，負責從證交所和櫃買中心收集資料。
+
+### 2. database/postgresql
+PostgreSQL 資料庫服務（生產環境）。
+
+### 3. database/sqlite
+SQLite 資料庫服務（開發/測試環境）。
+
+### 4. data-import-pipeline
+完整的資料收集與匯入管道（Collector + Importer + PostgreSQL）。
 
 **收集資料類型:**
 - 每日價量資料 (開高低收、成交量)
