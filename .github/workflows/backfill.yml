@@ -69,9 +69,9 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
 
-      - name: Pull Docker image
+      - name: Pull Data Collector image
         run: |
-          docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:phase1-latest
+          docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/data-collector:latest
 
       - name: Calculate date range
         id: dates
@@ -106,11 +106,11 @@ jobs:
           docker run --rm \
             --entrypoint python \
             -e TZ=Asia/Taipei \
+            -e LOG_LEVEL=INFO \
             -v ${{ github.workspace }}/data:/app/data \
             -v ${{ github.workspace }}/logs:/app/logs \
-            -v ${{ github.workspace }}/cache:/app/cache \
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:phase1-latest \
-            /app/scripts/backfill.py \
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/data-collector:latest \
+            /app/app/backfill.py \
               --start ${START_DATE} \
               --end ${END_DATE} \
               --types ${BACKFILL_TYPES} \

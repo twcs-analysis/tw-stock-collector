@@ -57,26 +57,22 @@ jobs:
             echo "types=price institutional margin lending top20_volume" >> $GITHUB_OUTPUT
           fi
 
-      - name: Pull Docker image
+      - name: Pull Data Collector image
         run: |
-          docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:phase1-latest
+          docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/data-collector:latest
 
       - name: Run data collection
-        env:
-          COLLECTION_DATE: ${{ steps.params.outputs.date }}
-          COLLECTION_TYPES: ${{ steps.params.outputs.types }}
         run: |
           docker run --rm \
-            -e COLLECTION_DATE="${COLLECTION_DATE}" \
-            -e COLLECTION_TYPES="${COLLECTION_TYPES}" \
             -e TZ=Asia/Taipei \
             -e CI=true \
             -e GITHUB_ACTIONS=true \
+            -e LOG_LEVEL=INFO \
             -v ${{ github.workspace }}/data:/app/data \
             -v ${{ github.workspace }}/logs:/app/logs \
-            -v ${{ github.workspace }}/cache:/app/cache \
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:phase1-latest \
-            --date ${COLLECTION_DATE} --types ${COLLECTION_TYPES}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/data-collector:latest \
+            --date ${{ steps.params.outputs.date }} \
+            --types ${{ steps.params.outputs.types }}
 
       - name: Check collected data
         run: |

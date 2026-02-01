@@ -1,34 +1,33 @@
 # Build 目錄
 
-此目錄包含 Docker 映像檔建置相關的檔案。
+Docker 映像檔建置配置，包含各微服務的 Dockerfile。
 
-## 📁 檔案說明
+## 📁 目錄結構
 
-### Dockerfile
-**Phase 1: 台股資料收集器 Docker Image**
+```
+build/
+├── data-collector/         # 資料收集服務建置
+│   └── Dockerfile
+├── data-importer/          # 資料匯入服務建置
+│   └── Dockerfile
+├── api-service/            # API 服務建置
+│   └── Dockerfile
+├── analyzer-service/       # 分析服務建置
+│   └── Dockerfile
+├── Dockerfile              # 舊版 Dockerfile (向後相容)
+└── README.md               # 本文件
+```
 
-這個 Dockerfile 用於建置 Phase 1 資料收集程式的 Docker 映像檔，可在以下環境執行：
-- GitHub Actions (自動化收集)
-- 本地開發測試
-- 生產環境部署
+## 🚀 建置映像檔
 
-**基礎映像**: Python 3.11-slim
+### 建置所有服務
 
-**包含內容**:
-- Python 3.11 執行環境
-- Git（用於版本控制）
-- 所有 Python 依賴套件（requirements.txt）
-- 資料收集程式碼（src/ 和 scripts/）
+```bash
+# 從專案根目錄執行
+./build/build-all.sh
+```
 
-**環境變數**:
-- `PYTHONUNBUFFERED=1`: 確保 Python 輸出不緩衝
-- `PYTHONPATH=/app`: 設定 Python 模組搜尋路徑
-
-**入口點**: `python /app/scripts/run_collection.py`
-
----
-
-## 🚀 使用方式
+### 建置單一服務
 
 ### 本地建置
 

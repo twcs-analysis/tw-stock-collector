@@ -1,0 +1,437 @@
+# 台股資料收集系統 - AI 助手指南
+
+本文件提供給 AI 助手參考，協助理解專案架構與開發規範。
+
+---
+
+## 📋 專案概述
+
+**專案名稱**: 台股資料收集與分析系統
+**主要目標**: 自動化收集台股資料，包含價格、法人、融資融券等數據
+**技術棧**: Python 3.11+, GitHub Actions, Docker, JSON
+**資料來源**: 台灣證交所 (TWSE) 與櫃買中心 (TPEx) 官方 API
+
+### 核心特色
+
+- GitHub Actions 自動化收集（每交易日 21:30）
+- 無需 API Token，完全使用免費公開 API
+- Git 版本控制追蹤所有資料變更
+- 統一的 JSON 資料結構
+- 三層資料驗證機制
+
+---
+
+## 🗂️ 專案結構
+
+```
+tw-stock-collector/
+├── src/                         # 核心程式碼
+│   ├── collectors/              # 資料收集器
+│   │   ├── base.py              # BaseCollector 基礎類別
+│   │   ├── price_collector.py   # 價格資料收集器
+│   │   ├── margin_collector.py  # 融資融券收集器
+│   │   ├── institutional_collector.py  # 三大法人收集器
+│   │   └── lending_collector.py # 借券賣出收集器
+│   ├── datasources/             # 資料源 API 封裝
+│   │   ├── twse_datasource.py   # 證交所 API（上市）
+│   │   └── tpex_datasource.py   # 櫃買中心 API（上櫃）
+│   └── utils/                   # 工具函式庫
+│       ├── date_helper.py       # 交易日判斷、日期轉換
+│       ├── file_handler.py      # 檔案操作、路徑管理
+│       └── logger.py            # 統一日誌記錄
+│
+├── scripts/                     # 執行腳本
+│   ├── run_collection.py        # 資料收集主腳本
+│   └── backfill.py              # 歷史資料回補腳本
+│
+├── data/raw/                    # 原始資料儲存
+│   ├── price/                   # 每日價格資料
+│   ├── margin/                  # 融資融券資料
+│   ├── institutional/           # 三大法人資料
+│   ├── lending/                 # 借券賣出資料
+│   └── top20_volume/            # 成交量前 20 名
+│
+├── .github/workflows/           # GitHub Actions
+│   ├── daily-collection.yml     # 每日資料收集
+│   └── backfill.yml             # 歷史資料回補
+│
+├── deployment/                  # 部署配置
+│   ├── deploy.sh                # 部署腳本
+│   └── stock-data-collector/    # Docker Compose 配置
+│
+├── build/                       # Docker 建置
+│   └── Dockerfile               # 容器映像檔
+│
+└── docs/                        # 文檔
+    ├── DATA_VALIDATION_SPEC.md  # 資料驗證規範
+    └── specifications/          # 詳細規格書
+```
+
+---
+
+## 📊 資料結構
+
+### 資料類型
+
+系統收集五種資料類型：
+
+1. **price** - 每日價量資料（開高低收、成交量）
+2. **institutional** - 三大法人買賣超（外資、投信、自營商）
+3. **margin** - 融資融券餘額與變化
+4. **lending** - 借券賣出餘額
+5. **top20_volume** - 成交量前 20 名個股
+
+### 檔案組織
+
+```
+data/raw/{type}/YYYY/MM/YYYY-MM-DD.json
+```
+
+- 一個日期一個檔案，包含所有股票資料
+- 依年份（YYYY）和月份（MM）分目錄
+- 統一的 JSON 格式，包含 metadata 和 data
+
+### JSON 格式範例
+
+```json
+{
+  "metadata": {
+    "date": "2025-12-26",
+    "collected_at": "2025-12-26T18:30:45",
+    "total_count": 1946,
+    "source": "TWSE + TPEx Official API"
+  },
+  "data": [
+    {
+      "date": "2025-12-26",
+      "stock_id": "2330",
+      "stock_name": "台積電",
+      "open": 1080.0,
+      "high": 1095.0,
+      "low": 1075.0,
+      "close": 1090.0,
+      "volume": 45678912,
+      "type": "twse"
+    }
+  ]
+}
+```
+
+---
+
+## 🔧 核心功能
+
+### 資料收集器架構
+
+所有收集器繼承 `BaseCollector`，實作統一介面：
+
+```python
+class BaseCollector:
+    def collect(self, date: str) -> Dict
+    def validate(self, data: Dict) -> bool
+    def save(self, data: Dict, date: str) -> None
+```
+
+### 資料源整合
+
+- **TWSeDataSource** - 證交所 API（上市股票）
+- **TPExDataSource** - 櫃買中心 API（上櫃股票）
+
+每個收集器會整合兩個資料源的資料。
+
+### 驗證機制
+
+三層驗證：
+1. **結構驗證** - JSON 格式、必要欄位
+2. **完整性檢查** - 筆數範圍、欄位完整
+3. **合理性驗證** - 數值範圍、邏輯一致性
+
+---
+
+## 🚀 常用指令
+
+### 本地執行
+
+```bash
+# 收集今日資料（自動偵測最近交易日）
+python scripts/run_collection.py
+
+# 收集指定日期的所有資料
+python scripts/run_collection.py --date 2024-12-27
+
+# 收集特定類型資料
+python scripts/run_collection.py --date 2024-12-27 --types price margin
+
+# 跳過交易日檢查
+python scripts/run_collection.py --date 2024-12-27 --skip-trading-day-check
+
+# 回補歷史資料
+python scripts/backfill.py --start 2025-01-01 --end 2025-01-31
+```
+
+### Docker 部署
+
+```bash
+# 互動式選擇服務
+cd deployment
+./deploy.sh
+
+# 直接指定服務
+./deploy.sh stock-data-collector
+
+# 使用 Docker Compose
+cd deployment/stock-data-collector
+docker-compose up
+```
+
+### 資料查看
+
+```bash
+# 查看檔案
+ls -lh data/raw/price/2024/12/
+
+# 查看 metadata
+cat data/raw/price/2024/12/2024-12-27.json | jq '.metadata'
+
+# 統計筆數
+cat data/raw/price/2024/12/2024-12-27.json | jq '.data | length'
+```
+
+---
+
+## 📝 開發規範
+
+### Git Commit 格式
+
+使用 Conventional Commits 規範：
+
+```
+<type>(<scope>): <subject>
+
+<body>
+
+Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
+```
+
+**Type 類型**：
+- `feat` - 新功能
+- `fix` - 修復 bug
+- `docs` - 文檔更新
+- `refactor` - 重構
+- `chore` - 雜項（建置、設定）
+- `test` - 測試
+- `data` - 資料更新
+
+**範例**：
+```bash
+feat: 新增成交量前 20 名資料收集器
+
+- 新增 Top20VolumeCollector
+- 從 TWSE OpenAPI 收集每日成交量前 20 名
+- 新增對應的資料驗證器
+
+Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
+```
+
+### 程式碼風格
+
+- Python: 遵循 PEP 8
+- 使用 type hints
+- 完整的 docstrings
+- 適當的錯誤處理
+
+### 文檔更新
+
+變更時需更新的文檔：
+- **新功能或重大變更** → 更新 `README.md`
+- **部署相關變更** → 更新 `deployment/README.md`
+- **Docker 配置變更** → 更新 `deployment/stock-data-collector/README.md`
+- **所有變更** → 更新 `CHANGELOG.md`
+
+CHANGELOG.md 使用 Keep a Changelog 格式：
+
+```markdown
+## [Unreleased]
+
+### Added
+- 新增功能描述
+
+### Changed
+- 變更內容描述
+
+### Fixed
+- 修復問題描述
+
+### Removed
+- 移除項目描述
+```
+
+---
+
+## 🔒 安全注意事項
+
+### 敏感資訊管理
+
+- ✅ `.env` 檔案已在 `.gitignore` 中
+- ✅ 日誌檔案 `*.log` 不提交到 Git
+- ❌ 不要硬編碼 API keys、密碼或 tokens
+- ❌ 不要提交包含敏感資訊的設定檔
+
+### 提交前檢查清單
+
+- [ ] 沒有硬編碼的密碼或 API token
+- [ ] `.env` 檔案在 `.gitignore` 中
+- [ ] 沒有提交敏感設定檔
+- [ ] 日誌檔案已在 `.gitignore` 中
+- [ ] 測試資料已清理
+
+---
+
+## 🎯 GitHub Actions 自動化
+
+### 工作流程
+
+1. **daily-collection.yml** - 每日資料收集
+   - 排程: 週一至週六 21:30 (台北時間)
+   - 自動判斷交易日
+   - 收集完成後自動 commit 並 push
+
+2. **backfill.yml** - 歷史資料回補
+   - 手動觸發
+   - 指定日期範圍回補資料
+
+### 手動觸發
+
+```bash
+# 觸發每日收集
+gh workflow run daily-collection.yml
+
+# 觸發回補資料
+gh workflow run backfill.yml
+```
+
+---
+
+## 📈 效能指標
+
+### 資料收集效能
+
+- **收集時間**: 約 2-3 分鐘（五種資料類型）
+- **單日資料量**: 約 6.1 MB（6,528 筆記錄）
+  - price: 1,954 筆 (604 KB)
+  - institutional: 1,721 筆 (4.1 MB)
+  - margin: 1,819 筆 (980 KB)
+  - lending: 1,014 筆 (551 KB)
+  - top20_volume: 20 筆 (6.6 KB)
+
+### 儲存空間
+
+- **每月**: 約 120 MB（20 個交易日）
+- **每年**: 約 1.4 GB（240 個交易日）
+- **檔案數量**: ~1,200 個檔案/年（每交易日 5 個檔案）
+
+---
+
+## 🛠️ 開發工具
+
+### 必要工具
+
+- Python 3.11+
+- Git
+- Docker & Docker Compose（選用）
+- GitHub CLI（選用）
+
+### Python 套件
+
+主要依賴：
+- `requests` - HTTP 請求
+- `pandas` - 資料處理
+- `python-dotenv` - 環境變數管理
+
+---
+
+## 📖 參考文件
+
+### 核心文件
+
+- [README.md](README.md) - 專案說明
+- [data/README.md](data/README.md) - 資料結構說明
+- [deployment/README.md](deployment/README.md) - 部署說明
+- [.claude/skills/git/SKILL.md](.claude/skills/git/SKILL.md) - Git 提交流程
+
+### 規格書
+
+- [PHASE1_DATA_COLLECTION.md](docs/specifications/PHASE1_DATA_COLLECTION.md) - 資料收集規格
+- [DATA_VALIDATION_SPEC.md](docs/DATA_VALIDATION_SPEC.md) - 資料驗證規範
+
+### API 文件
+
+- [TWSE OpenAPI](https://openapi.twse.com.tw) - 證交所開放 API
+- [TPEx OpenAPI](https://www.tpex.org.tw/openapi/v1) - 櫃買中心開放 API
+
+---
+
+## 💡 開發提示
+
+### 新增收集器
+
+1. 在 `src/collectors/` 建立新的收集器類別
+2. 繼承 `BaseCollector`
+3. 實作 `collect()`, `validate()`, `save()` 方法
+4. 在 `scripts/run_collection.py` 註冊新的收集器類型
+5. 更新相關文檔
+
+### 新增資料源
+
+1. 在 `src/datasources/` 建立新的資料源類別
+2. 實作統一的 API 介面
+3. 加入錯誤處理與重試機制
+4. 撰寫單元測試
+
+### 修改 Docker 配置
+
+1. 編輯 `build/Dockerfile` - 映像檔建置
+2. 編輯 `deployment/stock-data-collector/docker-compose.yml` - 服務配置
+3. 更新 `deployment/stock-data-collector/README.md` - 使用說明
+4. 測試部署流程
+
+---
+
+## 🚨 常見問題
+
+### Docker 相關
+
+**Q: Docker daemon 未啟動怎麼辦？**
+A: 啟動 Docker Desktop 或使用 Python 腳本替代
+
+**Q: docker-compose.yml 的 command 參數如何設定？**
+A: 使用陣列格式，例如 `command: ["--date", "2024-12-27", "--skip-trading-day-check"]`
+
+**Q: 為什麼不建議用 Docker 進行生產環境部署？**
+A: Docker 配置主要用於本地測試，生產環境建議使用 GitHub Actions 自動化
+
+### 資料收集
+
+**Q: 如何判斷是否為交易日？**
+A: 使用 `src/utils/date_helper.py` 的 `is_trading_day()` 函式
+
+**Q: 資料收集失敗怎麼辦？**
+A: 系統會自動重試最多 3 次，查看日誌了解錯誤原因
+
+**Q: 如何回補缺失的歷史資料？**
+A: 使用 `python scripts/backfill.py --start YYYY-MM-DD --end YYYY-MM-DD`
+
+---
+
+## 📞 支援
+
+如有問題或建議：
+1. 查看相關文檔
+2. 搜尋 GitHub Issues
+3. 建立新的 Issue 討論
+
+---
+
+**最後更新**: 2026-02-01
+**維護者**: Jason Huang
+**專案狀態**: Phase 1 完成，持續維護中
