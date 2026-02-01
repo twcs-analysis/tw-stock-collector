@@ -18,10 +18,19 @@ logger = get_logger(__name__)
 
 
 def parse_arguments():
-    """解析命令列參數"""
+    """解析命令列參數，包含日期驗證"""
     parser = argparse.ArgumentParser(
         description="資料轉換服務 - 將原始資料轉換為分析資料"
     )
+
+    # 自定義日期類型（驗證格式）
+    def valid_date(date_string):
+        try:
+            return datetime.strptime(date_string, "%Y-%m-%d")
+        except ValueError:
+            raise argparse.ArgumentTypeError(
+                f"無效日期格式: '{date_string}'. 應使用 YYYY-MM-DD"
+            )
 
     # 轉換類型
     parser.add_argument(
@@ -31,22 +40,22 @@ def parse_arguments():
         help='轉換類型 (預設: technical_analysis)'
     )
 
-    # 日期參數
+    # 日期參數（加入驗證）
     parser.add_argument(
         '--date',
-        type=str,
+        type=valid_date,
         help='指定日期 (YYYY-MM-DD)'
     )
 
     parser.add_argument(
         '--start',
-        type=str,
+        type=valid_date,
         help='起始日期 (YYYY-MM-DD，用於批次轉換)'
     )
 
     parser.add_argument(
         '--end',
-        type=str,
+        type=valid_date,
         help='結束日期 (YYYY-MM-DD，用於批次轉換)'
     )
 
@@ -64,7 +73,13 @@ def parse_arguments():
         help='配置檔路徑'
     )
 
-    return parser.parse_args()
+    args = parser.parse_args()
+
+    # 額外驗證：起始日期不能晚於結束日期
+    if args.start and args.end and args.start > args.end:
+        parser.error("起始日期不能晚於結束日期")
+
+    return args
 
 
 def get_transformer(transform_type: str, config=None):
@@ -124,28 +139,46 @@ def transform_single_date(transformer, date: str, stock_id=None):
         return False
 
 
-def transform_date_range(transformer, start_date: str, end_date: str, stock_id=None):
+def transform_date_range(transformer, start_date, end_date, stock_id=None):
     """
-    轉換日期範圍的資料
+    轉換日期範圍的資料，包含範圍檢查
 
     Args:
         transformer: 轉換器實例
-        start_date: 起始日期 (YYYY-MM-DD)
-        end_date: 結束日期 (YYYY-MM-DD)
+        start_date: 起始日期 (datetime)
+        end_date: 結束日期 (datetime)
         stock_id: 股票代碼 (選用)
 
     Returns:
         dict: 統計資訊
     """
+    # 計算日期數量
+    if isinstance(start_date, str):
+        start = datetime.strptime(start_date, '%Y-%m-%d')
+    else:
+        start = start_date
+
+    if isinstance(end_date, str):
+        end = datetime.strptime(end_date, '%Y-%m-%d')
+    else:
+        end = end_date
+
+    date_count = (end - start).days + 1
+
+    # 檢查範圍合理性
+    MAX_DAYS = 365  # 最多一次處理 1 年
+    if date_count > MAX_DAYS:
+        logger.warning(
+            f"日期範圍過大: {date_count} 天 (建議上限: {MAX_DAYS} 天). "
+            f"建議分批處理以避免資源耗盡."
+        )
+
     logger.info(
-        f"開始批次轉換: {start_date} 到 {end_date}, "
-        f"stock_id={stock_id or '全部'}"
+        f"開始批次轉換: {start.date()} 到 {end.date()} "
+        f"({date_count} 天), stock_id={stock_id or '全部'}"
     )
 
     # 生成日期列表
-    start = datetime.strptime(start_date, '%Y-%m-%d')
-    end = datetime.strptime(end_date, '%Y-%m-%d')
-
     dates = []
     current = start
     while current <= end:
@@ -160,9 +193,10 @@ def transform_date_range(transformer, start_date: str, end_date: str, stock_id=N
 
     logger.info(
         f"批次轉換完成:\n"
-        f"  成功: {stats['success_count']}\n"
-        f"  失敗: {stats['failed_count']}\n"
-        f"  總記錄數: {stats['total_records']}\n"
+        f"  成功: {stats['success_dates']} 日期\n"
+        f"  無資料: {stats['no_data_dates']} 日期\n"
+        f"  失敗: {stats['failed_dates']} 日期\n"
+        f"  記錄數: {stats['records_saved']} 筆\n"
         f"  耗時: {stats['duration_seconds']:.2f}秒\n"
         f"  速度: {stats['records_per_second']:.2f} 筆/秒"
     )
@@ -170,9 +204,47 @@ def transform_date_range(transformer, start_date: str, end_date: str, stock_id=N
     return stats
 
 
+def save_checkpoint(transformer, prefix='checkpoint'):
+    """
+    保存檢查點，便於恢復
+
+    Args:
+        transformer: 轉換器實例
+        prefix: 檔名前綴
+    """
+    import json
+    from pathlib import Path
+
+    stats = transformer.get_stats()
+
+    # 確保 logs 目錄存在
+    log_dir = Path('logs')
+    log_dir.mkdir(exist_ok=True)
+
+    # 生成檢查點檔名
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    checkpoint_file = log_dir / f"{prefix}_{timestamp}.json"
+
+    # 轉換 datetime 為字串
+    stats_serializable = {}
+    for key, value in stats.items():
+        if isinstance(value, datetime):
+            stats_serializable[key] = value.isoformat()
+        else:
+            stats_serializable[key] = value
+
+    # 保存
+    with open(checkpoint_file, 'w', encoding='utf-8') as f:
+        json.dump(stats_serializable, f, indent=2, ensure_ascii=False)
+
+    logger.info(f"檢查點已保存: {checkpoint_file}")
+    return checkpoint_file
+
+
 def main():
-    """主程式"""
+    """主程式，包含錯誤恢復機制"""
     args = parse_arguments()
+    transformer = None
 
     try:
         # 載入配置
@@ -196,7 +268,9 @@ def main():
                 end_date=args.end,
                 stock_id=args.stock_id
             )
-            exit_code = 0 if stats['failed_count'] == 0 else 1
+            # 保存批次統計
+            save_checkpoint(transformer, prefix='batch_complete')
+            exit_code = 0 if stats['failed_dates'] == 0 else 1
 
         elif args.date:
             # 單日轉換模式
@@ -209,8 +283,8 @@ def main():
 
         else:
             # 預設: 轉換昨天的資料
-            yesterday = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
-            logger.info(f"未指定日期，轉換昨天的資料: {yesterday}")
+            yesterday = (datetime.now() - timedelta(days=1))
+            logger.info(f"未指定日期，轉換昨天的資料: {yesterday.strftime('%Y-%m-%d')}")
 
             success = transform_single_date(
                 transformer=transformer,
@@ -223,10 +297,16 @@ def main():
 
     except KeyboardInterrupt:
         logger.warning("使用者中斷執行")
+        # 保存當前進度
+        if transformer:
+            save_checkpoint(transformer, prefix='interrupted')
         sys.exit(130)
 
     except Exception as e:
         logger.error(f"程式執行失敗: {e}", exc_info=True)
+        # 保存錯誤日誌和統計
+        if transformer:
+            save_checkpoint(transformer, prefix='error')
         sys.exit(1)
 
 
