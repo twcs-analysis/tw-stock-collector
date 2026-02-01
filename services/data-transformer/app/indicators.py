@@ -47,6 +47,11 @@ def rsi(series: pd.Series, period: int = 14) -> pd.Series:
 
     Returns:
         pd.Series: RSI 值 (0-100)
+
+    Note:
+        當股票持續上漲 (avg_loss = 0) 時，RSI 設為 100
+        當股票持續下跌 (avg_gain = 0) 時，RSI 設為 0
+        其他無法計算的情況設為 50 (中性)
     """
     delta = series.diff()
 
@@ -56,8 +61,20 @@ def rsi(series: pd.Series, period: int = 14) -> pd.Series:
     avg_gain = gain.rolling(window=period, min_periods=period).mean()
     avg_loss = loss.rolling(window=period, min_periods=period).mean()
 
-    rs = avg_gain / avg_loss
+    # 處理除以零的情況
+    with np.errstate(divide='ignore', invalid='ignore'):
+        # 將 avg_loss 為 0 的情況替換為 NaN，避免除以零
+        rs = avg_gain / avg_loss.replace(0, np.nan)
+
     rsi_val = 100 - (100 / (1 + rs))
+
+    # 處理特殊情況：
+    # - 當 avg_loss = 0 (持續上漲)，RSI 應該是 100
+    # - 當 avg_gain = 0 (持續下跌)，RSI 應該是 0
+    # - 其他無法計算的情況設為 50 (中性)
+    rsi_val = rsi_val.mask((avg_gain > 0) & (avg_loss == 0), 100)
+    rsi_val = rsi_val.mask((avg_gain == 0) & (avg_loss > 0), 0)
+    rsi_val = rsi_val.fillna(50)
 
     return rsi_val
 

@@ -104,17 +104,20 @@ def transform_single_date(transformer, date: str, stock_id=None):
     logger.info(f"開始轉換: date={date}, stock_id={stock_id or '全部'}")
 
     try:
-        success = transformer.transform_and_save(
+        result = transformer.transform_and_save(
             date=date,
             stock_id=stock_id
         )
 
-        if success:
-            logger.info(f"轉換成功: {date}")
+        if result['status'] == 'success':
+            logger.info(f"轉換成功: {date}, 記錄數: {result['records']}")
+            return True
+        elif result['status'] == 'no_data':
+            logger.warning(f"轉換完成但無資料: {date}")
+            return True  # 無資料不算失敗
         else:
-            logger.warning(f"轉換失敗或無資料: {date}")
-
-        return success
+            logger.error(f"轉換失敗: {date}, 錯誤: {result.get('error')}")
+            return False
 
     except Exception as e:
         logger.error(f"轉換時發生錯誤: {e}", exc_info=True)

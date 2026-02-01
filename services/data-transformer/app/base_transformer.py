@@ -224,7 +224,7 @@ class BaseTransformer(ABC):
         date: Union[str, datetime],
         stock_id: Optional[str] = None,
         **kwargs
-    ) -> bool:
+    ) -> Dict[str, Any]:
         """
         轉換並儲存資料 (便利方法)
 
@@ -234,7 +234,10 @@ class BaseTransformer(ABC):
             **kwargs: 其他參數
 
         Returns:
-            bool: 是否成功
+            Dict: 包含以下欄位的字典
+                - status: 'success' | 'no_data' | 'failed'
+                - records: 處理的記錄數
+                - error: 錯誤訊息 (如果有)
         """
         try:
             # 轉換
@@ -245,10 +248,25 @@ class BaseTransformer(ABC):
                 self.logger.info(
                     f"轉換結果無資料: date={date}, stock_id={stock_id}"
                 )
-                return True  # 無資料不算失敗
+                return {
+                    'status': 'no_data',
+                    'records': 0,
+                    'error': None
+                }
 
             # 儲存
-            return self.save_data(df, date, stock_id)
+            if self.save_data(df, date, stock_id):
+                return {
+                    'status': 'success',
+                    'records': len(df),
+                    'error': None
+                }
+            else:
+                return {
+                    'status': 'failed',
+                    'records': 0,
+                    'error': 'Failed to save data'
+                }
 
         except Exception as e:
             self.logger.error(
@@ -256,7 +274,11 @@ class BaseTransformer(ABC):
                 exc_info=True
             )
             self.stats['failed_count'] += 1
-            return False
+            return {
+                'status': 'failed',
+                'records': 0,
+                'error': str(e)
+            }
 
     def batch_transform(
         self,
@@ -273,7 +295,14 @@ class BaseTransformer(ABC):
             **kwargs: 其他參數
 
         Returns:
-            Dict: 轉換統計資訊
+            Dict: 轉換統計資訊，包含：
+                - dates_processed: 處理的日期數
+                - success_dates: 成功的日期數
+                - no_data_dates: 無資料的日期數
+                - failed_dates: 失敗的日期數
+                - records_saved: 成功儲存的記錄數
+                - duration_seconds: 耗時(秒)
+                - records_per_second: 處理速度
         """
         self.stats['start_time'] = datetime.now()
         self.logger.info(
@@ -281,50 +310,66 @@ class BaseTransformer(ABC):
             f"{len(stock_ids) if stock_ids else 0} 檔股票"
         )
 
-        success_count = 0
-        failed_count = 0
+        success_dates = 0
+        no_data_dates = 0
+        failed_dates = 0
+        records_saved = 0
 
         # 根據是否需要股票代碼來決定轉換方式
         if stock_ids:
             # 需要逐一轉換每檔股票
             for date in dates:
                 for stock_id in stock_ids:
-                    try:
-                        if self.transform_and_save(date, stock_id, **kwargs):
-                            success_count += 1
-                        else:
-                            failed_count += 1
-                    except Exception as e:
-                        self.logger.error(
-                            f"批次轉換失敗: {date}, {stock_id}, {e}"
-                        )
-                        failed_count += 1
+                    result = self.transform_and_save(date, stock_id, **kwargs)
+                    if result['status'] == 'success':
+                        success_dates += 1
+                        records_saved += result['records']
+                    elif result['status'] == 'no_data':
+                        no_data_dates += 1
+                    else:
+                        failed_dates += 1
         else:
             # 不需要股票代碼 (批次轉換)
             for date in dates:
-                try:
-                    if self.transform_and_save(date, stock_id=None, **kwargs):
-                        success_count += 1
-                    else:
-                        failed_count += 1
-                except Exception as e:
-                    self.logger.error(f"批次轉換失敗: {date}, {e}")
-                    failed_count += 1
+                result = self.transform_and_save(date, stock_id=None, **kwargs)
+                if result['status'] == 'success':
+                    success_dates += 1
+                    records_saved += result['records']
+                elif result['status'] == 'no_data':
+                    no_data_dates += 1
+                else:
+                    failed_dates += 1
 
         self.stats['end_time'] = datetime.now()
         duration = (self.stats['end_time'] - self.stats['start_time']).total_seconds()
 
         summary = {
-            'success_count': success_count,
-            'failed_count': failed_count,
-            'total_records': self.stats['total_records'],
+            # 按日期維度
+            'dates_processed': len(dates),
+            'success_dates': success_dates,
+            'no_data_dates': no_data_dates,
+            'failed_dates': failed_dates,
+
+            # 按記錄維度
+            'records_saved': records_saved,
+
+            # 時間統計
             'duration_seconds': duration,
-            'records_per_second': self.stats['total_records'] / duration if duration > 0 else 0
+            'records_per_second': records_saved / duration if duration > 0 else 0,
+
+            # 向後兼容（舊欄位）
+            'success_count': success_dates,
+            'failed_count': failed_dates,
+            'total_records': records_saved
         }
 
         self.logger.info(
-            f"批次轉換完成: 成功 {success_count}, 失敗 {failed_count}, "
-            f"耗時 {duration:.2f}s"
+            f"批次轉換完成:\n"
+            f"  成功: {success_dates} 日期\n"
+            f"  無資料: {no_data_dates} 日期\n"
+            f"  失敗: {failed_dates} 日期\n"
+            f"  記錄數: {records_saved} 筆\n"
+            f"  耗時: {duration:.2f}s"
         )
 
         return summary

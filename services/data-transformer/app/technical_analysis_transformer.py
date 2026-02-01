@@ -83,6 +83,10 @@ class TechnicalAnalysisTransformer(BaseTransformer):
 
             # 按股票分組計算技術指標
             result_list = []
+            skipped_stocks = {
+                'insufficient_data': [],
+                'calculation_errors': []
+            }
             grouped = historical_df.groupby('stock_id')
             total_stocks = len(grouped)
 
@@ -91,6 +95,11 @@ class TechnicalAnalysisTransformer(BaseTransformer):
             for idx, (stock_id_val, stock_df) in enumerate(grouped, 1):
                 # 只處理有足夠資料的股票
                 if len(stock_df) < self.min_periods:
+                    skipped_stocks['insufficient_data'].append({
+                        'stock_id': stock_id_val,
+                        'available_days': len(stock_df),
+                        'required_days': self.min_periods
+                    })
                     self.logger.debug(
                         f"跳過 {stock_id_val}: 資料不足 "
                         f"({len(stock_df)} < {self.min_periods})"
@@ -98,15 +107,39 @@ class TechnicalAnalysisTransformer(BaseTransformer):
                     continue
 
                 # 計算技術指標
-                stock_df_with_indicators = self._calculate_indicators(stock_df.copy())
-
-                result_list.append(stock_df_with_indicators)
+                try:
+                    stock_df_with_indicators = self._calculate_indicators(stock_df.copy())
+                    result_list.append(stock_df_with_indicators)
+                except Exception as e:
+                    skipped_stocks['calculation_errors'].append({
+                        'stock_id': stock_id_val,
+                        'error': str(e)
+                    })
+                    self.logger.error(
+                        f"計算指標失敗 {stock_id_val}: {e}"
+                    )
 
                 if idx % 100 == 0:
                     self.logger.info(f"已處理 {idx}/{total_stocks} 檔股票")
 
+            # 報告跳過的股票統計
+            if skipped_stocks['insufficient_data']:
+                self.logger.warning(
+                    f"跳過 {len(skipped_stocks['insufficient_data'])} 檔股票 (資料不足): "
+                    f"前 5 檔: {[s['stock_id'] for s in skipped_stocks['insufficient_data'][:5]]}"
+                )
+
+            if skipped_stocks['calculation_errors']:
+                self.logger.error(
+                    f"跳過 {len(skipped_stocks['calculation_errors'])} 檔股票 (計算錯誤): "
+                    f"前 5 檔: {[s['stock_id'] for s in skipped_stocks['calculation_errors'][:5]]}"
+                )
+
             if not result_list:
-                self.logger.warning("沒有股票有足夠資料可計算指標")
+                self.logger.warning(
+                    f"沒有股票有足夠資料可計算指標。"
+                    f"共跳過 {len(skipped_stocks['insufficient_data'])} 檔股票"
+                )
                 return pd.DataFrame()
 
             # 合併所有股票
@@ -137,6 +170,8 @@ class TechnicalAnalysisTransformer(BaseTransformer):
         - MA240 需要至少 240 天
         - 策略: 載入過去約 1.5 年的資料 (約 240 交易日)
 
+        優化: 跳過周末和假期，避免浪費資源
+
         Args:
             target_date: 目標日期
 
@@ -156,6 +191,9 @@ class TechnicalAnalysisTransformer(BaseTransformer):
         # 收集所有歷史資料
         all_data = []
         current = start_date
+        failed_consecutive = 0  # 連續失敗計數
+        total_attempts = 0
+        successful_loads = 0
 
         while current <= target_date:
             try:
@@ -170,11 +208,30 @@ class TechnicalAnalysisTransformer(BaseTransformer):
                         df['trade_date'] = current.strftime('%Y-%m-%d')
 
                     all_data.append(df)
+                    successful_loads += 1
+                    failed_consecutive = 0  # 重置連續失敗計數
+                else:
+                    failed_consecutive += 1
 
             except Exception as e:
-                self.logger.debug(f"載入 {current.date()} 資料失敗: {e}")
+                failed_consecutive += 1
+                # 只在 debug 模式記錄失敗（避免過多日誌）
+                if failed_consecutive <= 3:
+                    self.logger.debug(f"載入 {current.date()} 資料失敗: {e}")
 
-            current += timedelta(days=1)
+            total_attempts += 1
+
+            # 優化: 連續失敗超過 5 天後，跳過更多天數（可能是長假期）
+            if failed_consecutive > 5:
+                if failed_consecutive == 6:
+                    self.logger.debug(
+                        f"檢測到可能的假期區間，從 {current.date()} 開始加速跳過"
+                    )
+                # 跳過 2 天，加速通過周末和假期
+                current += timedelta(days=3)
+                failed_consecutive = 0  # 重置計數，避免無限跳躍
+            else:
+                current += timedelta(days=1)
 
         if not all_data:
             self.logger.warning("無歷史資料")
@@ -187,7 +244,8 @@ class TechnicalAnalysisTransformer(BaseTransformer):
 
         self.logger.info(
             f"載入完成: {len(df)} 筆記錄 "
-            f"({len(df['stock_id'].unique())} 檔股票)"
+            f"({len(df['stock_id'].unique())} 檔股票), "
+            f"成功載入 {successful_loads}/{total_attempts} 天"
         )
 
         return df
