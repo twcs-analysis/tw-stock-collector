@@ -60,42 +60,61 @@
 
 ### 本地收集資料
 
-1. **收集今日資料（自動偵測最近交易日）**
-   ```bash
-   python scripts/run_collection.py
-   ```
+#### 使用 Python 腳本
 
-2. **收集指定日期的所有資料**
-   ```bash
-   python scripts/run_collection.py --date 2024-12-27
-   ```
+```bash
+# 收集今日資料（自動偵測最近交易日）
+python scripts/run_collection.py
 
-3. **收集特定類型的資料**
-   ```bash
-   # 只收集價格和融資融券資料
-   python scripts/run_collection.py --date 2024-12-27 --types price margin
+# 收集指定日期的所有資料
+python scripts/run_collection.py --date 2024-12-27
 
-   # 可用類型: price, margin, institutional, lending
-   ```
+# 收集特定類型的資料
+python scripts/run_collection.py --date 2024-12-27 --types price margin
+# 可用類型: price, margin, institutional, lending
 
-4. **使用 Docker 收集**
-   ```bash
-   # 收集指定日期所有類型
-   COLLECTION_DATE=2024-12-27 docker-compose up
+# 回補歷史資料
+python scripts/backfill.py --start 2025-01-01 --end 2025-01-31
+```
 
-   # 收集特定類型
-   COLLECTION_DATE=2024-12-27 COLLECTION_TYPES="price margin" docker-compose up
-   ```
+#### 使用 Docker
+
+```bash
+# 收集指定日期所有類型
+COLLECTION_DATE=2024-12-27 docker-compose --profile collection up
+
+# 收集特定類型
+COLLECTION_DATE=2024-12-27 COLLECTION_TYPES="price margin" docker-compose --profile collection up
+
+# 回補歷史資料
+START_DATE=2025-01-01 END_DATE=2025-01-31 docker-compose --profile backfill up
+```
+
+**環境變數說明:**
+- `COLLECTION_DATE`: 收集日期（預設：yesterday）
+- `COLLECTION_TYPES`: 資料類型，空格分隔（預設：price institutional margin lending）
+- `START_DATE`: 回補開始日期
+- `END_DATE`: 回補結束日期
 
 ### 設定 GitHub Actions 自動化
 
 1. **Fork 此專案到你的 GitHub**
 2. **在專案的 Actions 頁面啟用工作流程**
-3. **無需任何設定** - 每交易日 18:00 自動收集並提交資料
+3. **無需任何設定** - 系統會自動運作
 
 **自動化時程**:
-- **每日收集**: 每交易日 18:00 自動執行
-- **回補資料**: 可透過 GitHub Actions 手動觸發
+- **每日收集**: 週一至週六 21:30 (台北時間) 自動執行
+- **自動判斷**: 跳過非交易日，只在交易日收集資料
+- **自動提交**: 收集完成後自動 commit 並 push 到 Git
+
+**手動觸發**:
+```bash
+# 手動觸發每日收集
+gh workflow run daily-collection.yml
+
+# 手動觸發回補資料
+gh workflow run backfill.yml
+```
 
 ---
 
