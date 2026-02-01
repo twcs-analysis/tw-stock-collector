@@ -1,7 +1,6 @@
 ---
 name: git
 description: "Git 提交流程：分析變更、code review、更新文檔、提交並推送"
-disable-model-invocation: true
 user-invocable: true
 allowed-tools: Bash(git:*), Read, Write, Edit, Grep, Glob, Task
 ---
