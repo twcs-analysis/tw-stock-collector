@@ -21,7 +21,8 @@ from src.collectors import (
     PriceCollector,
     MarginCollector,
     InstitutionalCollector,
-    LendingCollector
+    LendingCollector,
+    Top20VolumeCollector
 )
 from src.utils import is_trading_day
 
@@ -31,6 +32,7 @@ COLLECTORS = {
     'margin': MarginCollector,
     'institutional': InstitutionalCollector,
     'lending': LendingCollector,
+    'top20_volume': Top20VolumeCollector,
 }
 
 
@@ -104,7 +106,7 @@ def main():
         '--types',
         nargs='+',
         choices=list(COLLECTORS.keys()),
-        default=['price', 'institutional', 'margin', 'lending'],
+        default=['price', 'institutional', 'margin', 'lending', 'top20_volume'],
         help='要收集的資料類型（可指定多個）'
     )
     parser.add_argument(
