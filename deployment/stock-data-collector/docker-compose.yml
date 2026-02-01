@@ -11,8 +11,6 @@
 # 注意: Phase 1 主要透過 GitHub Actions 執行
 #       這個 compose 檔案用於本地測試收集流程
 
-version: '3.8'
-
 services:
   # 資料收集器 (Phase 1)
   collector:
