@@ -17,18 +17,16 @@ services:
   # 資料收集器 (Phase 1)
   collector:
     build:
-      context: ..
+      context: ../..
       dockerfile: build/Dockerfile
     image: tw-stock-collector:latest
     container_name: tw-stock-collector-phase1
     restart: "no"  # 收集完成後自動停止
     volumes:
       # 資料儲存目錄 (供 Git 版本控制)
-      - ../data:/app/data
-      # 日誌目錄
-      - ../logs:/app/logs
+      - ../../data:/app/data
       # 配置檔 (唯讀)
-      - ../config:/app/config:ro
+      - ../../config:/app/config:ro
     env_file:
       - .env
     environment:

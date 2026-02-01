@@ -42,7 +42,6 @@ env/
 *.sqlite3
 
 # Logs
-logs/*.log
 *.log
 
 # Data files

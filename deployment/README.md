@@ -1,143 +1,78 @@
 # Deployment 目錄
 
-此目錄包含台股資料收集系統的 Docker 部署配置。
+此目錄包含台股資料收集與分析系統的部署配置,依功能模組分類。
 
-## 📁 檔案說明
+## 📁 目錄結構
 
-### docker-compose.yml
-資料收集服務的 Docker Compose 配置檔。
-
-**功能:**
-- 運行資料收集器
-- 將資料儲存到本地 `data/` 目錄
-- 供 Git 版本控制使用
-
-**使用方式:**
-
-```bash
-# 從專案根目錄執行
-cd /path/to/tw-stock-collector
-
-# 收集指定日期的資料
-COLLECTION_DATE=2025-01-28 docker-compose -f deployment/docker-compose.yml up
-
-# 使用特定 profile 執行收集
-docker-compose --profile collection up
-
-# 背景執行
-docker-compose -f deployment/docker-compose.yml up -d
+```
+deployment/
+├── stock-data-collector/   # 資料收集服務部署
+│   ├── docker-compose.yml
+│   ├── .env.example
+│   └── .dockerignore
+│
+└── README.md              # 本文件
 ```
 
-**環境變數:**
-- `COLLECTION_DATE`: 收集日期（預設：today）
-- `COLLECTION_TYPES`: 資料類型（預設：price institutional margin lending）
-- `LOG_LEVEL`: 日誌等級（預設：INFO）
+## 🚀 模組說明
 
-### .env.example
-環境變數範例檔案。
+### stock-data-collector
+台股資料收集服務,負責從證交所和櫃買中心收集資料。
 
-**設定步驟:**
+**主要功能:**
+- 每日價量資料收集
+- 三大法人買賣超
+- 融資融券餘額
+- 借券賣出資料
+
+**使用方式:**
+```bash
+cd deployment/stock-data-collector
+cp .env.example .env
+
+# 執行資料收集
+COLLECTION_DATE=2025-01-28 docker-compose up
+```
+
+詳細說明請參考: [stock-data-collector/README.md](stock-data-collector/README.md)
+
+## 📝 部署注意事項
+
+### 主要部署方式
+本專案主要透過 **GitHub Actions** 進行自動化部署:
+- 每交易日 21:30 自動收集資料
+- 自動判斷交易日,跳過非交易日
+- 收集完成後自動 commit 並 push
+
+### Docker 部署用途
+此目錄的 Docker 配置主要用於:
+- **本地開發測試**
+- **回補歷史資料**
+- **驗證資料源連線**
+- **新功能開發與測試**
+
+## 🔧 通用設定
+
+### 環境變數
+各模組都使用 `.env` 檔案管理環境變數:
 ```bash
 # 複製範例檔案
 cp .env.example .env
 
-# 編輯環境變數（選用）
+# 編輯設定
 vim .env
 ```
 
-### .dockerignore
-Docker build 時忽略的檔案清單。
-
-## 🚀 快速開始
-
-### 1. 建置 Docker 映像檔
-
+### 網路配置
+所有服務使用共同的 Docker 網路:
 ```bash
-# 從專案根目錄執行
-docker build -f build/Dockerfile -t tw-stock-collector:latest .
-```
-
-### 2. 執行資料收集
-
-```bash
-# 收集今天的資料
-docker-compose -f deployment/docker-compose.yml up
-
-# 收集指定日期
-COLLECTION_DATE=2024-12-27 docker-compose -f deployment/docker-compose.yml up
-
-# 只收集特定類型
-COLLECTION_DATE=2024-12-27 COLLECTION_TYPES="price margin" \
-  docker-compose -f deployment/docker-compose.yml up
-```
-
-### 3. 檢查結果
-
-```bash
-# 查看收集的資料
-ls -lh ../data/raw/price/2024/12/
-
-# 查看日誌
-docker-compose -f deployment/docker-compose.yml logs
-```
-
-## 📝 注意事項
-
-**主要部署方式:**
-- Phase 1 資料收集主要透過 **GitHub Actions** 自動執行
-- 每交易日 21:30 自動收集並提交資料
-- 此 Docker Compose 配置主要用於**本地開發測試**
-
-**適用場景:**
-- 本地測試資料收集功能
-- 回補歷史資料
-- 驗證資料來源連線
-- 開發新功能時的測試環境
-
-## 🔧 進階設定
-
-### 自訂網路名稱
-
-編輯 `.env` 檔案:
-```bash
-NETWORK_NAME=my-custom-network
-```
-
-### 掛載自訂配置
-
-修改 `docker-compose.yml` 中的 volumes:
-```yaml
-volumes:
-  - ../data:/app/data
-  - ../logs:/app/logs
-  - /path/to/custom/config:/app/config:ro
-```
-
-## 🐛 故障排除
-
-### 映像檔建置失敗
-
-```bash
-# 清除 Docker 快取
-docker system prune -a
-
-# 重新建置
-docker-compose -f deployment/docker-compose.yml build --no-cache --pull
-```
-
-### 資料卷權限問題
-
-```bash
-# macOS/Linux: 確保目錄存在且有寫入權限
-mkdir -p data logs
-chmod 755 data logs
+NETWORK_NAME=tw-stock-network
 ```
 
 ## 📖 相關文件
 
 - **[主要 README](../README.md)** - 專案整體說明
-- **[Dockerfile](../build/Dockerfile)** - Docker 映像檔建置腳本
-- **[GitHub Actions](../.github/workflows/)** - 自動化收集設定
+- **[Build 目錄](../build/)** - Docker 映像檔建置
 
 ---
 

@@ -49,8 +49,6 @@ data/processed/
 
 # Logs
 *.log
-logs/
-data/logs/
 
 # Documentation
 docs/
