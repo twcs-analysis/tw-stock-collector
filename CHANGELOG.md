@@ -5,6 +5,12 @@
 ## [Unreleased]
 
 ### 新增
+- 新增技術分析資料轉換功能
+  - 新增 `FileHandler.load_dataframe()` 方法支援 JSON/CSV 資料載入
+  - 新增 `get_logger()` 便利函數簡化 logger 使用
+  - 匯出核心工具模組：`FileHandler`, `DataValidator`, `build_file_path` 等
+  - 完成 2026-01 技術分析資料轉換（21 個交易日，40,845 筆記錄）
+  - 計算 30+ 個技術指標（MA、RSI、MACD、DMI、布林通道、成交量指標等）
 - 新增教學影片逐字稿目錄 (`transcripts/`)
   - 包含 29 集技術分析教學影片原始逐字稿
   - 建立 `raw/` 存放原始逐字稿
@@ -26,6 +32,11 @@
 - 新增測試腳本 (`scripts/test_top20_volume.py`)
 
 ### 修改
+- 修正 `BaseTransformer` 輸出路徑
+  - 轉換後的資料儲存至 `data/transformed/` 而非 `data/raw/`
+  - 新增 `output_base_path` 屬性區分原始資料與轉換資料
+- 修正循環導入問題
+  - `file_handler.py` 和 `validator.py` 改用 `setup_logger()` 而非 `get_logger()`
 - 更新 `README.md` 加入 TWSE API 參考文件連結
 - 更新 `data/README.md` 加入成交量前 20 名資料說明
 - 修正 `institutional_collector.py` TPEx 資料收集的 SSL 憑證問題

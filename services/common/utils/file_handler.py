@@ -17,10 +17,10 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 import pandas as pd
 
-from .logger import get_logger
+from .logger import setup_logger
 from .config import get_global_config
 
-logger = get_logger(__name__)
+logger = setup_logger(__name__)
 
 
 class FileHandler:
@@ -224,6 +224,67 @@ class FileHandler:
 
         except Exception as e:
             logger.error(f"CSV 讀取失敗: {file_path} - {e}", exc_info=True)
+            return None
+
+    def load_dataframe(
+        self,
+        file_path: Union[str, Path],
+        format: str = 'auto',
+        **kwargs
+    ) -> Optional[pd.DataFrame]:
+        """
+        自動根據副檔名載入 DataFrame
+
+        Args:
+            file_path: 檔案路徑
+            format: 格式 ('auto', 'json', 'csv')
+            **kwargs: 傳遞給對應方法的參數
+
+        Returns:
+            pd.DataFrame 或 None
+
+        Examples:
+            >>> handler = FileHandler()
+            >>> df = handler.load_dataframe('data/stocks.csv')
+            >>> df = handler.load_dataframe('data/stocks.json')
+        """
+        file_path = Path(file_path)
+
+        if not file_path.exists():
+            logger.debug(f"檔案不存在: {file_path}")
+            return None
+
+        # 自動偵測格式
+        if format == 'auto':
+            suffix = file_path.suffix.lower()
+            format_map = {
+                '.json': 'json',
+                '.csv': 'csv',
+            }
+            format = format_map.get(suffix, 'json')
+
+        # 根據格式載入
+        if format == 'json':
+            data = self.load_json(file_path)
+            if data is None:
+                return None
+            # 處理包含 metadata 和 data 的格式
+            if isinstance(data, dict):
+                if 'data' in data:
+                    return pd.DataFrame(data['data'])
+                else:
+                    return pd.DataFrame([data])
+            elif isinstance(data, list):
+                return pd.DataFrame(data)
+            else:
+                logger.warning(f"不支援的 JSON 資料格式: {type(data)}")
+                return None
+
+        elif format == 'csv':
+            return self.load_csv(file_path, **kwargs)
+
+        else:
+            logger.error(f"不支援的格式: {format}")
             return None
 
     def save_dataframe(

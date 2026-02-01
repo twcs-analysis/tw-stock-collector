@@ -12,10 +12,10 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional, Union
 import pandas as pd
 
-from .logger import get_logger
+from .logger import setup_logger
 from .config import get_global_config
 
-logger = get_logger(__name__)
+logger = setup_logger(__name__)
 
 
 class ValidationError(Exception):
