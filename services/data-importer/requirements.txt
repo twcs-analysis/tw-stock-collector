@@ -1,0 +1,23 @@
+# ====================================
+# Data Importer Service - Python Dependencies
+# ====================================
+
+# Core
+python-dateutil>=2.8.2
+
+# Database - SQLAlchemy ORM
+sqlalchemy>=2.0.0
+alembic>=1.13.0
+
+# PostgreSQL Driver
+psycopg2-binary>=2.9.9
+
+# MySQL Driver (Optional)
+# pymysql>=1.1.0
+
+# Utilities
+pydantic>=2.5.0
+python-dotenv>=1.0.0
+
+# Progress Bar
+tqdm>=4.66.0

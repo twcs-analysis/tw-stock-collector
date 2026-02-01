@@ -1,0 +1,46 @@
+{
+  "metadata": {
+    "date": "2024-12-05",
+    "collected_at": "2026-02-01T19:09:42.193434",
+    "total_count": 3,
+    "source": "Test Data"
+  },
+  "data": [
+    {
+      "date": "2024-12-05",
+      "stock_id": "2330",
+      "stock_name": "測試股票0",
+      "open": 98.58,
+      "high": 100.72,
+      "low": 97.17,
+      "close": 99.13,
+      "volume": 1895268,
+      "amount": 187884268.5,
+      "type": "twse"
+    },
+    {
+      "date": "2024-12-05",
+      "stock_id": "2331",
+      "stock_name": "測試股票1",
+      "open": 109.8,
+      "high": 112.39,
+      "low": 106.83,
+      "close": 110.52,
+      "volume": 6174171,
+      "amount": 682351663.3,
+      "type": "twse"
+    },
+    {
+      "date": "2024-12-05",
+      "stock_id": "2332",
+      "stock_name": "測試股票2",
+      "open": 118.98,
+      "high": 120.26,
+      "low": 116.3,
+      "close": 119.3,
+      "volume": 4156752,
+      "amount": 495904321.66,
+      "type": "twse"
+    }
+  ]
+}

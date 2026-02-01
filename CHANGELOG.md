@@ -5,6 +5,17 @@
 ## [Unreleased]
 
 ### 新增
+- 新增資料匯入服務 (`data-importer`)
+  - 資料庫初始化腳本
+  - 支援本地和遠端資料庫配置
+  - requirements.txt 依賴管理
+- 新增資料轉換服務完整實作 (`data-transformer`)
+  - `TechnicalAnalysisTransformer` - 技術分析轉換器
+  - `indicators.py` - 技術指標計算模組
+  - `database_saver.py` - 資料庫儲存功能
+  - `json_saver.py` - JSON 儲存功能
+  - 完整的 requirements.txt 和測試腳本
+- 新增技術分析文檔 (`docs/TECHNICAL_ANALYSIS_TRANSFORM.md`)
 - 新增技術分析資料轉換功能
   - 新增 `FileHandler.load_dataframe()` 方法支援 JSON/CSV 資料載入
   - 新增 `get_logger()` 便利函數簡化 logger 使用
@@ -46,18 +57,28 @@
   - 確保歷史資料回補時包含成交量前 20 名資料
 
 ### 資料
-- 回補 2024 年完整資料（全年 262 個交易日）
-  - 價格資料 (price)
-  - 三大法人買賣超資料 (institutional)
-  - 融資融券資料 (margin)
-  - 借券賣出資料 (lending)
-  - 成交量前 20 名資料 (top20_volume)
-  - 總計 1,656,358 筆記錄
-- 回補 2025 年完整資料（進行中）
-  - 包含全部 5 種資料類型
-- 新增 2026-01-27 資料收集
-  - 價格資料 (1951 筆股票)
-  - 三大法人買賣超資料
+- 回補 2024 年完整資料（全年）
+  - 價格資料 (price) - 完整
+  - 三大法人買賣超資料 (institutional) - 完整
+  - 融資融券資料 (margin) - 完整
+  - 借券賣出資料 (lending) - 完整
+  - 成交量前 20 名資料 (top20_volume) - 完整
+- 回補 2025 年完整資料
+  - 價格資料 (price) - 1-12 月完整
+  - 三大法人買賣超資料 (institutional) - 1-12 月完整
+  - 融資融券資料 (margin) - 1-12 月完整
+  - 借券賣出資料 (lending) - 1-12 月完整
+  - 成交量前 20 名資料 (top20_volume) - 1-12 月完整
+- 新增 2026-01 完整資料
+  - 價格資料 (price) - 21 個交易日
+  - 三大法人買賣超資料 (institutional) - 21 個交易日
+  - 融資融券資料 (margin) - 21 個交易日
+  - 借券賣出資料 (lending) - 21 個交易日
+  - 成交量前 20 名資料 (top20_volume) - 21 個交易日
+- 新增 2026-01 技術分析轉換資料
+  - 位置: `data/transformed/technical_analysis/2026/01/`
+  - 21 個 JSON 檔案，每個約 1.4-1.5 MB
+  - 總計 40,845 筆技術分析記錄
   - 融資融券資料
   - 借券賣出資料
   - 成交量前 20 名資料

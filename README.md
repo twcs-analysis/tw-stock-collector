@@ -31,6 +31,7 @@
 - ✅ 董監持股與質押比例
 
 ### 市場統計
+- ✅ **[成交量前 20 名](data/raw/top20_volume/)** - 每日成交量排行
 - ✅ 每日市場總覽 (漲跌家數、成交量)
 - ✅ 產業統計
 - ✅ 強弱勢排行
@@ -71,7 +72,7 @@ python scripts/run_collection.py --date 2024-12-27
 
 # 收集特定類型的資料
 python scripts/run_collection.py --date 2024-12-27 --types price margin
-# 可用類型: price, margin, institutional, lending
+# 可用類型: price, institutional, margin, lending, top20_volume
 
 # 回補歷史資料
 python scripts/backfill.py --start 2025-01-01 --end 2025-01-31
@@ -150,6 +151,7 @@ data/raw/
 - [三大法人](data/raw/institutional/) - 外資、投信、自營商買賣超
 - [融資融券](data/raw/margin/) - 融資融券餘額與變化
 - [借券賣出](data/raw/lending/) - 借券賣出餘額資料
+- [成交量前 20 名](data/raw/top20_volume/) - 每日成交量排行
 
 ### 檔案格式
 
@@ -228,10 +230,31 @@ tw-stock-collector/
 │       ├── price/               # 每日價格資料
 │       ├── margin/              # 融資融券資料
 │       ├── institutional/       # 三大法人資料
-│       └── lending/             # 借券賣出資料
+│       ├── lending/             # 借券賣出資料
+│       └── top20_volume/        # 成交量前 20 名
+│
+├── database/                    # 資料庫相關
+│   ├── schemas/                 # 資料庫 Schema 定義
+│   │   ├── common/              # PostgreSQL + SQLite 共用
+│   │   ├── postgresql/          # PostgreSQL 專用
+│   │   └── sqlite/              # SQLite 專用
+│   ├── backups/                 # 資料庫備份
+│   ├── seeds/                   # 測試資料
+│   └── sqlite/                  # SQLite 檔案儲存
+│
+├── deployment/                  # 部署配置
+│   ├── deploy.sh                # 部署腳本
+│   ├── stock-data-collector/    # 資料收集服務
+│   ├── database/                # 資料庫服務
+│   │   ├── postgresql/          # PostgreSQL 部署
+│   │   └── sqlite/              # SQLite 部署
+│   └── data-import-pipeline/    # 資料匯入管道
 │
 ├── docs/                        # 文檔目錄
 │   ├── DATA_VALIDATION_SPEC.md  # 資料驗證規範
+│   ├── database/                # 資料庫文檔
+│   │   ├── QUERY_EXAMPLES.md    # SQL 查詢範例
+│   │   └── QUICK_REFERENCE.md   # 快速參考手冊
 │   └── specifications/          # 詳細規格書
 │
 ├── transcripts/                 # 教學影片逐字稿
@@ -239,7 +262,8 @@ tw-stock-collector/
 │   └── notes/                   # 重點整理
 │
 └── build/                       # Docker 建置檔案
-    └── Dockerfile               # Phase 1 Docker 映像檔
+    ├── stock-data-collector/    # 資料收集器映像檔
+    └── data-importer/           # 資料匯入器映像檔
 ```
 
 ---
@@ -309,24 +333,80 @@ cat data/raw/price/2024/12/2024-12-27.json | jq '.data | length'
 ## 📈 效能指標
 
 ### 資料收集
-- **收集時間**: 約 2-3 分鐘（四種資料類型）
-- **單日資料量**: 約 2.9 MB（5,834 筆記錄）
-  - 價格資料: 600 KB（1,946 檔股票）
-  - 融資融券: 877 KB（1,815 檔股票）
-  - 三大法人: 987 KB（1,027 檔股票）
-  - 借券賣出: 463 KB（1,046 檔股票）
+- **收集時間**: 約 2-3 分鐘（五種資料類型）
+- **單日資料量**: 約 6.1 MB（6,528 筆記錄）
+  - 價格資料: 604 KB（1,954 檔股票）
+  - 三大法人: 4.1 MB（1,721 檔股票）
+  - 融資融券: 980 KB（1,819 檔股票）
+  - 借券賣出: 551 KB（1,014 檔股票）
+  - 成交量前 20 名: 6.6 KB（20 檔股票）
 
 ### 儲存空間
-- **每月**: 約 60-70 MB（20 個交易日）
-- **每年**: 約 700-800 MB（240 個交易日）
-- **檔案數量**: ~960 個檔案/年（每交易日 4 個檔案）
+- **每月**: 約 120 MB（20 個交易日）
+- **每年**: 約 1.4 GB（240 個交易日）
+- **檔案數量**: ~1,200 個檔案/年（每交易日 5 個檔案）
 
 ### 成本
 - **GitHub Actions**: 完全在免費額度內運行
 - **API 使用**: 官方免費 API，無需 Token
 - **儲存空間**: GitHub 免費方案足夠使用
 
-**實測環境**: Python 3.11, 一般家用寬頻, 測試日期 2025-12-26
+**實測環境**: Python 3.11, 一般家用寬頻, 測試日期 2024-12-27
+
+---
+
+## 🗄️ 資料庫架構
+
+### 支援的資料庫
+
+- **PostgreSQL 16+** - 生產環境推薦
+- **SQLite 3.35+** - 開發/測試環境
+
+### 資料表設計
+
+系統包含 9 個主要資料表：
+
+1. **stocks** - 股票基本資訊
+2. **stock_price_daily** - 每日價格資料
+3. **stock_institutional_daily** - 三大法人買賣超
+4. **stock_margin_daily** - 融資融券資料
+5. **stock_lending_daily** - 借券賣出資料
+6. **stock_top20_volume_daily** - 成交量前 20 名
+7. **stock_analysis_daily** - 技術分析寬表（30+ 技術指標）
+8. **data_collection_log** - 資料收集記錄
+9. **data_import_log** - 資料匯入記錄
+
+### 技術分析寬表
+
+`stock_analysis_daily` 表包含完整的技術指標：
+
+- **移動平均線**: MA5, MA10, MA20, MA60, MA120, MA240
+- **RSI 指標**: RSI6, RSI14
+- **MACD 指標**: DIF, DEA, Histogram
+- **DMI 指標**: PDI, MDI, ADX, ADXR
+- **布林通道**: Upper, Mid, Lower
+- **成交量分析**: Vol MA5, Vol MA20, Vol Ratio, VWAP
+
+### 快速部署資料庫
+
+```bash
+# PostgreSQL
+cd deployment/database/postgresql
+cp .env.example .env
+# 編輯 .env 設定密碼
+docker-compose up -d
+
+# SQLite
+cd deployment/database/sqlite
+cp .env.example .env
+docker-compose up -d
+```
+
+### 查詢範例文檔
+
+完整的 SQL 查詢範例請參考：
+- **[SQL 查詢範例](docs/database/QUERY_EXAMPLES.md)** - 60+ 實用 SQL 查詢
+- **[快速參考手冊](docs/database/QUICK_REFERENCE.md)** - 常用查詢速查表
 
 ---
 
@@ -334,8 +414,18 @@ cat data/raw/price/2024/12/2024-12-27.json | jq '.data | length'
 
 ### 核心文件
 - **[資料目錄說明](data/README.md)** - 資料結構與格式詳細說明
+- **[資料庫說明](database/README.md)** - 資料庫架構與 Schema 說明
 - **[資料驗證規範](docs/DATA_VALIDATION_SPEC.md)** - 完整驗證標準與抽樣機制
 - **[TWSE API 參考文件](docs/TWSE_API_REFERENCE.md)** - 證交所 OpenAPI 完整端點說明
+
+### 資料庫文檔
+- **[SQL 查詢範例](docs/database/QUERY_EXAMPLES.md)** - 涵蓋選股策略、效能優化等 60+ 查詢範例
+- **[快速參考手冊](docs/database/QUICK_REFERENCE.md)** - 常用 SQL 查詢速查表
+
+### 部署文檔
+- **[部署說明](deployment/README.md)** - 整體部署架構與快速開始
+- **[PostgreSQL 部署](deployment/database/postgresql/README.md)** - PostgreSQL 部署詳細說明
+- **[SQLite 部署](deployment/database/sqlite/README.md)** - SQLite 部署詳細說明
 
 ### 規格書
 - **[Phase 1: 資料擷取與儲存](docs/specifications/PHASE1_DATA_COLLECTION.md)** - GitHub Actions 自動化收集
@@ -385,5 +475,5 @@ MIT License
 
 ---
 
-**最後更新**: 2025-12-28
-**版本**: Phase 1 資料收集完成
+**最後更新**: 2026-02-01
+**版本**: Phase 1 資料收集完成 + 資料庫架構建置完成
