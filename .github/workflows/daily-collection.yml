@@ -70,6 +70,8 @@ jobs:
             -e COLLECTION_DATE="${COLLECTION_DATE}" \
             -e COLLECTION_TYPES="${COLLECTION_TYPES}" \
             -e TZ=Asia/Taipei \
+            -e CI=true \
+            -e GITHUB_ACTIONS=true \
             -v ${{ github.workspace }}/data:/app/data \
             -v ${{ github.workspace }}/logs:/app/logs \
             -v ${{ github.workspace }}/cache:/app/cache \

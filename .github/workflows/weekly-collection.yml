@@ -57,6 +57,8 @@ jobs:
           docker run --rm \
             -e COLLECTION_DATE="${COLLECTION_DATE}" \
             -e TZ=Asia/Taipei \
+            -e CI=true \
+            -e GITHUB_ACTIONS=true \
             -v ${{ github.workspace }}/data:/app/data \
             -v ${{ github.workspace }}/logs:/app/logs \
             -v ${{ github.workspace }}/cache:/app/cache \
@@ -71,6 +73,8 @@ jobs:
           if [ "$CURRENT_DAY" -le 10 ]; then
             docker run --rm \
               -e TZ=Asia/Taipei \
+              -e CI=true \
+              -e GITHUB_ACTIONS=true \
               -v ${{ github.workspace }}/data:/app/data \
               -v ${{ github.workspace }}/logs:/app/logs \
               -v ${{ github.workspace }}/cache:/app/cache \
