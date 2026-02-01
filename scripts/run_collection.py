@@ -95,6 +95,13 @@ def main():
     if not args.skip_trading_day_check:
         if not is_trading_day(date):
             print(f"⚠️  警告: {date} 不是交易日（週末或國定假日）")
+
+            # 在 CI 環境中自動跳過非交易日
+            if os.getenv('CI') or os.getenv('GITHUB_ACTIONS'):
+                print("🤖 CI 環境偵測到非交易日，自動跳過收集")
+                return 0
+
+            # 本地環境詢問使用者
             response = input("是否繼續收集? (y/N): ")
             if response.lower() != 'y':
                 print("已取消收集")
