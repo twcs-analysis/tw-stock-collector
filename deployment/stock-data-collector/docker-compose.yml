@@ -32,10 +32,9 @@ services:
       - PYTHONUNBUFFERED=1
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
     # 執行特定日期的收集
-    # 可透過環境變數覆寫
-    command: >
-      python -m scripts.run_collection
-      --date ${COLLECTION_DATE:-today}
+    # Dockerfile 已設定 ENTRYPOINT 為 python /app/scripts/run_collection.py
+    # 這裡只需要提供參數
+    command: ["--date", "2024-12-27", "--skip-trading-day-check"]
     networks:
       - stock-network
 
