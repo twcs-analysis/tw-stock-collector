@@ -80,21 +80,29 @@ python scripts/backfill.py --start 2025-01-01 --end 2025-01-31
 #### 使用 Docker
 
 ```bash
-# 收集指定日期所有類型
-COLLECTION_DATE=2024-12-27 docker-compose --profile collection up
+# 進入 deployment 目錄
+cd deployment/stock-data-collector
 
-# 收集特定類型
-COLLECTION_DATE=2024-12-27 COLLECTION_TYPES="price margin" docker-compose --profile collection up
+# 1. 準備環境
+cp .env.example .env
 
-# 回補歷史資料
-START_DATE=2025-01-01 END_DATE=2025-01-31 docker-compose --profile backfill up
+# 2. 修改收集日期
+# 編輯 docker-compose.yml 中的 command 參數
+# command: ["--date", "2024-12-27", "--skip-trading-day-check"]
+
+# 3. 執行收集
+docker-compose up
+
+# 4. 查看結果
+ls -lh ../../data/raw/price/2024/12/
 ```
 
-**環境變數說明:**
-- `COLLECTION_DATE`: 收集日期（預設：yesterday）
-- `COLLECTION_TYPES`: 資料類型，空格分隔（預設：price institutional margin lending）
-- `START_DATE`: 回補開始日期
-- `END_DATE`: 回補結束日期
+**注意事項:**
+- Docker 方式需要手動修改 `docker-compose.yml` 中的日期
+- 主要用於本地開發測試,不支援環境變數動態設定
+- 建議使用 Python 腳本或 GitHub Actions 進行自動化收集
+
+詳細說明: [deployment/stock-data-collector/README.md](deployment/stock-data-collector/README.md)
 
 ### 設定 GitHub Actions 自動化
 
