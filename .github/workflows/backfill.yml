@@ -19,7 +19,7 @@ on:
       types:
         description: '資料類型 (用空格分隔)'
         required: false
-        default: 'price institutional margin lending'
+        default: 'price institutional margin lending top20_volume'
         type: string
       batch_size:
         description: '批次大小（每批處理天數）'

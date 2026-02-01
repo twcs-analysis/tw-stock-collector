@@ -20,7 +20,8 @@ from src.collectors import (
     PriceCollector,
     MarginCollector,
     InstitutionalCollector,
-    LendingCollector
+    LendingCollector,
+    Top20VolumeCollector
 )
 from src.utils import is_trading_day, get_latest_trading_day
 
@@ -31,6 +32,7 @@ COLLECTORS = {
     'margin': MarginCollector,
     'institutional': InstitutionalCollector,
     'lending': LendingCollector,
+    'top20_volume': Top20VolumeCollector,
 }
 
 

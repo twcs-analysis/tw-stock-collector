@@ -13,7 +13,7 @@ on:
       types:
         description: '資料類型 (用空格分隔，如: price institutional)'
         required: false
-        default: 'price institutional margin lending'
+        default: 'price institutional margin lending top20_volume'
         type: string
 
 env:
@@ -54,7 +54,7 @@ jobs:
           if [ -n "${{ github.event.inputs.types }}" ]; then
             echo "types=${{ github.event.inputs.types }}" >> $GITHUB_OUTPUT
           else
-            echo "types=price institutional margin lending" >> $GITHUB_OUTPUT
+            echo "types=price institutional margin lending top20_volume" >> $GITHUB_OUTPUT
           fi
 
       - name: Pull Docker image
