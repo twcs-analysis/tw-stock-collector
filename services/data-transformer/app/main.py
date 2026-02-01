@@ -11,7 +11,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from technical_analysis_transformer import TechnicalAnalysisTransformer
+from app.technical_analysis_transformer import TechnicalAnalysisTransformer
 from common.utils import get_logger, get_global_config
 
 logger = get_logger(__name__)

@@ -18,9 +18,9 @@ import pandas as pd
 import sys
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from base_transformer import BaseTransformer, TransformerError
+from app.base_transformer import BaseTransformer, TransformerError
 from common.utils import get_logger
-import indicators  # 使用我們自己的指標計算模組
+import app.indicators as indicators  # 使用我們自己的指標計算模組
 
 logger = get_logger(__name__)
 

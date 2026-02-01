@@ -41,8 +41,14 @@
 - 新增成交量前 20 名使用說明 (`docs/TOP20_VOLUME_USAGE.md`)
   - 包含資料欄位說明、使用範例、分析範例
 - 新增測試腳本 (`scripts/test_top20_volume.py`)
+- 新增歷史資料回補腳本
+  - `scripts/refetch_2025.sh`: 重新抓取 2025 年 1 月股價資料
+  - `scripts/fetch_2025_price.sh`: 抓取 2025 年 2-12 月股價資料
 
 ### 修改
+- 修正 data-transformer import 路徑
+  - `main.py`: 修正 `TechnicalAnalysisTransformer` import 路徑為 `app.technical_analysis_transformer`
+  - `technical_analysis_transformer.py`: 修正 `BaseTransformer` 和 `indicators` import 路徑為 `app.*`
 - 修正資料收集 API 以支援歷史查詢
   - 改用支援歷史查詢的舊版 TWSE/TPEx API
   - `twse_datasource.py`: 改用 `/rwd/zh/afterTrading/MI_INDEX` API
