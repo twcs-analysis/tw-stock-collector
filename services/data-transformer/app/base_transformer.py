@@ -415,12 +415,37 @@ class BaseTransformer(ABC):
 
     def get_stats(self) -> Dict[str, Any]:
         """
-        獲取統計資訊
+        獲取統計資訊（包含衍生指標）
 
         Returns:
             Dict: 統計資訊
         """
-        return self.stats.copy()
+        # 計算衍生指標
+        if self.stats['end_time'] and self.stats['start_time']:
+            duration = (self.stats['end_time'] - self.stats['start_time']).total_seconds()
+        else:
+            duration = 0
+
+        total = self.stats['success_count'] + self.stats['failed_count']
+        success_rate = (self.stats['success_count'] / total * 100) if total > 0 else 0
+        throughput = self.stats['total_records'] / duration if duration > 0 else 0
+
+        return {
+            # 基礎計數
+            'total_records': self.stats['total_records'],
+            'success_count': self.stats['success_count'],
+            'failed_count': self.stats['failed_count'],
+
+            # 時間信息
+            'start_time': self.stats['start_time'],
+            'end_time': self.stats['end_time'],
+            'duration_seconds': duration,
+
+            # 衍生指標
+            'success_rate': f"{success_rate:.1f}%",
+            'records_per_second': f"{throughput:.2f}",
+            'total_operations': total,
+        }
 
     def reset_stats(self) -> None:
         """重置統計資訊"""
