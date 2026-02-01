@@ -64,8 +64,16 @@ class TPExMarginDataSource:
         Returns:
             包含融資融券資料的 DataFrame
         """
+        # 轉換日期格式：YYYY-MM-DD -> YYY/MM/DD (民國年)
+        from datetime import datetime as dt
+        date_obj = dt.strptime(date, '%Y-%m-%d')
+        roc_year = date_obj.year - 1911
+        date_str = f"{roc_year}/{date_obj.month:02d}/{date_obj.day:02d}"
+
         # TPEx API 使用 result.php 端點
-        url = f"{self.BASE_URL}/margin_bal_result.php"
+        import time
+        timestamp = int(time.time() * 1000)
+        url = f"{self.BASE_URL}/margin_bal_result.php?l=zh-tw&t=D&d={date_str}&s=0,asc,0&_={timestamp}"
 
         try:
             response = self.session.get(url, timeout=self.timeout, verify=False)

@@ -43,6 +43,15 @@
 - 新增測試腳本 (`scripts/test_top20_volume.py`)
 
 ### 修改
+- 修正資料收集 API 以支援歷史查詢
+  - 改用支援歷史查詢的舊版 TWSE/TPEx API
+  - `twse_datasource.py`: 改用 `/rwd/zh/afterTrading/MI_INDEX` API
+  - `tpex_datasource.py`: 改用 `/web/stock/aftertrading/otc_quotes_no1430` API
+  - `twse_margin_datasource.py`: 改用 `/marginTrading/MI_MARGN?selectType=STOCK` API
+  - `tpex_margin_datasource.py`: 加入日期參數支援
+  - `top20_volume_collector.py`: 改用 `/rwd/zh/afterTrading/MI_INDEX20` API
+  - 加入 User-Agent headers 避免 API 封鎖
+  - 修正 2024-2025 年資料收集問題（之前所有日期都返回相同資料）
 - 修正 `BaseTransformer` 輸出路徑
   - 轉換後的資料儲存至 `data/transformed/` 而非 `data/raw/`
   - 新增 `output_base_path` 屬性區分原始資料與轉換資料

@@ -40,34 +40,47 @@ class Top20VolumeCollector(BaseCollector):
         self.logger.info(f"開始收集 top20_volume 資料: {self.date}")
 
         try:
-            # 使用 TWSE OpenAPI
-            url = "https://openapi.twse.com.tw/v1/exchangeReport/MI_INDEX20"
+            # 轉換日期格式：YYYY-MM-DD -> YYYYMMDD
+            date_str = self.date.replace('-', '')
+            # 使用舊版 TWSE API（支援歷史查詢）
+            url = f"https://www.twse.com.tw/rwd/zh/afterTrading/MI_INDEX20?date={date_str}&response=json"
 
             self.logger.info(f"查詢 TWSE API: {url}")
             response = requests.get(url, timeout=30, verify=False)
             response.raise_for_status()
-            data = response.json()
+            result = response.json()
 
+            # 檢查狀態
+            if result.get('stat') != 'OK':
+                self.logger.warning(f"TWSE 無資料: {self.date} (stat={result.get('stat')})")
+                return {}
+
+            # 從 data 欄位取得資料
+            data = result.get('data', [])
             if not data:
                 self.logger.warning(f"TWSE 無資料: {self.date}")
                 return {}
 
             # 處理資料
+            # 資料格式: [排名, 代號, 名稱, 成交股數, 成交筆數, 開盤價, 最高價, 最低價, 收盤價, 漲跌方向, 漲跌價差, ...]
             processed_data = []
-            for idx, item in enumerate(data, 1):
+            for item in data:
+                if len(item) < 11:
+                    continue
                 record = {
-                    'rank': idx,
+                    'rank': item[0],
                     'date': self.date,
-                    'stock_id': item.get('Code', ''),
-                    'stock_name': item.get('Name', '').strip(),
-                    'volume': self._parse_number(item.get('TradeVolume', 0)),
-                    'amount': self._parse_number(item.get('TradeValue', 0)),
-                    'transaction_count': self._parse_number(item.get('Transaction', 0)),
-                    'open': self._parse_number(item.get('OpeningPrice', 0)),
-                    'high': self._parse_number(item.get('HighestPrice', 0)),
-                    'low': self._parse_number(item.get('LowestPrice', 0)),
-                    'close': self._parse_number(item.get('ClosingPrice', 0)),
-                    'change': self._parse_number(item.get('Change', 0)),
+                    'stock_id': str(item[1]),
+                    'stock_name': str(item[2]).strip(),
+                    'volume': self._parse_number(item[3]),
+                    'transaction_count': self._parse_number(item[4]),
+                    'open': self._parse_number(item[5]),
+                    'high': self._parse_number(item[6]),
+                    'low': self._parse_number(item[7]),
+                    'close': self._parse_number(item[8]),
+                    # item[9] 是漲跌方向 HTML 標籤，跳過
+                    'change': self._parse_number(item[10]),
+                    'amount': 0.0,  # 舊版 API 沒有成交金額
                     'type': 'twse'
                 }
                 processed_data.append(record)

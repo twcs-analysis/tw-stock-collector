@@ -25,6 +25,10 @@ class TWSEDataSource(BaseDataSource):
     def __init__(self, timeout: int = 30):
         self.timeout = timeout
         self.session = requests.Session()
+        # 添加 headers 避免被封鎖
+        self.session.headers.update({
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        })
 
     def get_daily_prices(
         self,
@@ -34,38 +38,44 @@ class TWSEDataSource(BaseDataSource):
         """
         取得 TWSE 每日價量資料
 
-        API: /exchangeReport/STOCK_DAY_ALL
-        回傳當日所有上市股票成交資訊
+        API: /rwd/zh/afterTrading/MI_INDEX (舊版 API，支援歷史查詢)
+        回傳指定日期所有上市股票成交資訊
         """
-        url = f"{self.BASE_URL}/exchangeReport/STOCK_DAY_ALL"
+        # 轉換日期格式：YYYY-MM-DD -> YYYYMMDD
+        date_str = date.replace('-', '')
+        url = f"https://www.twse.com.tw/rwd/zh/afterTrading/MI_INDEX?date={date_str}&type=ALL&response=json"
 
         try:
             logger.info(f"查詢 TWSE API: {url}")
             response = self.session.get(url, timeout=self.timeout, verify=False)
             response.raise_for_status()
-            data = response.json()
+            result = response.json()
 
-            if not data:
+            # 檢查狀態
+            if result.get('stat') != 'OK':
+                logger.warning(f"TWSE 無資料: {date} (stat={result.get('stat')})")
+                return pd.DataFrame()
+
+            # 從 tables[8] 取得每日收盤行情資料
+            tables = result.get('tables', [])
+            if len(tables) < 9:
+                logger.warning(f"TWSE 資料格式錯誤: {date}")
+                return pd.DataFrame()
+
+            table_data = tables[8].get('data', [])
+            if not table_data:
                 logger.warning(f"TWSE 無資料: {date}")
                 return pd.DataFrame()
 
-            # 轉換為 DataFrame
-            df = pd.DataFrame(data)
-            logger.info(f"TWSE 原始資料: {len(df)} 筆")
+            logger.info(f"TWSE 原始資料: {len(table_data)} 筆")
 
-            # 欄位對應
-            df = df.rename(columns={
-                'Code': 'stock_id',
-                'Name': 'stock_name',
-                'OpeningPrice': 'open',
-                'HighestPrice': 'high',
-                'LowestPrice': 'low',
-                'ClosingPrice': 'close',
-                'TradeVolume': 'volume',
-                'TradeValue': 'amount',
-                'Transaction': 'transaction_count',
-                'Change': 'change_price'
-            })
+            # 轉換為 DataFrame
+            # 欄位: [證券代號, 證券名稱, 成交股數, 成交筆數, 成交金額, 開盤價, 最高價, 最低價, 收盤價, 漲跌(+/-), 漲跌價差, ...]
+            df = pd.DataFrame(table_data, columns=[
+                'stock_id', 'stock_name', 'volume', 'transaction_count', 'amount',
+                'open', 'high', 'low', 'close', 'change_direction', 'change_price',
+                'last_buy_price', 'last_buy_volume', 'last_sell_price', 'last_sell_volume', 'pe_ratio'
+            ])
 
             # 只保留 4 位數股票代碼（排除 ETF、權證等）
             df = df[df['stock_id'].str.len() == 4]
@@ -74,12 +84,14 @@ class TWSEDataSource(BaseDataSource):
             # 加入日期
             df['date'] = date
 
-            # 資料清理：移除逗號並轉換為數值
+            # 資料清理：移除逗號、HTML 標籤並轉換為數值
             numeric_cols = ['open', 'high', 'low', 'close', 'volume', 'amount', 'transaction_count', 'change_price']
             for col in numeric_cols:
                 if col in df.columns:
-                    # 移除逗號、處理特殊符號
+                    # 移除逗號、HTML 標籤、處理特殊符號
                     df[col] = df[col].astype(str).str.replace(',', '').str.replace('--', '0').str.replace('X', '0')
+                    # 移除 HTML 標籤（如 <p style= color:green>-</p>）
+                    df[col] = df[col].str.replace(r'<[^>]+>', '', regex=True)
                     df[col] = pd.to_numeric(df[col], errors='coerce')
 
             # 篩選股票
@@ -89,7 +101,7 @@ class TWSEDataSource(BaseDataSource):
             # 加入市場類型
             df['type'] = 'twse'
 
-            # 只保留需要的欄位，移除多餘欄位
+            # 只保留需要的欄位
             keep_cols = ['date', 'stock_id', 'stock_name', 'open', 'high', 'low', 'close',
                         'volume', 'amount', 'transaction_count', 'change_price', 'type']
             df = df[[col for col in keep_cols if col in df.columns]]
