@@ -268,16 +268,55 @@ class BaseTransformer(ABC):
                     'error': 'Failed to save data'
                 }
 
+        # 分別處理不同類型的異常
+        except TransformerError as e:
+            # 預期的轉換器錯誤（如數據不足）
+            self.logger.warning(
+                f"轉換器錯誤: date={date}, stock_id={stock_id}, 錯誤={e}"
+            )
+            self.stats['failed_count'] += 1
+            return {
+                'status': 'failed',
+                'records': 0,
+                'error': f"TransformerError: {str(e)}"
+            }
+
+        except FileNotFoundError as e:
+            # 源數據文件不存在（可能是正常的）
+            self.logger.debug(
+                f"來源資料檔案不存在: date={date}, stock_id={stock_id}"
+            )
+            return {
+                'status': 'no_data',
+                'records': 0,
+                'error': f"FileNotFoundError: {str(e)}"
+            }
+
+        except MemoryError as e:
+            # 記憶體不足（系統級錯誤，應該重新拋出）
+            self.logger.critical(
+                f"記憶體不足，無法繼續: date={date}",
+                exc_info=True
+            )
+            raise  # 重新拋出，讓上層處理
+
+        except KeyboardInterrupt:
+            # 用戶中斷（應該重新拋出）
+            self.logger.warning("用戶中斷操作")
+            raise  # 重新拋出，讓上層處理
+
         except Exception as e:
+            # 未預期的錯誤
             self.logger.error(
-                f"轉換或儲存失敗: date={date}, stock_id={stock_id}, 錯誤={e}",
+                f"未預期的錯誤: date={date}, stock_id={stock_id}, "
+                f"錯誤類型={type(e).__name__}, 錯誤={e}",
                 exc_info=True
             )
             self.stats['failed_count'] += 1
             return {
                 'status': 'failed',
                 'records': 0,
-                'error': str(e)
+                'error': f"{type(e).__name__}: {str(e)}"
             }
 
     def batch_transform(

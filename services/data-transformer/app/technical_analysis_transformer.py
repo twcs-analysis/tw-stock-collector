@@ -254,12 +254,18 @@ class TechnicalAnalysisTransformer(BaseTransformer):
         """
         計算單一股票的所有技術指標
 
+        統一使用 datetime 格式進行所有計算，只在最後轉為字串
+
         Args:
             df: 股票的歷史價格資料
 
         Returns:
             pd.DataFrame: 包含技術指標的資料
         """
+        # 確保 trade_date 是 datetime 格式（統一數據類型）
+        if not pd.api.types.is_datetime64_any_dtype(df['trade_date']):
+            df['trade_date'] = pd.to_datetime(df['trade_date'])
+
         # 設定索引為日期
         df = df.set_index('trade_date').sort_index()
 
@@ -322,7 +328,7 @@ class TechnicalAnalysisTransformer(BaseTransformer):
         # ========================================
         df = df.reset_index()
 
-        # 只保留需要的欄位
+        # 定義輸出欄位
         output_columns = [
             # 基礎資料
             'trade_date', 'stock_id',
@@ -341,11 +347,19 @@ class TechnicalAnalysisTransformer(BaseTransformer):
             'vol_ma5', 'vol_ma20', 'vol_ratio', 'vwap'
         ]
 
-        # 只保留存在的欄位 (避免某些指標計算失敗時出錯)
+        # 只保留存在的欄位，並記錄缺失的欄位
         existing_columns = [col for col in output_columns if col in df.columns]
+        missing_columns = [col for col in output_columns if col not in df.columns]
+
+        if missing_columns:
+            stock_id = df['stock_id'].iloc[0] if not df.empty and 'stock_id' in df.columns else 'unknown'
+            self.logger.warning(
+                f"股票 {stock_id} 缺少欄位: {missing_columns}"
+            )
+
         df = df[existing_columns]
 
-        # 將 trade_date 轉為字串格式
+        # 只在最後轉為字串格式（統一數據類型轉換時機）
         df['trade_date'] = df['trade_date'].dt.strftime('%Y-%m-%d')
 
         return df

@@ -191,20 +191,26 @@ def adx(high: pd.Series, low: pd.Series, close: pd.Series, period: int = 14) -> 
     plus_dm = high_diff.where((high_diff > low_diff) & (high_diff > 0), 0)
     minus_dm = low_diff.where((low_diff > high_diff) & (low_diff > 0), 0)
 
-    # 計算 TR (True Range)
-    tr = atr(high, low, close, 1)  # 使用 period=1 獲取單日 TR
+    # 直接計算 True Range (而不是調用 atr() 函數)
+    high_low = high - low
+    high_close = (high - close.shift()).abs()
+    low_close = (low - close.shift()).abs()
+    tr = pd.concat([high_low, high_close, low_close], axis=1).max(axis=1)
 
     # 計算平滑後的 +DM, -DM, TR
     atr_val = tr.rolling(window=period, min_periods=period).mean()
     plus_dm_smooth = plus_dm.rolling(window=period, min_periods=period).mean()
     minus_dm_smooth = minus_dm.rolling(window=period, min_periods=period).mean()
 
-    # 計算 +DI 和 -DI
-    pdi = 100 * (plus_dm_smooth / atr_val)
-    mdi = 100 * (minus_dm_smooth / atr_val)
+    # 計算 +DI 和 -DI (避免除以零)
+    with np.errstate(divide='ignore', invalid='ignore'):
+        pdi = 100 * (plus_dm_smooth / atr_val.replace(0, np.nan))
+        mdi = 100 * (minus_dm_smooth / atr_val.replace(0, np.nan))
 
-    # 計算 DX 和 ADX
-    dx = 100 * ((pdi - mdi).abs() / (pdi + mdi))
+    # 計算 DX 和 ADX (避免除以零)
+    with np.errstate(divide='ignore', invalid='ignore'):
+        dx = 100 * ((pdi - mdi).abs() / (pdi + mdi).replace(0, np.nan))
+
     adx_val = dx.rolling(window=period, min_periods=period).mean()
 
     return pd.DataFrame({
