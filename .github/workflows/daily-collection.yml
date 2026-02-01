@@ -27,6 +27,7 @@ jobs:
     permissions:
       contents: write
       packages: read
+      issues: write
 
     steps:
       - name: Checkout code
@@ -73,7 +74,7 @@ jobs:
             -v ${{ github.workspace }}/logs:/app/logs \
             -v ${{ github.workspace }}/cache:/app/cache \
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:phase1-latest \
-            python scripts/run_collection.py --date ${COLLECTION_DATE} --types ${COLLECTION_TYPES}
+            --date ${COLLECTION_DATE} --types ${COLLECTION_TYPES}
 
       - name: Check collected data
         run: |
