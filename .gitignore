@@ -83,3 +83,5 @@ htmlcov/
 .dmypy.json
 dmypy.json
 venv/
+*_backup.py
+*_old.py
