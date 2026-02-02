@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       date:
-        description: '收集日期 (YYYY-MM-DD，留空為昨天)'
+        description: '收集日期 (YYYY-MM-DD，留空為當天)'
         required: false
         type: string
       types:
@@ -47,9 +47,16 @@ jobs:
         run: |
           if [ -n "${{ github.event.inputs.date }}" ]; then
             echo "date=${{ github.event.inputs.date }}" >> $GITHUB_OUTPUT
+            DATE_ARG="--date ${{ github.event.inputs.date }}"
+            COMMIT_DATE="${{ github.event.inputs.date }}"
           else
-            echo "date=yesterday" >> $GITHUB_OUTPUT
+            # 不指定日期，讓程式使用當天日期
+            DATE_ARG=""
+            COMMIT_DATE=$(date +%Y-%m-%d)
           fi
+
+          echo "date_arg=${DATE_ARG}" >> $GITHUB_OUTPUT
+          echo "commit_date=${COMMIT_DATE}" >> $GITHUB_OUTPUT
 
           if [ -n "${{ github.event.inputs.types }}" ]; then
             echo "types=${{ github.event.inputs.types }}" >> $GITHUB_OUTPUT
@@ -71,7 +78,7 @@ jobs:
             -v ${{ github.workspace }}/data:/app/data \
             -v ${{ github.workspace }}/logs:/app/logs \
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/data-collector:latest \
-            --date ${{ steps.params.outputs.date }} \
+            ${{ steps.params.outputs.date_arg }} \
             --types ${{ steps.params.outputs.types }}
 
       - name: Check collected data
@@ -90,20 +97,13 @@ jobs:
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
 
-          # 設定日期（用於 commit message）
-          if [ "${{ steps.params.outputs.date }}" = "yesterday" ]; then
-            COMMIT_DATE=$(date -d "yesterday" +%Y-%m-%d 2>/dev/null || date -v-1d +%Y-%m-%d)
-          else
-            COMMIT_DATE="${{ steps.params.outputs.date }}"
-          fi
-
           git add data/raw/ logs/
 
           # 檢查是否有變更
           if git diff --staged --quiet; then
             echo "沒有新資料需要提交"
           else
-            git commit -m "data: Daily collection for ${COMMIT_DATE}" \
+            git commit -m "data: Daily collection for ${{ steps.params.outputs.commit_date }}" \
                        -m "Collected data types: ${{ steps.params.outputs.types }}" \
                        -m "🤖 Automated collection by GitHub Actions"
 
@@ -115,7 +115,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: collection-logs-${{ steps.params.outputs.date }}
+          name: collection-logs-${{ steps.params.outputs.commit_date }}
           path: logs/
           retention-days: 30
 
@@ -127,10 +127,10 @@ jobs:
             github.rest.issues.create({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              title: '🚨 Daily Collection Failed - ${{ steps.params.outputs.date }}',
+              title: '🚨 Daily Collection Failed - ${{ steps.params.outputs.commit_date }}',
               body: `## Collection Failed
 
-              **Date:** ${{ steps.params.outputs.date }}
+              **Date:** ${{ steps.params.outputs.commit_date }}
               **Types:** ${{ steps.params.outputs.types }}
               **Workflow:** [Run #${{ github.run_number }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
 

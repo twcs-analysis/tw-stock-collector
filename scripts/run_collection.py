@@ -49,7 +49,7 @@ def parse_args():
   # 只收集價格和融資融券資料
   python scripts/run_collection.py --date 2024-12-27 --types price margin
 
-  # 使用最近交易日
+  # 使用當天日期
   python scripts/run_collection.py
         """
     )
@@ -57,7 +57,7 @@ def parse_args():
     parser.add_argument(
         '--date',
         type=str,
-        help='收集日期 (YYYY-MM-DD)，不指定則使用最近交易日'
+        help='收集日期 (YYYY-MM-DD)，不指定則使用當天日期'
     )
 
     parser.add_argument(
@@ -90,8 +90,9 @@ def main():
     if args.date:
         date = args.date
     else:
-        date = get_latest_trading_day()
-        print(f"未指定日期，使用最近交易日: {date}")
+        # 預設使用當天日期
+        date = datetime.now().strftime('%Y-%m-%d')
+        print(f"未指定日期，使用當天日期: {date}")
 
     # 檢查是否為交易日
     if not args.skip_trading_day_check:

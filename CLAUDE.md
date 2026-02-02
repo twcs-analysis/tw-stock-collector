@@ -153,7 +153,7 @@ class BaseCollector:
 ### 本地執行
 
 ```bash
-# 收集今日資料（自動偵測最近交易日）
+# 收集當天資料（預設使用當天日期）
 python scripts/run_collection.py
 
 # 收集指定日期的所有資料
