@@ -112,7 +112,7 @@ export DB_PASSWORD=your_password
 - ✅ 彩色日誌輸出
 - ✅ 友善的錯誤訊息
 
-**預設輸出位置**：`data/processed/technical/`
+**預設輸出位置**：`data/transformed/technical/`
 
 ### 進階用法（直接使用 Python）
 

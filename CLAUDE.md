@@ -44,12 +44,12 @@
 - ✅ VWAP 修正: amount ÷ volume
 - ✅ ADX 修正: Wilder's Smoothing (EWM)
 - ⚡ 效能: ~20 秒處理 1,900 檔股票
-- 📂 輸出路徑: `data/processed/technical/`
+- 📂 輸出路徑: `data/transformed/technical/`
 
 **資料儲存架構**：
 1. **原始資料**: `data/raw/` - JSON 檔案（版本控制，2020-2026）
 2. **資料庫**: PostgreSQL - 結構化資料（目前僅 2024-2026）
-3. **處理後資料**: `data/processed/` - 技術指標等衍生資料
+3. **轉換後資料**: `data/transformed/` - 技術指標等衍生資料
 
 ---
 

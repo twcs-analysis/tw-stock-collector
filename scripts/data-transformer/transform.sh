@@ -31,7 +31,7 @@ PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 PYTHON_SCRIPT="$SCRIPT_DIR/run_technical_analysis.py"
 
 # 輸出目錄
-OUTPUT_DIR="$PROJECT_ROOT/data/processed/technical"
+OUTPUT_DIR="$PROJECT_ROOT/data/transformed/technical"
 
 # 日誌函式
 log_info() {

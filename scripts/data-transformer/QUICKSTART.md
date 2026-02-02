@@ -20,14 +20,14 @@ export DB_PASSWORD=tw_stock_dev_password_2024
 
 ### 3. 查看結果
 
-輸出檔案位於：`data/processed/technical/`
+輸出檔案位於：`data/transformed/technical/`
 
 ```bash
 # 查看檔案
-ls -lh data/processed/technical/
+ls -lh data/transformed/technical/
 
 # 查看內容
-head data/processed/technical/2026-02-02_all.csv
+head data/transformed/technical/2026-02-02_all.csv
 ```
 
 ---
