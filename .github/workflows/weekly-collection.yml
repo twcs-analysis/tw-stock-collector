@@ -106,7 +106,7 @@ jobs:
             COMMIT_DATE="${{ steps.date.outputs.date }}"
           fi
 
-          git add data/raw/ logs/
+          git add data/raw/
 
           if git diff --staged --quiet; then
             echo "沒有新資料需要提交"

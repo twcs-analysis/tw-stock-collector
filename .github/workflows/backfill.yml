@@ -204,7 +204,7 @@ jobs:
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
 
-          git add data/raw/ logs/
+          git add data/raw/
 
           if git diff --staged --quiet; then
             echo "沒有新資料需要提交"
