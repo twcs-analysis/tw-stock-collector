@@ -76,21 +76,29 @@
 
 ### 本地收集資料
 
+#### 使用 Shell 腳本（推薦）
+
+```bash
+# 收集當天資料
+./scripts/data-collector/collect.sh
+
+# 收集指定日期的所有資料
+./scripts/data-collector/collect.sh 2026-02-02
+
+# 收集特定類型的資料
+./scripts/data-collector/collect.sh 2026-02-02 price margin
+# 可用類型: price, institutional, margin, lending, top20_volume
+
+# 回補歷史資料（自動完成：收集 → 匯入 → 轉換）
+./scripts/data-collector/backfill.sh 2026-01-01 2026-01-31
+```
+
 #### 使用 Python 腳本
 
 ```bash
-# 收集當天資料（預設使用當天日期）
-python scripts/run_collection.py
-
-# 收集指定日期的所有資料
-python scripts/run_collection.py --date 2024-12-27
-
-# 收集特定類型的資料
-python scripts/run_collection.py --date 2024-12-27 --types price margin
-# 可用類型: price, institutional, margin, lending, top20_volume
-
-# 回補歷史資料
-python scripts/backfill.py --start 2025-01-01 --end 2025-01-31
+# 或使用 Python 直接調用
+python scripts/run_collection.py --date 2026-02-02
+python scripts/backfill.py --start 2026-01-01 --end 2026-01-31
 ```
 
 #### 使用 Docker
@@ -221,26 +229,26 @@ tw-stock-collector/
 │   ├── backfill.yml             # 歷史資料回補
 │   └── ci.yml                   # CI/CD 流程
 │
-├── src/                         # 核心程式碼
-│   ├── collectors/              # 資料收集器
-│   │   ├── base.py              # BaseCollector 基礎類別
-│   │   ├── price_collector.py   # 價格資料收集器
-│   │   ├── margin_collector.py  # 融資融券收集器
-│   │   ├── institutional_collector.py  # 三大法人收集器
-│   │   └── lending_collector.py # 借券賣出收集器
+├── services/                    # 服務化架構
+│   ├── common/                  # 共用核心模組
+│   │   ├── collectors/          # 資料收集器（統一實現）
+│   │   ├── datasources/         # API 資料源封裝
+│   │   ├── utils/               # 工具函式庫
+│   │   ├── validators/          # 資料驗證器
+│   │   └── database/            # ORM 模型
 │   │
-│   ├── datasources/             # 資料源 API 封裝
-│   │   ├── twse_datasource.py   # 證交所 API（上市）
-│   │   └── tpex_datasource.py   # 櫃買中心 API（上櫃）
-│   │
-│   └── utils/                   # 工具函式庫
-│       ├── date_helper.py       # 交易日判斷、日期轉換
-│       ├── file_handler.py      # 檔案操作、路徑管理
-│       └── logger.py            # 統一日誌記錄
+│   ├── data-collector/          # 資料收集服務
+│   ├── data-importer/           # 資料匯入服務
+│   ├── data-transformer/        # 資料轉換服務
+│   └── analyzer-service/        # 分析服務（規劃中）
 │
 ├── scripts/                     # 執行腳本
-│   ├── run_collection.py        # 資料收集主腳本
-│   └── backfill.py              # 歷史資料回補腳本
+│   ├── data-collector/          # 資料收集腳本
+│   │   ├── collect.sh           # 單日收集
+│   │   └── backfill.sh          # 歷史回補
+│   ├── data-importer/           # 資料匯入腳本
+│   ├── data-transformer/        # 技術指標轉換
+│   └── database/                # 資料庫管理
 │
 ├── data/                        # 資料儲存目錄
 │   └── raw/                     # 原始資料（JSON 格式）
@@ -290,17 +298,17 @@ tw-stock-collector/
 ### 本地收集資料
 
 ```bash
-# 收集今日所有資料（自動偵測最近交易日）
-python scripts/run_collection.py
+# 收集當天資料
+./scripts/data-collector/collect.sh
 
 # 收集指定日期的所有資料
-python scripts/run_collection.py --date 2024-12-27
+./scripts/data-collector/collect.sh 2026-02-02
 
 # 只收集特定類型資料
-python scripts/run_collection.py --date 2024-12-27 --types price margin
+./scripts/data-collector/collect.sh 2026-02-02 price margin
 
-# 跳過交易日檢查（測試或補資料用）
-python scripts/run_collection.py --date 2024-12-27 --skip-trading-day-check
+# 回補歷史資料（自動：收集 → 匯入 → 轉換）
+./scripts/data-collector/backfill.sh 2026-01-01 2026-01-31
 ```
 
 ### Docker 部署
@@ -492,5 +500,5 @@ MIT License
 
 ---
 
-**最後更新**: 2026-02-01
-**版本**: Phase 1 資料收集完成 + 資料庫架構建置完成
+**最後更新**: 2026-02-02
+**版本**: 架構重構完成 - 統一使用 services/common 模組
