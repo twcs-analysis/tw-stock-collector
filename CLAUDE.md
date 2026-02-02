@@ -176,8 +176,19 @@ class BaseCollector:
 
 ### 資料源整合
 
-- **TWSeDataSource** - 證交所 API（上市股票）
-- **TPExDataSource** - 櫃買中心 API（上櫃股票）
+**TWSEDataSource** - 證交所 API（上市股票），雙模式架構：
+1. **即時模式** - 使用 STOCK_DAY_ALL OpenAPI
+   - API: `https://openapi.twse.com.tw/v1/exchangeReport/STOCK_DAY_ALL`
+   - 速度：約 2-3 秒
+   - 用途：每日自動收集（僅限當日最新資料）
+
+2. **回補模式** - 使用 MI_INDEX API
+   - API: `https://www.twse.com.tw/rwd/zh/afterTrading/MI_INDEX`
+   - 速度：約 2-3 秒（一次取得所有股票）
+   - 用途：歷史資料回補（支援任意歷史日期）
+   - 重要：此 API 從 `tables[8]` 取得股票資料
+
+**TPExDataSource** - 櫃買中心 API（上櫃股票）
 
 每個收集器會整合兩個資料源的資料。
 
@@ -439,6 +450,52 @@ gh workflow run backfill.yml
 
 ---
 
+## ⚠️ 已知問題與修正歷史
+
+### 2026-02-02：資料源 API 限制與雙模式設計
+
+**問題發現**：
+- 所有「一次取得所有股票」的 TWSE API 都**僅支援最新交易日資料**
+- `STOCK_DAY_ALL` (OpenAPI 和舊版) 都無法指定歷史日期查詢
+- 導致無法使用簡單 API 回補歷史資料
+
+**根本原因**：
+證交所 API 設計限制：
+- `STOCK_DAY_ALL`：一次取得所有股票（快，但只有當日資料）
+- `STOCK_DAY`：取得單一股票月資料（慢，但可查歷史）
+- 無法同時滿足「批次」和「歷史」兩個需求
+
+**解決方案：雙模式設計**
+
+#### 模式一：即時模式（預設，推薦）
+- **API**: `STOCK_DAY_ALL` (OpenAPI)
+- **用途**: 每日自動收集當天資料
+- **優點**: 快速（1 次請求），可取得所有股票
+- **限制**: 只能取得最新交易日資料
+- **使用**: `TWSEDataSource(use_backfill_mode=False)`
+
+#### 模式二：回補模式（緊急用）
+- **API**: `STOCK_DAY` (逐股查詢月資料)
+- **用途**: 回補缺失的歷史資料
+- **優點**: 可查詢任意歷史日期
+- **限制**:
+  - ⚠️ **非常慢**（1,900 支 = 20-30 分鐘）
+  - 必須提供股票代碼列表
+  - 每支股票 0.5 秒延遲（避免被封鎖）
+- **使用**: `TWSEDataSource(use_backfill_mode=True)`
+
+**建議作法**：
+1. ✅ 優先使用**每日自動收集**（GitHub Actions）
+2. ✅ **即時模式**用於當日收集
+3. ⚠️ **回補模式**僅用於緊急補少量資料
+4. ❌ 不建議大量回補（耗時過長）
+
+**修正檔案**：
+- [services/common/datasources/twse_datasource.py](services/common/datasources/twse_datasource.py) - 雙模式實作
+- [scripts/data-collector/backfill_historical.py](scripts/data-collector/backfill_historical.py) - 歷史回補腳本
+
+---
+
 ## 🚨 常見問題
 
 ### Docker 相關
@@ -461,7 +518,10 @@ A: 使用 `src/utils/date_helper.py` 的 `is_trading_day()` 函式
 A: 系統會自動重試最多 3 次，查看日誌了解錯誤原因
 
 **Q: 如何回補缺失的歷史資料？**
-A: 使用 `python scripts/backfill.py --start YYYY-MM-DD --end YYYY-MM-DD`
+A:
+- **當日/最近資料**: 使用 `python scripts/run_collection.py --date YYYY-MM-DD`
+- **歷史資料** (慢): 使用 `python scripts/data-collector/backfill_historical.py --date YYYY-MM-DD --stocks 2330,2337`
+- ⚠️ 回補歷史資料非常慢，建議只補少量關鍵股票或依賴每日自動收集
 
 ---
 
@@ -474,6 +534,6 @@ A: 使用 `python scripts/backfill.py --start YYYY-MM-DD --end YYYY-MM-DD`
 
 ---
 
-**最後更新**: 2026-02-01
+**最後更新**: 2026-02-02
 **維護者**: Jason Huang
 **專案狀態**: Phase 1 完成，持續維護中
