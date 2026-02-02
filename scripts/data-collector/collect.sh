@@ -61,8 +61,12 @@ fi
 echo -e "${BLUE}[INFO]${NC} 執行資料收集..."
 echo ""
 
-# 執行收集腳本
-python3 "$PROJECT_ROOT/scripts/run_collection.py" $DATE_ARG $TYPES_ARG
+# 優先使用 services/data-collector 版本，否則使用 scripts 版本
+if [ -f "$PROJECT_ROOT/services/data-collector/app/main.py" ]; then
+    python3 "$PROJECT_ROOT/services/data-collector/app/main.py" $DATE_ARG $TYPES_ARG
+else
+    python3 "$PROJECT_ROOT/scripts/run_collection.py" $DATE_ARG $TYPES_ARG
+fi
 
 RESULT=$?
 

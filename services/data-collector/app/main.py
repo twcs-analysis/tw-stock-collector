@@ -3,19 +3,22 @@
 統一資料收集腳本
 
 使用方式:
-    python scripts/run_collection.py --date 2024-12-27 --types price margin institutional lending
-    python scripts/run_collection.py --date 2024-12-27  # 收集所有類型
-    python scripts/run_collection.py  # 使用最近交易日，收集所有類型
+    python services/data-collector/app/main.py --date 2024-12-27 --types price margin institutional lending
+    python services/data-collector/app/main.py --date 2024-12-27  # 收集所有類型
+    python services/data-collector/app/main.py  # 使用最近交易日，收集所有類型
 """
 
 import sys
 import os
 import argparse
 from datetime import datetime
+from pathlib import Path
 
-# Add src to path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+# Add project root to path
+project_root = Path(__file__).parent.parent.parent.parent
+sys.path.insert(0, str(project_root))
 
+# 使用 src/collectors（已驗證可運行的實現）
 from src.collectors import (
     PriceCollector,
     MarginCollector,
