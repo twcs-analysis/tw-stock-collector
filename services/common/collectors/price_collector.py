@@ -25,8 +25,18 @@ class PriceCollector(BaseCollector):
             date: 收集日期 (YYYY-MM-DD)
         """
         super().__init__(date)
-        self.twse_source = TWSEDataSource()
-        self.tpex_source = TPExDataSource()
+
+        # 判斷是否為歷史資料（非今天）→ 使用回補模式
+        today = datetime.now().strftime('%Y-%m-%d')
+        use_backfill = (date != today)
+
+        if use_backfill:
+            self.logger.info(f"歷史日期 {date}，使用回補模式（MI_INDEX API）")
+        else:
+            self.logger.info(f"當日資料 {date}，使用即時模式（OpenAPI）")
+
+        self.twse_source = TWSEDataSource(use_backfill_mode=use_backfill)
+        self.tpex_source = TPExDataSource(use_backfill_mode=use_backfill)
         self.merger = DataMerger()
 
     def get_data_type(self) -> str:

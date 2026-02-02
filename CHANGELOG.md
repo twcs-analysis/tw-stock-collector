@@ -4,6 +4,18 @@
 
 ## [Unreleased]
 
+### 修正
+- 修正歷史資料收集 API 問題
+  - `PriceCollector`: 新增自動判斷日期模式，歷史日期自動使用回補模式
+  - `TPExDataSource`: 實作雙模式架構（即時模式 + 回補模式）
+  - 回補模式使用 MI_INDEX API（TWSE）和傳統 API（TPEx）取得正確的歷史資料
+  - 修正因使用 OpenAPI 導致歷史資料重複/錯誤的問題
+  - 重新收集 2026-01-27 至 2026-02-02 的正確資料
+  - 技術指標計算修正（RSI、MACD 等指標恢復正常）
+
+### 移除
+- 移除臨時測試腳本 `scripts/data-transformer/transform_by_month.sh`
+
 ### 新增
 - 新增資料匯入服務 (`data-importer`)
   - 資料庫初始化腳本
