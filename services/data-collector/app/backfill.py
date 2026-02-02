@@ -15,15 +15,16 @@ import sys
 from datetime import datetime, timedelta
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).parent.parent))
+project_root = Path(__file__).parent.parent.parent.parent
+sys.path.insert(0, str(project_root))
 
-from src.collectors import (
+from services.common.collectors import (
     PriceCollector,
     MarginCollector,
     InstitutionalCollector,
     LendingCollector
 )
-from src.utils import is_trading_day
+from services.common.utils.date_helper import is_trading_day
 
 # 可用的收集器對應表
 COLLECTORS = {

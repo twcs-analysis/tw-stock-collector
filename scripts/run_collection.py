@@ -12,18 +12,20 @@ import sys
 import os
 import argparse
 from datetime import datetime
+from pathlib import Path
 
-# Add src to path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+# Add project root to path
+project_root = Path(__file__).parent.parent
+sys.path.insert(0, str(project_root))
 
-from src.collectors import (
+from services.common.collectors import (
     PriceCollector,
     MarginCollector,
     InstitutionalCollector,
     LendingCollector,
     Top20VolumeCollector
 )
-from src.utils import is_trading_day, get_latest_trading_day
+from services.common.utils.date_helper import is_trading_day, get_latest_trading_day
 
 
 # 可用的收集器對應表

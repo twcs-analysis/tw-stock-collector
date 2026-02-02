@@ -18,15 +18,15 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent.parent.parent
 sys.path.insert(0, str(project_root))
 
-# 使用 src/collectors（已驗證可運行的實現）
-from src.collectors import (
+# 使用 services/common 的統一實現
+from services.common.collectors import (
     PriceCollector,
     MarginCollector,
     InstitutionalCollector,
     LendingCollector,
     Top20VolumeCollector
 )
-from src.utils import is_trading_day, get_latest_trading_day
+from services.common.utils.date_helper import is_trading_day, get_latest_trading_day
 
 
 # 可用的收集器對應表
