@@ -170,7 +170,7 @@ class TechnicalAnalysisTransformer(BaseTransformer):
         - MA240 需要至少 240 天
         - 策略: 載入過去約 1.5 年的資料 (約 240 交易日)
 
-        優化: 跳過周末和假期，避免浪費資源
+        使用資料庫模式時，直接查詢區間資料，效率更高
 
         Args:
             target_date: 目標日期
@@ -181,11 +181,53 @@ class TechnicalAnalysisTransformer(BaseTransformer):
         if isinstance(target_date, str):
             target_date = datetime.strptime(target_date, "%Y-%m-%d")
 
+        # 使用資料庫載入 (推薦，效率更高)
+        if self.use_database:
+            self.logger.info(
+                f"使用資料庫載入歷史資料 (回溯 {self.lookback_days} 天)"
+            )
+
+            df = self.db_loader.load_historical_data(
+                target_date=target_date,
+                lookback_days=self.lookback_days,
+                stock_id=None
+            )
+
+            if df.empty:
+                self.logger.warning("無歷史資料")
+                return pd.DataFrame()
+
+            self.logger.info(
+                f"歷史資料載入完成: {len(df)} 筆記錄, "
+                f"{df['stock_id'].nunique()} 檔股票"
+            )
+
+            return df
+
+        # 使用檔案系統載入 (舊方法，逐日載入)
+        else:
+            return self._load_historical_data_from_files(target_date)
+
+    def _load_historical_data_from_files(
+        self,
+        target_date: datetime
+    ) -> pd.DataFrame:
+        """
+        從檔案系統載入歷史資料 (舊方法)
+
+        逐日載入，跳過周末和假期
+
+        Args:
+            target_date: 目標日期
+
+        Returns:
+            pd.DataFrame: 歷史資料
+        """
         # 計算起始日期 (往前推 lookback_days 天)
         start_date = target_date - timedelta(days=self.lookback_days)
 
         self.logger.info(
-            f"載入歷史資料: {start_date.date()} 到 {target_date.date()}"
+            f"從檔案系統載入歷史資料: {start_date.date()} 到 {target_date.date()}"
         )
 
         # 收集所有歷史資料
@@ -198,7 +240,7 @@ class TechnicalAnalysisTransformer(BaseTransformer):
         while current <= target_date:
             try:
                 # 載入單日資料
-                df = self.load_source_data(current, stock_id=None)
+                df = self._load_from_file(current, stock_id=None)
 
                 if not df.empty:
                     # 確保有 date 欄位
@@ -243,7 +285,7 @@ class TechnicalAnalysisTransformer(BaseTransformer):
         df = df.sort_values(['stock_id', 'trade_date'])
 
         self.logger.info(
-            f"載入完成: {len(df)} 筆記錄 "
+            f"檔案載入完成: {len(df)} 筆記錄 "
             f"({len(df['stock_id'].unique())} 檔股票), "
             f"成功載入 {successful_loads}/{total_attempts} 天"
         )
@@ -320,8 +362,8 @@ class TechnicalAnalysisTransformer(BaseTransformer):
         # 量比 (當日量 / 5日均量)
         df['vol_ratio'] = df['volume'] / df['vol_ma5']
 
-        # VWAP (成交量加權平均價)
-        df['vwap'] = indicators.vwap(df['high'], df['low'], df['close'], df['volume'])
+        # VWAP (成交量加權平均價) = 成交金額 / 成交量
+        df['vwap'] = indicators.vwap(df['amount'], df['volume'])
 
         # ========================================
         # 重置索引，保留原始欄位

@@ -131,21 +131,23 @@ def bollinger_bands(series: pd.Series, period: int = 20, std_dev: float = 2.0) -
     })
 
 
-def vwap(high: pd.Series, low: pd.Series, close: pd.Series, volume: pd.Series) -> pd.Series:
+def vwap(amount: pd.Series, volume: pd.Series) -> pd.Series:
     """
     Volume Weighted Average Price (成交量加權平均價)
 
+    計算當日 VWAP = 成交金額 / 成交量
+    這代表當日的平均成交價格
+
     Args:
-        high: 最高價序列
-        low: 最低價序列
-        close: 收盤價序列
+        amount: 成交金額序列
         volume: 成交量序列
 
     Returns:
-        pd.Series: VWAP 值
+        pd.Series: VWAP 值（每日獨立計算）
     """
-    typical_price = (high + low + close) / 3
-    return (typical_price * volume).cumsum() / volume.cumsum()
+    with np.errstate(divide='ignore', invalid='ignore'):
+        vwap_val = amount / volume.replace(0, np.nan)
+    return vwap_val
 
 
 def atr(high: pd.Series, low: pd.Series, close: pd.Series, period: int = 14) -> pd.Series:
@@ -174,6 +176,7 @@ def atr(high: pd.Series, low: pd.Series, close: pd.Series, period: int = 14) -> 
 def adx(high: pd.Series, low: pd.Series, close: pd.Series, period: int = 14) -> pd.DataFrame:
     """
     Average Directional Index (平均趨向指標)
+    使用 Wilder's Smoothing 方法
 
     Args:
         high: 最高價序列
@@ -191,16 +194,17 @@ def adx(high: pd.Series, low: pd.Series, close: pd.Series, period: int = 14) -> 
     plus_dm = high_diff.where((high_diff > low_diff) & (high_diff > 0), 0)
     minus_dm = low_diff.where((low_diff > high_diff) & (low_diff > 0), 0)
 
-    # 直接計算 True Range (而不是調用 atr() 函數)
+    # 計算 True Range
     high_low = high - low
     high_close = (high - close.shift()).abs()
     low_close = (low - close.shift()).abs()
     tr = pd.concat([high_low, high_close, low_close], axis=1).max(axis=1)
 
-    # 計算平滑後的 +DM, -DM, TR
-    atr_val = tr.rolling(window=period, min_periods=period).mean()
-    plus_dm_smooth = plus_dm.rolling(window=period, min_periods=period).mean()
-    minus_dm_smooth = minus_dm.rolling(window=period, min_periods=period).mean()
+    # 使用 Wilder's Smoothing (EWM with alpha = 1/period)
+    alpha = 1.0 / period
+    atr_val = tr.ewm(alpha=alpha, min_periods=period, adjust=False).mean()
+    plus_dm_smooth = plus_dm.ewm(alpha=alpha, min_periods=period, adjust=False).mean()
+    minus_dm_smooth = minus_dm.ewm(alpha=alpha, min_periods=period, adjust=False).mean()
 
     # 計算 +DI 和 -DI (避免除以零)
     with np.errstate(divide='ignore', invalid='ignore'):
@@ -211,7 +215,8 @@ def adx(high: pd.Series, low: pd.Series, close: pd.Series, period: int = 14) -> 
     with np.errstate(divide='ignore', invalid='ignore'):
         dx = 100 * ((pdi - mdi).abs() / (pdi + mdi).replace(0, np.nan))
 
-    adx_val = dx.rolling(window=period, min_periods=period).mean()
+    # ADX 也使用 Wilder's Smoothing
+    adx_val = dx.ewm(alpha=alpha, min_periods=period, adjust=False).mean()
 
     return pd.DataFrame({
         'PDI': pdi,

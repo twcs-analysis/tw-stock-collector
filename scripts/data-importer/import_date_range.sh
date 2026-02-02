@@ -42,12 +42,20 @@ if [ -z "$DB_PASSWORD" ]; then
     export DB_PASSWORD=tw_stock_dev_password_2024
 fi
 
-# 檢查資料庫是否運行
-if ! docker ps | grep -q tw-stock-postgres; then
-    echo -e "${RED}✗ PostgreSQL 容器未運行${NC}"
-    echo -e "${YELLOW}請先啟動資料庫:${NC}"
-    echo "  cd deployment/database/postgresql"
-    echo "  docker-compose up -d"
+# 檢查資料庫是否運行（支援本地和 Docker）
+if command -v psql &> /dev/null; then
+    # 嘗試連線本地資料庫
+    if PGPASSWORD="$DB_PASSWORD" psql -h localhost -U postgres -d tw_stock -c "SELECT 1" &> /dev/null; then
+        echo -e "${GREEN}✓ 使用本地 PostgreSQL${NC}"
+    else
+        echo -e "${RED}✗ 無法連線到本地 PostgreSQL${NC}"
+        exit 1
+    fi
+elif docker ps | grep -q tw-stock-postgres; then
+    echo -e "${GREEN}✓ 使用 Docker PostgreSQL${NC}"
+else
+    echo -e "${RED}✗ PostgreSQL 未運行${NC}"
+    echo -e "${YELLOW}請先啟動資料庫${NC}"
     exit 1
 fi
 
@@ -81,14 +89,25 @@ if [ $RESULT -eq 0 ]; then
     # 驗證資料
     echo ""
     echo -e "${GREEN}驗證匯入結果:${NC}"
-    docker exec tw-stock-postgres psql -U postgres -d tw_stock -c \
-        "SELECT
-            COUNT(DISTINCT trade_date) as total_dates,
-            MIN(trade_date) as first_date,
-            MAX(trade_date) as last_date,
-            COUNT(*) as total_records
-         FROM stock_prices
-         WHERE trade_date BETWEEN '${START_DATE}' AND '${END_DATE}';"
+    if command -v psql &> /dev/null; then
+        PGPASSWORD="$DB_PASSWORD" psql -h localhost -U postgres -d tw_stock -c \
+            "SELECT
+                COUNT(DISTINCT trade_date) as total_dates,
+                MIN(trade_date) as first_date,
+                MAX(trade_date) as last_date,
+                COUNT(*) as total_records
+             FROM stock_prices
+             WHERE trade_date BETWEEN '${START_DATE}' AND '${END_DATE}';"
+    else
+        docker exec tw-stock-postgres psql -U postgres -d tw_stock -c \
+            "SELECT
+                COUNT(DISTINCT trade_date) as total_dates,
+                MIN(trade_date) as first_date,
+                MAX(trade_date) as last_date,
+                COUNT(*) as total_records
+             FROM stock_prices
+             WHERE trade_date BETWEEN '${START_DATE}' AND '${END_DATE}';"
+    fi
 else
     echo ""
     echo -e "${RED}✗ 匯入失敗，請檢查錯誤訊息${NC}"

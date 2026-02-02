@@ -1,19 +1,11 @@
 """
-Database package - 向後兼容層
+Common Database Package
 
-此模組現在從 common.database 匯入所有內容
-保持向後兼容，避免破壞現有程式碼
+共用的資料庫連線管理和 ORM 模型定義
+供所有服務使用（data-importer, data-transformer, api-service 等）
 """
 
-import sys
-from pathlib import Path
-
-# 加入 services 路徑
-services_path = Path(__file__).parent.parent.parent.parent
-sys.path.insert(0, str(services_path))
-
-# 從 common.database 匯入所有內容
-from common.database import (
+from .models import (
     Base,
     Stock,
     StockPriceDaily,
@@ -23,6 +15,8 @@ from common.database import (
     StockTop20VolumeDaily,
     StockAnalysisDaily,
     DataImportLog,
+)
+from .connection import (
     DatabaseConfig,
     DatabaseManager,
     get_db_manager,

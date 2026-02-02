@@ -8,7 +8,7 @@
 
 **專案名稱**: 台股資料收集與分析系統
 **主要目標**: 自動化收集台股資料，包含價格、法人、融資融券等數據
-**技術棧**: Python 3.11+, GitHub Actions, Docker, JSON
+**技術棧**: Python 3.11+, PostgreSQL, GitHub Actions, Docker, JSON
 **資料來源**: 台灣證交所 (TWSE) 與櫃買中心 (TPEx) 官方 API
 
 ### 核心特色
@@ -18,6 +18,38 @@
 - Git 版本控制追蹤所有資料變更
 - 統一的 JSON 資料結構
 - 三層資料驗證機制
+
+### 🔴 重要環境資訊
+
+**資料庫設定**（本地 PostgreSQL）：
+- **類型**: PostgreSQL（本地安裝，非 Docker）
+- **主機**: localhost
+- **埠號**: 5432
+- **資料庫名稱**: tw_stock
+- **使用者**: postgres
+- **密碼**: tw_stock_dev_password_2024
+
+**目前資料庫狀態**（2026-02-02 21:40 更新）：
+- ✅ **Schema 重建完成**: 使用 `services/common/database/` 統一模型
+- ✅ **資料匯入完成**: 所有 price 資料已匯入
+- **主表格**: `stock_prices`（統一使用此名稱）
+- **股票總數**: 2,019 檔
+- **資料範圍**: 2024-01-02 至 2026-02-02
+- **交易日數**: 513 天
+- **總記錄數**: 958,793 筆
+
+**技術分析轉換器**：
+- ✅ 已整合資料庫載入模式
+- ✅ 計算 30 個技術指標（MA、RSI、MACD、DMI/ADX、布林通道、成交量分析）
+- ✅ VWAP 修正: amount ÷ volume
+- ✅ ADX 修正: Wilder's Smoothing (EWM)
+- ⚡ 效能: ~20 秒處理 1,900 檔股票
+- 📂 輸出路徑: `data/processed/technical/`
+
+**資料儲存架構**：
+1. **原始資料**: `data/raw/` - JSON 檔案（版本控制，2020-2026）
+2. **資料庫**: PostgreSQL - 結構化資料（目前僅 2024-2026）
+3. **處理後資料**: `data/processed/` - 技術指標等衍生資料
 
 ---
 

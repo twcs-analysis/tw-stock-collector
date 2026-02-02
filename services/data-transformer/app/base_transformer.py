@@ -26,6 +26,7 @@ from common.utils import (
     DataValidator,
     build_file_path
 )
+from app.database_loader import get_database_loader, DatabaseLoader
 
 logger = get_logger(__name__)
 
@@ -44,11 +45,13 @@ class BaseTransformer(ABC):
 
     def __init__(
         self,
-        config: Optional[Any] = None
+        config: Optional[Any] = None,
+        use_database: bool = True
     ):
         """
         Args:
             config: 配置實例
+            use_database: 是否使用資料庫載入 (預設 True，False 則使用檔案系統)
         """
         if config is None:
             config = get_global_config()
@@ -59,6 +62,14 @@ class BaseTransformer(ABC):
 
         # Logger
         self.logger = get_logger(self.__class__.__name__)
+
+        # 資料載入模式
+        self.use_database = use_database
+        if self.use_database:
+            self.db_loader = get_database_loader()
+            self.logger.info("使用資料庫載入模式")
+        else:
+            self.logger.info("使用檔案系統載入模式")
 
         # 轉換資料的輸出路徑（與原始資料分開）
         self.output_base_path = 'data/transformed'
@@ -122,6 +133,47 @@ class BaseTransformer(ABC):
     ) -> pd.DataFrame:
         """
         載入來源資料
+
+        根據設定使用資料庫或檔案系統載入
+
+        Args:
+            date: 日期
+            stock_id: 股票代碼 (選用)
+
+        Returns:
+            pd.DataFrame: 來源資料
+        """
+        # 使用資料庫載入
+        if self.use_database:
+            source_type = self.get_source_data_type()
+
+            if source_type == 'price':
+                df = self.db_loader.load_price_data(date, stock_id)
+            else:
+                # 其他資料類型暫時不支援，回退到檔案系統
+                self.logger.warning(
+                    f"資料類型 '{source_type}' 尚未支援資料庫載入，使用檔案系統"
+                )
+                df = self._load_from_file(date, stock_id)
+
+            if df is None or df.empty:
+                self.logger.debug(f"來源資料為空: date={date}, stock_id={stock_id}")
+                return pd.DataFrame()
+
+            self.logger.debug(f"載入來源資料 (DB): date={date}, records={len(df)}")
+            return df
+
+        # 使用檔案系統載入
+        else:
+            return self._load_from_file(date, stock_id)
+
+    def _load_from_file(
+        self,
+        date: Union[str, datetime],
+        stock_id: Optional[str] = None
+    ) -> pd.DataFrame:
+        """
+        從檔案系統載入資料 (舊方法)
 
         Args:
             date: 日期
