@@ -2,8 +2,8 @@ name: Daily Data Collection
 
 on:
   schedule:
-    # 每週一到週六 21:30 台灣時間執行 (UTC+8 = 13:30 UTC)
-    - cron: '30 13 * * 1-6'
+    # 每週一到週五 21:30 台灣時間執行 (UTC+8 = 13:30 UTC)
+    - cron: '30 13 * * 1-5'
   workflow_dispatch:
     inputs:
       date:

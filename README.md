@@ -44,20 +44,35 @@
 
 - Python 3.11+
 - Git
+- **Git LFS** (用於大型資料檔案)
 - GitHub Account (用於自動化收集)
 
 ### 安裝步驟
 
-1. **Clone 專案**
+1. **安裝 Git LFS**
+   ```bash
+   # macOS
+   brew install git-lfs
+
+   # Ubuntu/Debian
+   sudo apt-get install git-lfs
+
+   # 初始化 Git LFS
+   git lfs install
+   ```
+
+2. **Clone 專案**
    ```bash
    git clone https://github.com/twcs-analysis/tw-stock-collector.git
    cd tw-stock-collector
    ```
 
-2. **安裝 Python 套件**
+3. **安裝 Python 套件**
    ```bash
    pip install -r requirements.txt
    ```
+
+> 💡 **關於 Git LFS**: 本專案使用 Git LFS 管理大型資料檔案（`data/` 目錄）。詳細說明請參考 [Git LFS 使用指南](docs/GIT_LFS_GUIDE.md)。
 
 ### 本地收集資料
 
@@ -112,10 +127,11 @@ ls -lh ../../data/raw/price/2024/12/
 3. **無需任何設定** - 系統會自動運作
 
 **自動化時程**:
-- **每日收集**: 週一至週六 21:30 (台北時間) 自動執行
+- **每日收集**: 週一至週五 21:30 (台北時間) 自動執行
 - **收集日期**: 預設收集當天日期的資料
 - **自動判斷**: 跳過非交易日，只在交易日收集資料
 - **自動提交**: 收集完成後自動 commit 並 push 到 Git
+- **Git LFS**: 資料檔案使用 LFS 儲存，節省倉庫空間
 
 **手動觸發**:
 ```bash
