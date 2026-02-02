@@ -65,19 +65,42 @@ class PriceImporter(BaseImporter):
 
     @staticmethod
     def _to_decimal(value) -> Decimal | None:
-        """轉換為 Decimal"""
+        """轉換為 Decimal，處理 NaN 值"""
         if value is None or value == '':
             return None
+
+        # 檢查是否為 NaN (Python float nan 或字符串 'nan')
         try:
-            return Decimal(str(value))
-        except (ValueError, TypeError):
+            import math
+            if isinstance(value, float) and math.isnan(value):
+                return None
+        except (TypeError, ValueError):
+            pass
+
+        # 轉換為 Decimal
+        try:
+            decimal_value = Decimal(str(value))
+            # 檢查 Decimal 是否為 NaN
+            if decimal_value.is_nan():
+                return None
+            return decimal_value
+        except (ValueError, TypeError, decimal.InvalidOperation):
             return None
 
     @staticmethod
     def _to_int(value) -> int | None:
-        """轉換為整數"""
+        """轉換為整數，處理 NaN 值"""
         if value is None or value == '':
             return None
+
+        # 檢查是否為 NaN
+        try:
+            import math
+            if isinstance(value, float) and math.isnan(value):
+                return None
+        except (TypeError, ValueError):
+            pass
+
         try:
             return int(value)
         except (ValueError, TypeError):
