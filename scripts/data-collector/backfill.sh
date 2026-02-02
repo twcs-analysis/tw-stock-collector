@@ -140,10 +140,17 @@ if [ "$SKIP_TRANSFORM" = false ]; then
     echo -e "${GREEN}========================================${NC}"
     echo ""
 
-    "$PROJECT_ROOT/scripts/data-transformer/transform.sh" \
-        range \
-        "$START_DATE" \
-        "$END_DATE"
+    # 判斷是單日還是區間
+    if [ "$START_DATE" = "$END_DATE" ]; then
+        # 單日轉換：使用單日模式，產生 {date}_all.csv
+        "$PROJECT_ROOT/scripts/data-transformer/transform.sh" "$START_DATE"
+    else
+        # 區間轉換：使用區間模式，產生 {start}_to_{end}.csv
+        "$PROJECT_ROOT/scripts/data-transformer/transform.sh" \
+            range \
+            "$START_DATE" \
+            "$END_DATE"
+    fi
 
     if [ $? -ne 0 ]; then
         echo -e "${RED}✗ 技術指標轉換失敗${NC}"
