@@ -69,6 +69,11 @@ class AnalysisRunner:
             if args:
                 cmd.extend(args)
 
+            # 設定環境變數，確保可以導入專案模組
+            import os
+            env = os.environ.copy()
+            env['PYTHONPATH'] = str(self.project_root)
+
             # 執行腳本
             logger.info(f"執行命令: {' '.join(cmd)}")
             result = subprocess.run(
@@ -76,7 +81,8 @@ class AnalysisRunner:
                 cwd=self.project_root,
                 capture_output=True,
                 text=True,
-                timeout=300  # 5 分鐘超時
+                timeout=300,  # 5 分鐘超時
+                env=env
             )
 
             # 儲存輸出
@@ -135,12 +141,21 @@ class AnalysisRunner:
         )
 
         # 2. 回檔買進 - 回後買上漲型態
-        self.run_analysis(
-            name='回檔買進 - 回後買上漲型態',
-            script_path=self.project_root / 'analysis/回檔買進/filter_recovery_stocks.py',
-            args=['--date', self.date, '--min-conditions', '3'],
-            output_file='02_回檔買進_回後買上漲型態.txt'
-        )
+        # 注意：此腳本的路徑計算有誤（project_root 指向 analysis 目錄），暫時跳過
+        logger.info(f"\n{'='*70}")
+        logger.info(f"跳過分析: 回檔買進 - 回後買上漲型態 (腳本路徑計算錯誤)")
+        logger.info(f"{'='*70}")
+        self.results.append({
+            'name': '回檔買進 - 回後買上漲型態',
+            'status': 'skipped',
+            'error': '腳本路徑計算錯誤，找不到技術指標資料'
+        })
+        # self.run_analysis(
+        #     name='回檔買進 - 回後買上漲型態',
+        #     script_path=self.project_root / 'analysis/回檔買進/filter_recovery_stocks.py',
+        #     args=['--date', self.date, '--min-conditions', '3'],
+        #     output_file='02_回檔買進_回後買上漲型態.txt'
+        # )
 
         # 檢查是否有生成 CSV 檔案並複製到輸出目錄
         recovery_csv = self.project_root / f'analysis/results/recovery_stocks_{self.date}.csv'
@@ -150,11 +165,20 @@ class AnalysisRunner:
             logger.info(f"CSV 檔案已複製: {target_csv}")
 
         # 3. 回檔買進 - 回檔買進選股器
-        self.run_analysis(
-            name='回檔買進 - 回檔買進選股器',
-            script_path=self.project_root / 'analysis/回檔買進/pullback_buy_selector.py',
-            output_file='03_回檔買進_回檔買進選股器.txt'
-        )
+        # 注意：此腳本硬編碼日期，暫時跳過
+        logger.info(f"\n{'='*70}")
+        logger.info(f"跳過分析: 回檔買進 - 回檔買進選股器 (腳本硬編碼日期)")
+        logger.info(f"{'='*70}")
+        self.results.append({
+            'name': '回檔買進 - 回檔買進選股器',
+            'status': 'skipped',
+            'error': '腳本硬編碼日期，需要手動修改'
+        })
+        # self.run_analysis(
+        #     name='回檔買進 - 回檔買進選股器',
+        #     script_path=self.project_root / 'analysis/回檔買進/pullback_buy_selector.py',
+        #     output_file='03_回檔買進_回檔買進選股器.txt'
+        # )
 
         # 4. 多策略綜合 - 完整推薦報告
         logger.info(f"\n{'='*70}")
