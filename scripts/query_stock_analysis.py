@@ -20,6 +20,9 @@
 
     # 簡化輸出（只顯示關鍵指標）
     python scripts/query_stock_analysis.py 2330 --simple
+
+    # 原始數值輸出（CSV 格式）
+    python scripts/query_stock_analysis.py 2330 --raw
 """
 
 import sys
@@ -254,6 +257,22 @@ def display_simple_analysis(row: pd.Series, stock_name: str):
     print()
 
 
+def display_raw_data(df: pd.DataFrame):
+    """顯示原始數值（CSV 格式）"""
+    # 設定 pandas 顯示選項
+    pd.set_option('display.max_columns', None)
+    pd.set_option('display.width', None)
+    pd.set_option('display.max_colwidth', None)
+    pd.set_option('display.float_format', lambda x: f'{x:.2f}' if pd.notna(x) else 'NaN')
+
+    # 確保 stock_id 顯示為字串
+    df_display = df.copy()
+    df_display['stock_id'] = df_display['stock_id'].astype(int).astype(str)
+
+    # 以 CSV 格式輸出
+    print(df_display.to_csv(index=False, float_format='%.4f'))
+
+
 def main():
     parser = argparse.ArgumentParser(
         description='查詢股票技術分析資料',
@@ -274,6 +293,9 @@ def main():
 
   # 簡化輸出
   %(prog)s 2330 --simple
+
+  # 原始數值輸出
+  %(prog)s 2330 --raw
         '''
     )
 
@@ -302,6 +324,12 @@ def main():
         help='簡化輸出（只顯示關鍵指標）'
     )
 
+    parser.add_argument(
+        '--raw',
+        action='store_true',
+        help='原始數值輸出（CSV 格式）'
+    )
+
     args = parser.parse_args()
 
     # 如果沒有指定日期，使用今天或最近交易日
@@ -325,14 +353,19 @@ def main():
         print(f"✅ 找到 {len(df)} 筆資料\n")
 
         # 顯示結果
-        for _, row in df.iterrows():
-            stock_id = str(int(row['stock_id']))
-            stock_name = get_stock_name(stock_id)
+        if args.raw:
+            # 原始數值模式
+            display_raw_data(df)
+        else:
+            # 格式化顯示模式
+            for _, row in df.iterrows():
+                stock_id = str(int(row['stock_id']))
+                stock_name = get_stock_name(stock_id)
 
-            if args.simple:
-                display_simple_analysis(row, stock_name)
-            else:
-                display_full_analysis(row, stock_name)
+                if args.simple:
+                    display_simple_analysis(row, stock_name)
+                else:
+                    display_full_analysis(row, stock_name)
 
     except FileNotFoundError as e:
         print(f"❌ 錯誤: {e}")
