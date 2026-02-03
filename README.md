@@ -349,6 +349,25 @@ cat data/raw/price/2024/12/2024-12-27.json | jq '.metadata'
 cat data/raw/price/2024/12/2024-12-27.json | jq '.data | length'
 ```
 
+### 交易日曆查詢
+
+```bash
+# 檢查是否為交易日
+python scripts/common-tools/get_trading_days.py check 2026-01-01
+
+# 查詢日期區間的所有交易日
+python scripts/common-tools/get_trading_days.py range 2026-01-01 2026-01-31
+
+# 查看年度摘要
+python scripts/common-tools/get_trading_days.py summary 2026
+
+# 查看所有休市日
+python scripts/common-tools/get_trading_days.py holidays --year 2026
+
+# 查看特殊交易日
+python scripts/common-tools/get_trading_days.py special
+```
+
 ---
 
 ## 🛡️ 資料品質保證
@@ -454,6 +473,7 @@ docker-compose up -d
 - **[資料庫說明](database/README.md)** - 資料庫架構與 Schema 說明
 - **[資料驗證規範](docs/DATA_VALIDATION_SPEC.md)** - 完整驗證標準與抽樣機制
 - **[TWSE API 參考文件](docs/TWSE_API_REFERENCE.md)** - 證交所 OpenAPI 完整端點說明
+- **[交易日曆服務](services/common/calendar/README.md)** - 證交所交易日曆查詢與驗證服務
 
 ### 資料庫文檔
 - **[SQL 查詢範例](docs/database/QUERY_EXAMPLES.md)** - 涵蓋選股策略、效能優化等 60+ 查詢範例
