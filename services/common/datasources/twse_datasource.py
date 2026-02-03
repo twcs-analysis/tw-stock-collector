@@ -1,17 +1,17 @@
 """
-台灣證券交易所 (TWSE) 資料源 - 雙模式架構
+台灣證券交易所 (TWSE) 資料源 - 統一使用 MI_INDEX API
 
 策略：
-1. 即時模式：使用 STOCK_DAY_ALL OpenAPI（當日最新資料，快速）
-   - API: https://openapi.twse.com.tw/v1/exchangeReport/STOCK_DAY_ALL
-   - 速度：~2-3 秒
-   - 用途：每日自動收集
-
-2. 回補模式：使用 MI_INDEX API（歷史資料，快速）
+統一使用 MI_INDEX API（即時和歷史資料都用同一個）
    - API: https://www.twse.com.tw/rwd/zh/afterTrading/MI_INDEX
    - 速度：~2-3 秒（一次取得所有股票）
-   - 用途：歷史資料回補
-   - 說明：此 API 支援歷史日期查詢，比逐股查詢快得多
+   - 用途：每日自動收集 + 歷史資料回補
+   - 優點：資料更新快，支援歷史日期查詢
+   - 說明：OpenAPI 更新較慢（可能延遲一天），MI_INDEX API 更即時
+
+注意：
+- OpenAPI (STOCK_DAY_ALL) 已不再使用，因為更新較慢
+- MI_INDEX API 同時支援當日和歷史資料查詢
 """
 import requests
 import pandas as pd
@@ -54,17 +54,18 @@ class TWSEDataSource(BaseDataSource):
         """
         取得 TWSE 每日價量資料
 
+        統一使用 MI_INDEX API（即時模式和回補模式都用同一個 API）
+        因為 OpenAPI 更新較慢，MI_INDEX API 資料更即時
+
         Args:
             date: 查詢日期 (YYYY-MM-DD)
-            stock_ids: 股票代碼列表（選用，回補模式下使用）
+            stock_ids: 股票代碼列表（選用，用於篩選特定股票）
 
         Returns:
             pd.DataFrame: 價格資料，若無資料或非交易日則返回空 DataFrame
         """
-        if self.use_backfill_mode:
-            return self._get_daily_prices_backfill(date, stock_ids)
-        else:
-            return self._get_daily_prices_realtime(date)
+        # 統一使用 MI_INDEX API
+        return self._get_daily_prices_backfill(date, stock_ids)
 
     def _get_daily_prices_realtime(self, date: str) -> pd.DataFrame:
         """
