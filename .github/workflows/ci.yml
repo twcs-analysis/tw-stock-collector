@@ -33,7 +33,7 @@ jobs:
 
       - name: Verify Python imports
         run: |
-          python -c "import sys; sys.path.insert(0, '.'); from src.collectors import price_collector; print('✅ Python imports successful')"
+          python -c "import sys; sys.path.insert(0, '.'); from services.common.collectors import PriceCollector; print('✅ Python imports successful')"
         env:
           PYTHONPATH: ${{ github.workspace }}
 
