@@ -219,7 +219,7 @@ class BaseValidator(ABC):
         self.metadata = raw_data['metadata']
 
         # 檢查 metadata 必要欄位
-        required_meta_fields = ['date', 'collected_at', 'total_count', 'source']
+        required_meta_fields = ['date', 'total_count', 'source']
         missing_fields = [f for f in required_meta_fields if f not in self.metadata]
 
         if missing_fields:

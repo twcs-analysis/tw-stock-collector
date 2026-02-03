@@ -135,7 +135,6 @@ class LendingCollector(BaseCollector):
             result = {
                 "metadata": {
                     "date": self.date,
-                    "collected_at": datetime.now().isoformat(),
                     "total_count": total_count,
                     "source": "TWSE TWT93U API (包含上市+上櫃)"
                 },

@@ -77,7 +77,6 @@ class PriceCollector(BaseCollector):
         result = {
             "metadata": {
                 "date": self.date,
-                "collected_at": datetime.now().isoformat(),
                 "total_count": len(data_list),
                 "twse_count": twse_count,
                 "tpex_count": tpex_count,

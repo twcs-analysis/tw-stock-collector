@@ -189,7 +189,6 @@ class InstitutionalCollector(BaseCollector):
         result = {
             "metadata": {
                 "date": self.date,
-                "collected_at": datetime.now().isoformat(),
                 "total_count": total_count,
                 "source": "TWSE T86 + TPEx Official API"
             },

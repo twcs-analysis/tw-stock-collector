@@ -76,7 +76,6 @@ class Top20VolumeCollector(BaseCollector):
             result = {
                 "metadata": {
                     "date": self.date,
-                    "collected_at": datetime.now().isoformat(),
                     "total_count": len(processed_data),
                     "source": "TWSE OpenAPI MI_INDEX20"
                 },

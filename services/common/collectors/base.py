@@ -34,7 +34,6 @@ class BaseCollector(ABC):
                 {
                     "metadata": {
                         "date": "2024-12-27",
-                        "collected_at": "2024-12-27T10:30:00",
                         "total_count": 100,
                         "source": "TWSE API"
                     },
