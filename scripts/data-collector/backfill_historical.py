@@ -104,6 +104,20 @@ def backfill_single_date(date: str, stock_ids: list = None, skip_trading_day_che
     file_path = collector.save(result)
     print(f"✅ 資料已儲存至: {file_path}")
 
+    # 執行驗證
+    print(f"\n執行驗證...")
+    try:
+        from services.common.validators import PriceValidator
+
+        validator = PriceValidator(file_path)
+        validation_result = validator.validate()
+        report_path = validator.generate_report()
+
+        print(f"✅ 驗證完成: {validation_result.status} ({validation_result.grade}, {validation_result.accuracy:.1f}%)")
+        print(f"✅ 驗證報告: {report_path}")
+    except Exception as e:
+        print(f"⚠️  驗證失敗: {e}")
+
     return True
 
 
