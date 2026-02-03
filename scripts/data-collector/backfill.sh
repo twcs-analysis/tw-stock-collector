@@ -95,9 +95,10 @@ if [ -n "$TYPES" ]; then
     TYPES_ARG="--types$TYPES"
 fi
 
-python3 "$PROJECT_ROOT/scripts/backfill.py" \
+python3 "$PROJECT_ROOT/services/data-collector/app/backfill.py" \
     --start "$START_DATE" \
     --end "$END_DATE" \
+    --skip-trading-day-check \
     $TYPES_ARG
 
 if [ $? -ne 0 ]; then

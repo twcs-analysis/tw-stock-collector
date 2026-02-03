@@ -24,22 +24,40 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root))
 
-from services.common.datasources import TWSEDataSource, TPExDataSource
-from services.common.collectors import PriceCollector
+from services.common.collectors import (
+    PriceCollector,
+    MarginCollector,
+    InstitutionalCollector,
+    LendingCollector
+)
 from services.common.utils.date_helper import is_trading_day
 
+# 可用的收集器對應表
+COLLECTORS = {
+    'price': PriceCollector,
+    'margin': MarginCollector,
+    'institutional': InstitutionalCollector,
+    'lending': LendingCollector,
+}
 
-def backfill_single_date(date: str, stock_ids: list = None, skip_trading_day_check: bool = False):
+
+def backfill_single_date(date: str, data_types: list = None, stock_ids: list = None, skip_trading_day_check: bool = False):
     """
     回補單一日期的資料
 
     Args:
         date: 日期 (YYYY-MM-DD)
-        stock_ids: 股票代碼列表（選用，用於篩選特定股票）
+        data_types: 資料類型列表 (預設所有類型)
+        stock_ids: 股票代碼列表（選用，用於篩選特定股票，僅 price 支援）
         skip_trading_day_check: 是否跳過交易日檢查
     """
+    # 預設收集所有類型
+    if data_types is None:
+        data_types = ['price', 'margin', 'institutional', 'lending']
+
     print(f"\n{'='*70}")
     print(f"回補日期: {date}")
+    print(f"資料類型: {', '.join(data_types)}")
     if stock_ids:
         print(f"股票代碼: {', '.join(stock_ids)} ({len(stock_ids)} 支)")
     print(f"{'='*70}\n")
@@ -52,73 +70,56 @@ def backfill_single_date(date: str, stock_ids: list = None, skip_trading_day_che
             print("已取消")
             return False
 
-    # 建立回補模式的資料源
-    print("初始化資料源（回補模式 - MI_INDEX API）...")
-    twse = TWSEDataSource(use_backfill_mode=True)
-    # TODO: TPExDataSource 尚未實作 backfill 模式
-    tpex = TPExDataSource()
-
     # 開始回補
-    print(f"\n開始回補資料...")
     start_time = datetime.now()
+    date_success = True
+    date_records = 0
 
-    # 回補 TWSE（上市）
-    print("回補 TWSE（上市）使用 MI_INDEX API...")
-    twse_df = twse.get_daily_prices(date, stock_ids=stock_ids)
-    print(f"✅ TWSE: {len(twse_df)} 筆")
+    # 依序收集各類型資料
+    for data_type in data_types:
+        print(f"\n[{data_type.upper()}] 開始收集...")
 
-    # 回補 TPEx（上櫃）- 使用標準 API（可能只能取得最新資料）
-    print("回補 TPEx（上櫃）...")
-    tpex_df = tpex.get_daily_prices(date, stock_ids=stock_ids)
-    print(f"✅ TPEx: {len(tpex_df)} 筆")
+        try:
+            # 建立收集器
+            collector_class = COLLECTORS.get(data_type)
+            if not collector_class:
+                print(f"❌ {data_type}: 不支援的資料類型")
+                date_success = False
+                continue
 
-    if twse_df.empty and tpex_df.empty:
-        print(f"❌ 無資料: {date}")
-        return False
+            collector = collector_class(date)
+
+            # 執行收集（會自動驗證和產生 MD5）
+            result = collector.run(enable_validation=True)
+
+            # 統計結果
+            if result['status'] == 'success':
+                records = result.get('records', 0)
+                date_records += records
+                print(f"✅ {data_type}: {records} 筆")
+
+                # 顯示驗證結果
+                if 'validation' in result:
+                    val = result['validation']
+                    print(f"   驗證: {val.get('status')} ({val.get('grade')}, {val.get('accuracy', 0):.1f}%)")
+            elif result['status'] == 'no_data':
+                print(f"⚠️  {data_type}: 無資料")
+            else:
+                print(f"❌ {data_type}: {result.get('error')}")
+                date_success = False
+
+        except Exception as e:
+            print(f"❌ {data_type}: 例外錯誤 - {e}")
+            date_success = False
 
     elapsed = (datetime.now() - start_time).total_seconds()
-    total_records = len(twse_df) + len(tpex_df)
-    print(f"\n✅ 回補完成: {total_records} 筆資料 ({len(twse_df)} 上市 + {len(tpex_df)} 上櫃)")
-    print(f"耗時: {elapsed:.1f} 秒")
 
-    # 儲存資料
-    print(f"\n儲存資料...")
-    collector = PriceCollector(date=date)
+    if date_success:
+        print(f"\n✅ {date} 完成 - 共 {date_records} 筆記錄，耗時 {elapsed:.1f} 秒")
+    else:
+        print(f"\n⚠️  {date} 部分失敗 - 共 {date_records} 筆記錄，耗時 {elapsed:.1f} 秒")
 
-    # 合併 TWSE 和 TPEx 資料
-    import pandas as pd
-    combined_data = pd.concat([twse_df, tpex_df], ignore_index=True) if not tpex_df.empty else twse_df
-
-    # 轉換為 PriceCollector 的格式（與 collect() 返回格式一致）
-    result = {
-        'metadata': {
-            'date': date,
-            'total_count': len(combined_data),
-            'source': 'TWSE + TPEx Historical Backfill (MI_INDEX API)',
-            'mode': 'backfill'
-        },
-        'data': combined_data.to_dict('records')
-    }
-
-    # 儲存
-    file_path = collector.save(result)
-    print(f"✅ 資料已儲存至: {file_path}")
-
-    # 執行驗證
-    print(f"\n執行驗證...")
-    try:
-        from services.common.validators import PriceValidator
-
-        validator = PriceValidator(file_path)
-        validation_result = validator.validate()
-        report_path = validator.generate_report()
-
-        print(f"✅ 驗證完成: {validation_result.status} ({validation_result.grade}, {validation_result.accuracy:.1f}%)")
-        print(f"✅ 驗證報告: {report_path}")
-    except Exception as e:
-        print(f"⚠️  驗證失敗: {e}")
-
-    return True
+    return date_success
 
 
 def main():
@@ -144,9 +145,16 @@ def main():
         help='回補結束日期 (YYYY-MM-DD)'
     )
     parser.add_argument(
+        '--types',
+        nargs='+',
+        choices=list(COLLECTORS.keys()),
+        default=None,
+        help='要收集的資料類型（可指定多個，預設全部）'
+    )
+    parser.add_argument(
         '--stocks',
         type=str,
-        help='指定股票代碼，用逗號分隔 (例如: 2330,2337,2454)'
+        help='指定股票代碼，用逗號分隔 (例如: 2330,2337,2454，僅 price 支援)'
     )
     parser.add_argument(
         '--skip-trading-day-check',
@@ -161,6 +169,9 @@ def main():
 
     args = parser.parse_args()
 
+    # 解析資料類型
+    data_types = args.types if args.types else None
+
     # 解析股票代碼
     stock_ids = None
     if args.stocks:
@@ -168,7 +179,7 @@ def main():
 
     # 單一日期回補
     if args.date:
-        success = backfill_single_date(args.date, stock_ids, args.skip_trading_day_check)
+        success = backfill_single_date(args.date, data_types, stock_ids, args.skip_trading_day_check)
         return 0 if success else 1
 
     # 日期範圍回補
@@ -186,6 +197,10 @@ def main():
         print(f"批次回補")
         print(f"{'='*70}")
         print(f"日期範圍: {args.start} ~ {args.end} ({len(dates)} 天)")
+        if data_types:
+            print(f"資料類型: {', '.join(data_types)}")
+        else:
+            print(f"資料類型: 全部")
         if stock_ids:
             print(f"股票數量: {len(stock_ids)} 支")
         print(f"預估時間: {len(dates) * 5:.0f} 秒 (每天約 2-3 秒)")
@@ -199,7 +214,7 @@ def main():
 
         success_count = 0
         for date in dates:
-            if backfill_single_date(date, stock_ids, args.skip_trading_day_check):
+            if backfill_single_date(date, data_types, stock_ids, args.skip_trading_day_check):
                 success_count += 1
 
         print(f"\n{'='*70}")

@@ -244,6 +244,19 @@ cd deployment/stock-data-collector
 docker-compose up
 ```
 
+### 交易日曆查詢
+
+```bash
+# 檢查是否為交易日
+python scripts/common-tools/get_trading_days.py check 2026-01-01
+
+# 查詢交易日區間
+python scripts/common-tools/get_trading_days.py range 2026-01-01 2026-01-31
+
+# 年度摘要
+python scripts/common-tools/get_trading_days.py summary 2026
+```
+
 ### 資料查看
 
 ```bash
@@ -527,8 +540,11 @@ A: 系統會自動重試最多 3 次，查看日誌了解錯誤原因
 **Q: 如何回補缺失的歷史資料？**
 A:
 - **當日/最近資料**: 使用 `python scripts/run_collection.py --date YYYY-MM-DD`
-- **歷史資料** (慢): 使用 `python scripts/data-collector/backfill_historical.py --date YYYY-MM-DD --stocks 2330,2337`
-- ⚠️ 回補歷史資料非常慢，建議只補少量關鍵股票或依賴每日自動收集
+- **歷史資料回補**: 使用 `python scripts/data-collector/backfill_historical.py`
+  - 支援多種資料類型: `--types price margin institutional lending`
+  - 單一日期: `--date YYYY-MM-DD`
+  - 日期範圍: `--start YYYY-MM-DD --end YYYY-MM-DD`
+  - 範例: `python scripts/data-collector/backfill_historical.py --date 2026-01-15 --types price margin`
 
 ---
 
@@ -541,6 +557,6 @@ A:
 
 ---
 
-**最後更新**: 2026-02-02
+**最後更新**: 2026-02-03
 **維護者**: Jason Huang
 **專案狀態**: Phase 1 完成，持續維護中
