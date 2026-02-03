@@ -20,11 +20,11 @@ COPY requirements.txt ./requirements.txt
 # 安裝 Python 依賴
 RUN pip install --no-cache-dir -r requirements.txt
 
-# 複製共用程式庫
-COPY services/common /app/common
+# 複製共用程式庫（維持 services 結構）
+COPY services/common /app/services/common
 
 # 複製服務程式碼
-COPY services/data-collector/app /app/app
+COPY services/data-collector/app /app/services/data-collector/app
 
 # 複製執行腳本
 COPY scripts/run_collection.py /app/scripts/run_collection.py
