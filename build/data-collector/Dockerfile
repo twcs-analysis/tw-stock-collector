@@ -26,10 +26,9 @@ COPY services/common /app/common
 # 複製服務程式碼
 COPY services/data-collector/app /app/app
 
-# 複製舊版程式碼（向後相容）
-COPY src /app/src
+# 複製執行腳本
 COPY scripts/run_collection.py /app/scripts/run_collection.py
-COPY scripts/backfill.py /app/scripts/backfill.py
+COPY scripts/data-collector/ /app/scripts/data-collector/
 
 # 設定環境變數
 ENV PYTHONUNBUFFERED=1
@@ -41,7 +40,7 @@ ENV LOG_LEVEL=INFO
 RUN mkdir -p /app/data/raw /app/logs
 
 # 設定執行權限
-RUN chmod +x /app/scripts/run_collection.py /app/app/main.py
+RUN chmod +x /app/scripts/run_collection.py
 
 # 預設執行命令（使用舊的入口點保持向後相容）
 ENTRYPOINT ["python", "/app/scripts/run_collection.py"]
