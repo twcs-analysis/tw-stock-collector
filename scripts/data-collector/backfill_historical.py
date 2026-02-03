@@ -29,13 +29,14 @@ from services.common.collectors import PriceCollector
 from services.common.utils.date_helper import is_trading_day
 
 
-def backfill_single_date(date: str, stock_ids: list = None):
+def backfill_single_date(date: str, stock_ids: list = None, skip_trading_day_check: bool = False):
     """
     回補單一日期的資料
 
     Args:
         date: 日期 (YYYY-MM-DD)
         stock_ids: 股票代碼列表（選用，用於篩選特定股票）
+        skip_trading_day_check: 是否跳過交易日檢查
     """
     print(f"\n{'='*70}")
     print(f"回補日期: {date}")
@@ -44,7 +45,7 @@ def backfill_single_date(date: str, stock_ids: list = None):
     print(f"{'='*70}\n")
 
     # 檢查是否為交易日（可選）
-    if not is_trading_day(date):
+    if not skip_trading_day_check and not is_trading_day(date):
         print(f"⚠️  警告: {date} 可能不是交易日")
         response = input("是否仍要繼續？ (y/N): ")
         if response.lower() != 'y':
@@ -92,7 +93,6 @@ def backfill_single_date(date: str, stock_ids: list = None):
     result = {
         'metadata': {
             'date': date,
-            'collected_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
             'total_count': len(combined_data),
             'source': 'TWSE + TPEx Historical Backfill (MI_INDEX API)',
             'mode': 'backfill'
@@ -134,6 +134,16 @@ def main():
         type=str,
         help='指定股票代碼，用逗號分隔 (例如: 2330,2337,2454)'
     )
+    parser.add_argument(
+        '--skip-trading-day-check',
+        action='store_true',
+        help='跳過交易日檢查'
+    )
+    parser.add_argument(
+        '--yes', '-y',
+        action='store_true',
+        help='自動確認，不詢問'
+    )
 
     args = parser.parse_args()
 
@@ -144,7 +154,7 @@ def main():
 
     # 單一日期回補
     if args.date:
-        success = backfill_single_date(args.date, stock_ids)
+        success = backfill_single_date(args.date, stock_ids, args.skip_trading_day_check)
         return 0 if success else 1
 
     # 日期範圍回補
@@ -167,14 +177,15 @@ def main():
         print(f"預估時間: {len(dates) * 5:.0f} 秒 (每天約 2-3 秒)")
         print(f"{'='*70}\n")
 
-        response = input("確定要執行批次回補嗎？ (y/N): ")
-        if response.lower() != 'y':
-            print("已取消")
-            return 1
+        if not args.yes:
+            response = input("確定要執行批次回補嗎？ (y/N): ")
+            if response.lower() != 'y':
+                print("已取消")
+                return 1
 
         success_count = 0
         for date in dates:
-            if backfill_single_date(date, stock_ids):
+            if backfill_single_date(date, stock_ids, args.skip_trading_day_check):
                 success_count += 1
 
         print(f"\n{'='*70}")
