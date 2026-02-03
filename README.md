@@ -248,15 +248,27 @@ tw-stock-collector/
 │   │   └── backfill.sh          # 歷史回補
 │   ├── data-importer/           # 資料匯入腳本
 │   ├── data-transformer/        # 技術指標轉換
-│   └── database/                # 資料庫管理
+│   ├── database/                # 資料庫管理
+│   └── common-tools/            # 通用工具
+│       ├── markdown_to_pdf.py   # Markdown 轉 PDF
+│       └── README.md            # 工具說明
+│
+├── analysis/                    # 技術分析工具（獨立目錄）
+│   ├── README.md                # 分析工具總覽
+│   ├── recommend_stocks_with_names.py          # 股票推薦（完整版）
+│   ├── recommend_stocks_with_names.README.md   # 使用說明
+│   ├── find_bullish_stocks.py                  # 多頭選股（簡化版）
+│   └── find_bullish_stocks.README.md           # 使用說明
 │
 ├── data/                        # 資料儲存目錄
-│   └── raw/                     # 原始資料（JSON 格式）
-│       ├── price/               # 每日價格資料
-│       ├── margin/              # 融資融券資料
-│       ├── institutional/       # 三大法人資料
-│       ├── lending/             # 借券賣出資料
-│       └── top20_volume/        # 成交量前 20 名
+│   ├── raw/                     # 原始資料（JSON 格式）
+│   │   ├── price/               # 每日價格資料
+│   │   ├── margin/              # 融資融券資料
+│   │   ├── institutional/       # 三大法人資料
+│   │   ├── lending/             # 借券賣出資料
+│   │   └── top20_volume/        # 成交量前 20 名
+│   └── transformed/             # 轉換後資料
+│       └── technical/           # 技術指標（CSV 格式）
 │
 ├── database/                    # 資料庫相關
 │   ├── schemas/                 # 資料庫 Schema 定義
