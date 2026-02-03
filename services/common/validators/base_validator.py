@@ -5,6 +5,7 @@
 """
 
 import json
+import hashlib
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -381,6 +382,10 @@ class BaseValidator(ABC):
             f.write(report_content)
 
         logger.info(f"驗證報告已生成: {output_path}")
+
+        # 計算並儲存 MD5
+        self._generate_md5_file()
+
         return str(output_path)
 
     def _generate_report_content(self) -> str:
@@ -525,3 +530,28 @@ class BaseValidator(ABC):
 """
 
         return report
+
+    def _generate_md5_file(self) -> str:
+        """
+        計算並儲存資料檔案的 MD5
+
+        Returns:
+            str: MD5 檔案路徑
+        """
+        # 計算 MD5
+        md5_hash = hashlib.md5()
+        with open(self.file_path, 'rb') as f:
+            for chunk in iter(lambda: f.read(4096), b""):
+                md5_hash.update(chunk)
+
+        md5_value = md5_hash.hexdigest()
+
+        # MD5 檔案路徑: {原檔名}.json.md5
+        md5_file_path = Path(str(self.file_path) + '.md5')
+
+        # 寫入 MD5 檔案
+        with open(md5_file_path, 'w', encoding='utf-8') as f:
+            f.write(f"{md5_value}  {self.file_path.name}\n")
+
+        logger.info(f"MD5 檔案已生成: {md5_file_path}")
+        return str(md5_file_path)
