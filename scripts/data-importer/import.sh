@@ -145,7 +145,7 @@ cd "$PROJECT_ROOT"
 if [ "$IS_TECHNICAL" = true ]; then
     # 技術分析資料匯入
     info "匯入技術分析資料..."
-    python scripts/data-importer/import_technical_analysis.py "$@"
+    python3.11 scripts/data-importer/import_technical_analysis.py "$@"
 
 else
     # 原始資料匯入（price, institutional, margin, lending, top20_volume）
@@ -154,7 +154,7 @@ else
     # 將逗號分隔的類型轉換為空格分隔
     TYPES=$(echo "$DATA_TYPE" | tr ',' ' ')
 
-    python scripts/data-importer/import_data.py --types $TYPES "$@"
+    python3.11 scripts/data-importer/import_data.py --types $TYPES "$@"
 fi
 
 # 檢查執行結果

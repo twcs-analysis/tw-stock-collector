@@ -31,22 +31,34 @@
 
 ### 🔴 重要環境資訊
 
+**Python 環境**（2026-02-04 更新）：
+- **Python 版本**: Python 3.11+（必須使用 `python3.11`，不可使用系統預設的 `python3` 3.7）
+- **套件管理器**: 優先使用 `uv`（已安裝），次選 `pip`
+- **虛擬環境**: `venv/`（使用 uv 管理）
+- **套件安裝方式**：
+  1. **推薦**: `uv pip install -r requirements.txt`（快速）
+  2. **替代**: `python3.11 -m pip install --user -r requirements.txt`（全域安裝）
+- **重要**: 所有腳本執行都必須使用 `python3.11`，已更新：
+  - `scripts/data-importer/import.sh`（已改為 python3.11）
+  - 其他 shell 腳本如需 Python 也應使用 python3.11
+
 **資料庫設定**（本地 PostgreSQL）：
-- **類型**: PostgreSQL（本地安裝，非 Docker）
+- **類型**: PostgreSQL 17（本地安裝，非 Docker）
 - **主機**: localhost
 - **埠號**: 5432
 - **資料庫名稱**: tw_stock
 - **使用者**: postgres
 - **密碼**: tw_stock_dev_password_2024
+- **CLI 工具**: `psql-17`（請使用 `psql-17` 而非 `psql`）
 
-**目前資料庫狀態**（2026-02-03 更新）：
+**目前資料庫狀態**（2026-02-04 更新）：
 - ✅ **Schema 重建完成**: 使用 `services/common/database/` 統一模型
 - ✅ **資料匯入完成**: 所有 price 資料已匯入
-- **主表格**: `stock_prices`（統一使用此名稱）
+- **主表格**: `stock_prices`（統一使用此名稱，欄位名稱: `trade_date`, `stock_id`, `open_price`, `close_price` 等）
 - **股票總數**: 2,019 檔
-- **資料範圍**: 2024-01-02 至 2026-02-02
-- **交易日數**: 513 天
-- **總記錄數**: 958,793 筆
+- **資料範圍**: 2024-01-02 至 2026-02-04
+- **交易日數**: 514 天
+- **總記錄數**: 960,750 筆
 
 **資料收集架構**（2026-02-03 修正）：
 - ✅ **雙模式 API 架構**: 自動判斷日期選擇適當的 API
