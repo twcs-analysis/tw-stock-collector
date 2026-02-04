@@ -208,3 +208,29 @@ def init_database(config: Optional[DatabaseConfig] = None):
     manager = get_db_manager(config)
     manager.create_tables()
     return manager
+
+
+def get_connection_string() -> str:
+    """
+    取得資料庫連線字串
+
+    優先級:
+    1. 環境變數 DATABASE_URL
+    2. 環境變數 DB_* 設定
+    3. 預設值（PostgreSQL localhost）
+
+    Returns:
+        資料庫連線字串
+    """
+    database_url = os.getenv("DATABASE_URL")
+    if database_url:
+        return database_url
+
+    # 從環境變數或使用預設值
+    config = DatabaseConfig.from_env()
+
+    # 如果沒有設定密碼，使用預設密碼
+    if not config.password and config.db_type == "postgresql":
+        config.password = os.getenv("DB_PASSWORD", "tw_stock_dev_password_2024")
+
+    return config.get_url()

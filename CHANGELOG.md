@@ -4,6 +4,23 @@
 
 ## [Unreleased]
 
+### 新增
+- **ETF 持股篩選系統**
+  - 資料庫 Schema：新增 3 個表格（etfs, etf_holdings, etf_stock_union）
+  - ETF 持股資料：2 個 ETF（00733 富邦臺灣中小、0051 元大中型100）
+  - 自動化腳本：
+    - `scripts/etf-importer/import_etf_holdings.py`：ETF 持股匯入工具
+    - `scripts/etf-importer/generate_etf_union.py`：去重清單生成器
+    - `scripts/etf-importer/run_all.sh`：一鍵執行完整流程
+  - 選股策略 SQL（ETF 篩選版）：
+    - `analysis/ETF持股篩選/回頭買上漲_ETF篩選.sql`：嚴格版（4 檔精選）
+    - `analysis/ETF持股篩選/回頭買上漲_ETF篩選_寬鬆版.sql`：寬鬆版（28 檔預備池）
+    - `analysis/ETF持股篩選/主升段加速突破_ETF篩選.sql`：ETF 背書版
+  - 資料統計：
+    - 總持股數：150 筆（00733: 50 檔，0051: 100 檔）
+    - 去重後股票：147 檔
+    - 被多個 ETF 持有：3 檔（2313 華通、3481 群創、2404 漢唐）
+
 ### 資料更新
 - 2026-02-04 完整資料處理流程
   - **原始資料收集**: price (1,957 筆), margin (1,820 筆), institutional (761 筆), top20_volume (20 筆)

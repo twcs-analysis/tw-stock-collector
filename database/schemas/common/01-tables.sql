@@ -268,3 +268,52 @@ CREATE TABLE IF NOT EXISTS import_logs (
 
     CONSTRAINT chk_status CHECK (status IN ('running', 'completed', 'failed'))
 );
+
+-- ==========================================
+-- 9. ETF 基本資訊表 (etfs)
+-- ==========================================
+-- 說明: 儲存 ETF 代號、名稱等基本資訊
+-- 更新頻率: 手動維護
+CREATE TABLE IF NOT EXISTS etfs (
+    etf_id VARCHAR(10) PRIMARY KEY,           -- ETF 代碼 (例: 0050, 00733)
+    etf_name VARCHAR(100) NOT NULL,           -- ETF 名稱 (例: 元大台灣50)
+    description VARCHAR(500),                 -- ETF 說明
+    created_at TIMESTAMP DEFAULT CURRENT_timestamp,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- ==========================================
+-- 10. ETF 持股明細表 (etf_holdings)
+-- ==========================================
+-- 說明: 儲存 ETF 的持股組成與權重
+-- 更新頻率: 不定期 (隨 ETF 持股變動)
+-- 資料來源: data/raw/etf-holdings/
+CREATE TABLE IF NOT EXISTS etf_holdings (
+    id BIGINT PRIMARY KEY,
+    etf_id VARCHAR(10) NOT NULL,              -- ETF 代碼
+    stock_id VARCHAR(10) NOT NULL,            -- 成分股代碼
+    snapshot_date DATE NOT NULL,              -- 持股快照日期
+    weight DECIMAL(10, 2),                    -- 持股權重 (%)
+    shares BIGINT,                            -- 持有股數
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (etf_id) REFERENCES etfs(etf_id) ON DELETE CASCADE,
+    FOREIGN KEY (stock_id) REFERENCES stocks(stock_id) ON DELETE CASCADE,
+    UNIQUE (etf_id, stock_id, snapshot_date)
+);
+
+-- ==========================================
+-- 11. ETF 持股去重清單表 (etf_stock_union)
+-- ==========================================
+-- 說明: 包含所有 ETF 的成分股（去重），用於選股策略篩選
+-- 更新頻率: 每次 ETF 持股更新後重新計算
+CREATE TABLE IF NOT EXISTS etf_stock_union (
+    stock_id VARCHAR(10) PRIMARY KEY,         -- 股票代碼
+    etf_count INTEGER NOT NULL,               -- 被幾個 ETF 持有
+    total_weight DECIMAL(10, 2),              -- 所有 ETF 中的權重總和 (%)
+    latest_update DATE NOT NULL,              -- 最後更新日期
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (stock_id) REFERENCES stocks(stock_id) ON DELETE CASCADE
+);

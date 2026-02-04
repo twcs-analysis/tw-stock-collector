@@ -166,3 +166,33 @@ ON import_logs (status, created_at DESC);
 --    - 根據實際查詢模式調整索引
 --
 -- ==========================================
+
+-- ==========================================
+-- 8. ETF Holdings 索引
+-- ==========================================
+-- 用途: 查詢特定 ETF 的持股清單
+CREATE INDEX IF NOT EXISTS idx_etf_holdings_etf_date
+ON etf_holdings (etf_id, snapshot_date DESC);
+
+-- 用途: 查詢特定股票被哪些 ETF 持有
+CREATE INDEX IF NOT EXISTS idx_etf_holdings_stock_date
+ON etf_holdings (stock_id, snapshot_date DESC);
+
+-- 用途: 查詢特定日期的所有 ETF 持股
+CREATE INDEX IF NOT EXISTS idx_etf_holdings_date
+ON etf_holdings (snapshot_date DESC);
+
+-- 用途: 依權重排序（找出各 ETF 的重倉股）
+CREATE INDEX IF NOT EXISTS idx_etf_holdings_weight
+ON etf_holdings (etf_id, snapshot_date DESC, weight DESC);
+
+-- ==========================================
+-- 9. ETF Stock Union 索引
+-- ==========================================
+-- 用途: 查詢被多個 ETF 持有的股票（熱門股）
+CREATE INDEX IF NOT EXISTS idx_etf_union_count
+ON etf_stock_union (etf_count DESC, total_weight DESC);
+
+-- 用途: 查詢權重最高的成分股
+CREATE INDEX IF NOT EXISTS idx_etf_union_weight
+ON etf_stock_union (total_weight DESC);

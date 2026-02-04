@@ -253,6 +253,70 @@ class DataImportLog(Base):
         return f"<DataImportLog(date={self.import_date}, type={self.data_type}, status={self.status})>"
 
 
+class ETF(Base):
+    """ETF 基本資訊表"""
+    __tablename__ = 'etfs'
+
+    etf_id = Column(String(10), primary_key=True, comment='ETF 代碼')
+    etf_name = Column(String(100), nullable=False, comment='ETF 名稱')
+    description = Column(String(500), comment='ETF 說明')
+    created_at = Column(TIMESTAMP, server_default=text('CURRENT_TIMESTAMP'))
+    updated_at = Column(TIMESTAMP, server_default=text('CURRENT_TIMESTAMP'))
+
+    def __repr__(self):
+        return f"<ETF(etf_id={self.etf_id}, name={self.etf_name})>"
+
+
+class ETFHolding(Base):
+    """ETF 持股明細表"""
+    __tablename__ = 'etf_holdings'
+    __table_args__ = (
+        UniqueConstraint('etf_id', 'stock_id', 'snapshot_date', name='uq_etf_stock_date'),
+        Index('idx_etf_holdings_etf', 'etf_id'),
+        Index('idx_etf_holdings_stock', 'stock_id'),
+        Index('idx_etf_holdings_date', 'snapshot_date'),
+    )
+
+    id = Column(BigInteger, primary_key=True, autoincrement=True)
+    etf_id = Column(String(10), ForeignKey('etfs.etf_id', ondelete='CASCADE'), nullable=False)
+    stock_id = Column(String(10), ForeignKey('stocks.stock_id', ondelete='CASCADE'), nullable=False)
+    snapshot_date = Column(Date, nullable=False, comment='持股快照日期')
+
+    weight = Column(DECIMAL(10, 2), comment='持股權重 (%)')
+    shares = Column(BigInteger, comment='持有股數')
+
+    created_at = Column(TIMESTAMP, server_default=text('CURRENT_TIMESTAMP'))
+
+    # Relationships
+    etf = relationship("ETF", backref="holdings")
+    stock = relationship("Stock", backref="etf_holdings")
+
+    def __repr__(self):
+        return f"<ETFHolding(etf={self.etf_id}, stock={self.stock_id}, weight={self.weight})>"
+
+
+class ETFStockUnion(Base):
+    """ETF 持股去重清單表 - 包含所有 ETF 的成分股（去重）"""
+    __tablename__ = 'etf_stock_union'
+    __table_args__ = (
+        Index('idx_etf_union_stock', 'stock_id'),
+    )
+
+    stock_id = Column(String(10), ForeignKey('stocks.stock_id', ondelete='CASCADE'), primary_key=True)
+    etf_count = Column(Integer, nullable=False, comment='被幾個 ETF 持有')
+    total_weight = Column(DECIMAL(10, 2), comment='所有 ETF 中的權重總和 (%)')
+    latest_update = Column(Date, nullable=False, comment='最後更新日期')
+
+    created_at = Column(TIMESTAMP, server_default=text('CURRENT_TIMESTAMP'))
+    updated_at = Column(TIMESTAMP, server_default=text('CURRENT_TIMESTAMP'))
+
+    # Relationship
+    stock = relationship("Stock", backref="etf_union")
+
+    def __repr__(self):
+        return f"<ETFStockUnion(stock={self.stock_id}, etf_count={self.etf_count})>"
+
+
 class StockAnalysisDaily(Base):
     """技術分析寬表 - 30+ 技術指標"""
     __tablename__ = 'stock_analysis_daily'
