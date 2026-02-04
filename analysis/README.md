@@ -1,6 +1,6 @@
 # 技術分析工具 (Analysis Tools)
 
-本目錄包含台股技術分析相關的工具與腳本。
+本目錄包含台股技術分析相關的工具與腳本。**每個策略都提供 Python 腳本和對應的 SQL 查詢檔案**，可靈活選擇使用 Python 或直接在資料庫執行 SQL。
 
 ---
 
@@ -9,20 +9,35 @@
 ```
 analysis/
 ├── README.md                          # 本說明文件
-├── filter_recovery_stocks.py          # 回後買上漲型態篩選器（新）
-├── find_bullish_stocks.py             # 多頭選股分析
-├── recommend_stocks_20260202.py       # 2026-02-02 股票推薦（舊版）
-├── recommend_stocks_with_names.py     # 股票推薦分析（完整版，含股票名稱）
+│
+├── 回檔買進/                          # 回檔買進策略
+│   ├── filter_recovery_stocks.py      # Python 腳本（彈性條件版）
+│   ├── filter_recovery_stocks.sql     # 對應 SQL 查詢
+│   ├── pullback_buy_selector.py       # Python 腳本
+│   └── pullback_buy_selector.sql      # 對應 SQL 查詢
+│
+├── 趨勢追蹤/                          # 趨勢追蹤策略
+│   ├── find_bullish_stocks.py         # Python 腳本
+│   └── find_bullish_stocks.sql        # 對應 SQL 查詢
+│
+├── 多策略綜合/                        # 多策略綜合
+│   ├── recommend_stocks_20260202.py   # Python 腳本（文字報告版）
+│   ├── recommend_stocks_with_names.py # Python 腳本（Markdown 版）
+│   └── multi_strategy_selector.sql    # 對應 SQL 查詢
+│
 └── results/                           # 篩選結果輸出目錄
+    └── [日期]/                        # 按日期組織的結果
 ```
 
 ---
 
 ## 🎯 主要工具
 
-### 1. filter_recovery_stocks.py（回後買上漲型態篩選器，NEW！）
+### 1. 回檔買進策略（回後買上漲型態篩選）
 
 **專為「回後買上漲」型態設計的股票篩選器**，根據四個技術條件自動篩選符合型態的標的。
+
+#### 1.1 filter_recovery_stocks.py（彈性條件版，推薦）
 
 #### 功能特色
 
@@ -67,6 +82,19 @@ python analysis/filter_recovery_stocks.py --date 2026-02-02 --output results.csv
 
 **輸出檔案位置**：`analysis/results/recovery_stocks_{date}.csv`
 
+**對應 SQL 查詢**：[filter_recovery_stocks.sql](回檔買進/filter_recovery_stocks.sql)
+
+#### 1.2 pullback_buy_selector.py（標準版）
+
+與 `filter_recovery_stocks.py` 邏輯相同，但實作細節略有不同。
+
+```bash
+# 基本使用
+python analysis/回檔買進/pullback_buy_selector.py 2026-02-03
+```
+
+**對應 SQL 查詢**：[pullback_buy_selector.sql](回檔買進/pullback_buy_selector.sql)
+
 #### 條件說明
 
 | 條件 | 檢查邏輯 | 意義 |
@@ -84,7 +112,31 @@ python analysis/filter_recovery_stocks.py --date 2026-02-02 --output results.csv
 
 ---
 
-### 2. recommend_stocks_with_names.py（推薦使用）
+### 2. 趨勢追蹤策略
+
+#### 2.1 find_bullish_stocks.py（多頭市場技術分析）
+
+**簡化版的多頭選股工具**，快速篩選符合多頭條件的股票。
+
+**選股條件**：
+1. 價格在均線之上（多頭排列）
+2. RSI 在 50-70 之間（強勢但未超買）
+3. MACD 黃金交叉（DIF > DEA）且柱狀圖為正
+4. ADX > 25（趨勢強勁）
+5. 價格在布林通道中上軌
+6. 成交量大於 20 日均量（活躍）
+
+```bash
+python analysis/趨勢追蹤/find_bullish_stocks.py
+```
+
+**對應 SQL 查詢**：[find_bullish_stocks.sql](趨勢追蹤/find_bullish_stocks.sql)
+
+---
+
+### 3. 多策略綜合
+
+#### 3.1 recommend_stocks_with_names.py（推薦使用）
 
 **最完整的股票推薦分析工具**，根據技術指標自動篩選並推薦適合的標的。
 
@@ -167,37 +219,147 @@ python scripts/common-tools/markdown_to_pdf.py \
 
 詳見：[markdown_to_pdf.py 使用說明](../scripts/common-tools/README.md)
 
----
+#### 3.2 recommend_stocks_20260202.py（文字報告版）
 
-### 3. find_bullish_stocks.py
-
-**簡化版的多頭選股工具**，快速篩選符合多頭條件的股票。
-
-#### 功能特色
-
-- ✅ 單一多頭策略
-- ✅ 快速篩選
-- ✅ 終端輸出結果
-
-#### 使用方式
+與 `recommend_stocks_with_names.py` 邏輯相同，但生成純文字報告（不含 Markdown）。
 
 ```bash
-python analysis/find_bullish_stocks.py
+python analysis/多策略綜合/recommend_stocks_20260202.py
 ```
 
-#### 適用場景
+**對應 SQL 查詢**：[multi_strategy_selector.sql](多策略綜合/multi_strategy_selector.sql)
 
-- 快速查看多頭標的
-- 終端機直接查看結果
-- 不需要完整報告
+**註**：兩個 Python 腳本共用同一個 SQL 查詢檔案。
 
 ---
 
-### 4. recommend_stocks_20260202.py（舊版，不建議使用）
+## 🗄️ SQL 查詢檔案
 
-**舊版的股票推薦工具**，功能類似 `recommend_stocks_with_names.py` 但缺少股票名稱。
+**每個策略都提供對應的 SQL 查詢檔案**，可直接在 PostgreSQL 資料庫中執行，無需 Python 環境。
 
-建議使用 `recommend_stocks_with_names.py` 取代。
+### SQL 檔案清單
+
+| SQL 檔案 | 對應 Python 腳本 | 說明 |
+|---------|----------------|------|
+| [filter_recovery_stocks.sql](回檔買進/filter_recovery_stocks.sql) | filter_recovery_stocks.py | 回後買上漲型態篩選（彈性版） |
+| [pullback_buy_selector.sql](回檔買進/pullback_buy_selector.sql) | pullback_buy_selector.py | 回檔買上漲選股（標準版） |
+| [find_bullish_stocks.sql](趨勢追蹤/find_bullish_stocks.sql) | find_bullish_stocks.py | 多頭市場選股 |
+| [multi_strategy_selector.sql](多策略綜合/multi_strategy_selector.sql) | recommend_stocks_*.py | 多策略綜合選股 |
+
+### SQL 使用方式
+
+#### 方法一：使用 psql 命令執行
+
+```bash
+# 執行 SQL 查詢
+psql -U postgres -d tw_stock -f analysis/回檔買進/filter_recovery_stocks.sql
+
+# 匯出結果為 CSV
+psql -U postgres -d tw_stock -f analysis/回檔買進/filter_recovery_stocks.sql -o results.csv
+```
+
+#### 方法二：在 psql 互動模式中執行
+
+```bash
+# 連接資料庫
+psql -U postgres -d tw_stock
+
+# 執行 SQL 檔案
+\i analysis/回檔買進/filter_recovery_stocks.sql
+```
+
+#### 方法三：使用資料庫管理工具
+
+使用 DBeaver、pgAdmin、DataGrip 等工具：
+1. 開啟 SQL 檔案
+2. 連接到 `tw_stock` 資料庫
+3. 執行查詢
+
+### SQL 調整參數
+
+所有 SQL 檔案都支援以下調整：
+
+#### 1. 修改目標日期
+
+將 SQL 中的日期常數替換為目標日期：
+
+```sql
+-- 範例：從 2026-02-03 改為 2026-02-04
+-- 原本
+WHERE ti.trade_date = '2026-02-03'
+
+-- 修改為
+WHERE ti.trade_date = '2026-02-04'
+```
+
+#### 2. 調整篩選條件
+
+```sql
+-- 範例：放寬 RSI 範圍
+-- 原本
+AND rsi_14 > 50 AND rsi_14 < 70
+
+-- 修改為
+AND rsi_14 > 45 AND rsi_14 < 75
+```
+
+#### 3. 調整評分權重
+
+```sql
+-- 原本
+rsi_score * 0.2 + macd_score * 0.2 + ...
+
+-- 修改為（加重 RSI 權重）
+rsi_score * 0.3 + macd_score * 0.15 + ...
+```
+
+#### 4. 限制輸出數量
+
+```sql
+-- 原本
+LIMIT 10
+
+-- 修改為
+LIMIT 20
+```
+
+### SQL 查詢範例
+
+#### 範例一：快速查看回檔買進標的
+
+```sql
+-- 執行簡化版查詢（僅顯示關鍵資訊）
+SELECT
+    stock_id AS "股票代號",
+    close_price AS "收盤價",
+    ma_5 AS "MA5",
+    ma_20 AS "MA20"
+FROM stock_prices
+WHERE trade_date = '2026-02-03'
+    AND close_price > open_price  -- 紅 K
+    AND close_price > ma_5         -- 站上 MA5
+    AND stock_id >= 1000
+    AND volume >= 1000000
+ORDER BY close_price DESC;
+```
+
+#### 範例二：查看各條件通過統計
+
+```sql
+-- 查看各條件通過的股票數量和比例
+-- 參考 filter_recovery_stocks.sql 中的「各條件通過統計」查詢
+```
+
+### SQL vs Python 選擇建議
+
+| 需求 | 建議 | 原因 |
+|-----|------|-----|
+| 快速查詢最新數據 | SQL | 速度快，無需載入 Python |
+| 需要股票名稱 | Python | 自動載入名稱資料 |
+| 生成報告（PDF/MD） | Python | 支援多種輸出格式 |
+| 批次處理多日期 | Python | 支援迴圈和自動化 |
+| 整合其他系統 | SQL | 標準 SQL 易於整合 |
+| 學習和研究 | 兩者皆可 | 對照學習最佳 |
 
 ---
 

@@ -32,7 +32,7 @@ def load_historical_data(date_str, days_back=20):
         dict: {stock_id: [日期資料列表]}
     """
     target_date = datetime.strptime(date_str, '%Y-%m-%d')
-    base_path = Path(__file__).parent.parent / "data/transformed/technical"
+    base_path = Path(__file__).parent.parent.parent / "data/transformed/technical"
 
     stock_history = {}
 
@@ -169,17 +169,25 @@ def check_break_yesterday_high(row, history):
 
 def main():
     """主程式"""
+    import sys
+
     print("=" * 80)
     print("回檔買上漲選股工具")
     print("=" * 80)
     print()
 
-    # 設定日期
-    target_date = "2026-02-02"
+    # 設定日期（可從命令列參數取得，預設為今天）
+    if len(sys.argv) > 1:
+        target_date = sys.argv[1]
+    else:
+        target_date = datetime.now().strftime('%Y-%m-%d')
 
     # 載入股票名稱
     print("📊 載入股票資料...")
-    raw_data_path = Path(__file__).parent.parent / f"data/raw/price/2026/02/{target_date}.json"
+    # 從日期提取年月
+    date_parts = target_date.split('-')
+    year, month = date_parts[0], date_parts[1]
+    raw_data_path = Path(__file__).parent.parent.parent / f"data/raw/price/{year}/{month}/{target_date}.json"
 
     stock_name_dict = {}
     if raw_data_path.exists():
@@ -191,7 +199,7 @@ def main():
         print(f"⚠️  原始資料不存在，將僅顯示股票代碼")
 
     # 載入技術指標資料
-    data_path = Path(__file__).parent.parent / f"data/transformed/technical/{target_date}_all.csv"
+    data_path = Path(__file__).parent.parent.parent / f"data/transformed/technical/{target_date}_all.csv"
 
     if not data_path.exists():
         print(f"❌ 找不到技術指標資料：{data_path}")

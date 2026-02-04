@@ -19,7 +19,7 @@ import argparse
 import sys
 
 # 加入專案根目錄到 sys.path
-project_root = Path(__file__).parent.parent
+project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root))
 
 from services.common.utils.logger import setup_logger

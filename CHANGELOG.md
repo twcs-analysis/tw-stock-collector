@@ -4,6 +4,21 @@
 
 ## [Unreleased]
 
+### 改進
+- 回檔買進策略 SQL 查詢優化
+  - 修正 `stock_id` 型別比較錯誤（字串 vs 整數）
+  - 新增參數化日期設定（使用 CTE `params`）
+  - 提升 SQL 可維護性與靈活性
+- 分析腳本路徑修正與命令列參數支援
+  - `pullback_buy_selector.py`: 修正專案根目錄路徑計算
+  - `pullback_buy_selector.py`: 支援命令列參數傳入日期
+  - `filter_recovery_stocks.py`: 修正專案根目錄路徑
+  - `run_all_analysis.py`: 啟用先前跳過的分析腳本
+- 分析工具文檔重構
+  - 按策略分類組織（回檔買進、趨勢追蹤、多策略綜合）
+  - 新增對應 SQL 查詢檔案說明
+  - 提升文檔結構與可讀性
+
 ### 新增
 - 新增證交所交易日曆服務 (`TradingCalendarService`)
   - 從證交所 OpenAPI 取得官方交易日曆資料
