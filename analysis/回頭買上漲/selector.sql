@@ -107,70 +107,73 @@ final_data AS (
 
 -- 🎯 最終篩選與輸出
 SELECT
-    stock_id AS "股票代號",
-    close_price AS "收盤價",
-    pct_chg AS "日漲跌%",
-    ROUND((close_price - ma_5) / NULLIF(ma_5, 0) * 100, 2) AS "距MA5%",
-    ROUND((close_price - ma_20) / NULLIF(ma_20, 0) * 100, 2) AS "距MA20%",
-    ROUND(volume / 1000.0, 0) AS "成交量(張)",
-    vol_ratio AS "量比",
-    ma20_slope_pct AS "月線斜率%",
-    close_pos AS "收盤位置",
+    f.stock_id AS "股票代號",
+    s.stock_name AS "股票名稱",
+    s.market_type AS "市場別",
+    f.close_price AS "收盤價",
+    f.pct_chg AS "日漲跌%",
+    ROUND((f.close_price - f.ma_5) / NULLIF(f.ma_5, 0) * 100, 2) AS "距MA5%",
+    ROUND((f.close_price - f.ma_20) / NULLIF(f.ma_20, 0) * 100, 2) AS "距MA20%",
+    ROUND(f.volume / 1000.0, 0) AS "成交量(張)",
+    f.vol_ratio AS "量比",
+    f.ma20_slope_pct AS "月線斜率%",
+    f.close_pos AS "收盤位置",
 
     -- 條件檢查（調試用）
-    CASE WHEN avg_high_recent > avg_high_earlier THEN '✓' ELSE '✗' END AS "A_頭高",
-    CASE WHEN avg_low_recent > avg_low_earlier THEN '✓' ELSE '✗' END AS "A_底高",
-    CASE WHEN close_price > ma_20 AND low_price >= prev_low THEN '✓' ELSE '✗' END AS "B_月線支撐",
-    CASE WHEN close_price > open_price AND close_price > ma_5 THEN '✓' ELSE '✗' END AS "C_紅K站5均",
-    CASE WHEN close_price > yesterday_high THEN '✓' ELSE '✗' END AS "D_過昨高",
-    CASE WHEN ma20_slope_pct > 0 THEN '✓' ELSE '✗' END AS "E_月線↑",
-    CASE WHEN vol_ratio BETWEEN 0.40 AND 0.70 THEN '✓' ELSE '✗' END AS "F_縮量",
-    CASE WHEN close_pos >= 0.65 THEN '✓' ELSE '✗' END AS "G_收高點"
+    CASE WHEN f.avg_high_recent > f.avg_high_earlier THEN '✓' ELSE '✗' END AS "A_頭高",
+    CASE WHEN f.avg_low_recent > f.avg_low_earlier THEN '✓' ELSE '✗' END AS "A_底高",
+    CASE WHEN f.close_price > f.ma_20 AND f.low_price >= f.prev_low THEN '✓' ELSE '✗' END AS "B_月線支撐",
+    CASE WHEN f.close_price > f.open_price AND f.close_price > f.ma_5 THEN '✓' ELSE '✗' END AS "C_紅K站5均",
+    CASE WHEN f.close_price > f.yesterday_high THEN '✓' ELSE '✗' END AS "D_過昨高",
+    CASE WHEN f.ma20_slope_pct > 0 THEN '✓' ELSE '✗' END AS "E_月線↑",
+    CASE WHEN f.vol_ratio BETWEEN 0.40 AND 0.70 THEN '✓' ELSE '✗' END AS "F_縮量",
+    CASE WHEN f.close_pos >= 0.65 THEN '✓' ELSE '✗' END AS "G_收高點"
 
-FROM final_data
+FROM final_data f
 CROSS JOIN params
+LEFT JOIN stocks s ON f.stock_id = s.stock_id
 WHERE
-    trade_date = params.target_date
+    f.trade_date = params.target_date
 
     -- ✅ 條件 A：頭頭高 底底高（趨勢確認）
-    AND avg_high_recent > avg_high_earlier
-    AND avg_low_recent > avg_low_earlier
+    AND f.avg_high_recent > f.avg_high_earlier
+    AND f.avg_low_recent > f.avg_low_earlier
 
     -- ✅ 條件 B：股價在月線之上且前低未破
-    AND close_price > ma_20
-    AND low_price >= prev_low
+    AND f.close_price > f.ma_20
+    AND f.low_price >= f.prev_low
 
     -- ✅ 條件 C：今日紅K站上5均
-    AND close_price > open_price
-    AND close_price > ma_5
+    AND f.close_price > f.open_price
+    AND f.close_price > f.ma_5
 
     -- ✅ 條件 D：收盤過昨日高
-    AND close_price > yesterday_high
+    AND f.close_price > f.yesterday_high
 
     -- ✅ 條件 E：月線斜率向上
-    AND ma20_slope_pct > 0
+    AND f.ma20_slope_pct > 0
 
     -- ✅ 條件 F：量能縮減 40-70%（健康回檔）
-    AND vol_ratio BETWEEN 0.40 AND 0.70
+    AND f.vol_ratio BETWEEN 0.40 AND 0.70
 
     -- ✅ 條件 G：收在相對高點（下檔有支撐）
-    AND close_pos >= 0.65
+    AND f.close_pos >= 0.65
 
     -- 🛡️ 防護條件 1：排除「價跌量不減」的出貨型態
-    AND NOT (pct_chg < -3 AND vol_ratio > 0.80)
+    AND NOT (f.pct_chg < -3 AND f.vol_ratio > 0.80)
 
     -- 🛡️ 防護條件 2：多頭排列確認
-    AND ma_5 > ma_20
-    AND ma_20 > ma_60
+    AND f.ma_5 > f.ma_20
+    AND f.ma_20 > f.ma_60
 
     -- 🛡️ 防護條件 3：流動性保護
-    AND volume >= 1000
-    AND vol_ma20 >= 500
+    AND f.volume >= 1000
+    AND f.vol_ma20 >= 500
 
     -- 排除 ETF
-    AND stock_id >= '1000'
+    AND f.stock_id >= '1000'
 
-ORDER BY close_price DESC;
+ORDER BY f.close_price DESC;
 
 
 -- ============================================================================

@@ -4,6 +4,20 @@
 
 ## [Unreleased]
 
+### 新增
+- **回頭買上漲選股報告系統**
+  - 新增 `generate_report.py`：自動生成 Markdown 和 PDF 報告
+  - 新增 `run_report.sh`：一鍵生成報告的便捷腳本
+  - 報告包含股票名稱、市場別、完整技術指標、條件檢查
+  - 使用專案現有的 `markdown_to_pdf.py` 工具轉換 PDF（Chrome headless）
+  - 報告儲存路徑：`analysis/reports/回頭買上漲/{日期}/`
+- **SQL 優化與文檔增強**
+  - `selector.sql` 加入股票名稱（JOIN stocks 表）
+  - README.md 新增「SQL 執行階段詳解」章節
+  - 詳細說明 params、all_indicators、enriched_data、final_data 各階段
+  - 新增資料庫索引優化說明與效能提升數據
+  - 新增報告生成使用說明
+
 ### 重構
 - **回頭買上漲選股策略**（原「回檔買進」策略重構）
   - 目錄重新命名：`回檔買進/` → `回頭買上漲/`
@@ -13,7 +27,7 @@
   - 撰寫完整策略文檔（README.md），包含條件詳解、SQL 實作、案例說明
   - 移除舊版檔案（Python 腳本、舊 SQL、results 目錄）
 
-### 新增
+### 已完成功能
 - **Claude Code Skills**
   - `data-collect`: 資料收集操作技能
   - `data-import`: 資料匯入操作技能
