@@ -4,7 +4,32 @@
 
 ## [Unreleased]
 
+### 重構
+- **回頭買上漲選股策略**（原「回檔買進」策略重構）
+  - 目錄重新命名：`回檔買進/` → `回頭買上漲/`
+  - 整合完整版 SQL 為高效能版本 (`selector.sql`)
+  - 七大核心條件 + 三層防護機制
+  - 效能優化：90天資料限制 + WINDOW 子句，執行時間 1-2 秒
+  - 撰寫完整策略文檔（README.md），包含條件詳解、SQL 實作、案例說明
+  - 移除舊版檔案（Python 腳本、舊 SQL、results 目錄）
+
+### 新增
+- **Claude Code Skills**
+  - `data-collect`: 資料收集操作技能
+  - `data-import`: 資料匯入操作技能
+  - `data-transform`: 資料轉換操作技能
+- **多策略綜合分析 SQL**
+  - `analysis/多策略綜合/multi_strategy_selector.sql`
+- **趨勢追蹤策略 SQL**
+  - `analysis/趨勢追蹤/find_bullish_stocks.sql`
+- **分析推薦腳本**
+  - `scripts/analyze_and_recommend.py`
+
 ### 改進
+- CLAUDE.md 新增「執行腳本規範」章節
+  - 強制優先使用現有腳本，禁止自行撰寫程式
+  - 適用於資料收集、匯入、轉換、分析等所有操作
+  - 提供執行前檢查清單與範例
 - 回檔買進策略 SQL 查詢優化
   - 修正 `stock_id` 型別比較錯誤（字串 vs 整數）
   - 新增參數化日期設定（使用 CTE `params`）
