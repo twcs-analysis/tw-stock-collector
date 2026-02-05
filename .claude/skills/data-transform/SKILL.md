@@ -11,7 +11,7 @@ allowed-tools: Bash(python3:*), Read, Grep, Glob
 
 ## 功能說明
 
-此 skill 使用專案中的 `scripts/data-transformer/run_technical_analysis.py` 腳本來轉換資料，計算包含：
+此 skill 使用專案中的 `scripts/data-transformer/run_technical.py` 腳本來轉換資料，計算包含：
 
 ### 技術指標（共 30 個）
 
@@ -65,20 +65,20 @@ allowed-tools: Bash(python3:*), Read, Grep, Glob
 
 **執行命令**：
 ```bash
-python3 scripts/data-transformer/run_technical_analysis.py --date 2026-02-03
+python3 scripts/data-transformer/run_technical.py --date 2026-02-03
 ```
 
 說明：
 - 從資料庫讀取歷史價格資料（需要約 240 天歷史資料計算 MA240）
 - 計算所有 30 個技術指標
-- 輸出 JSON 檔案到 `data/transformed/technical_analysis/2026/02/2026-02-03.json`
+- 輸出 JSON 檔案到 `data/transformed/technical/2026/02/2026-02-03.json`
 
 ### 場景 2: 計算日期區間的技術指標
 使用者說：「計算 2026-01-01 到 2026-01-31 的技術指標」
 
 **執行命令**：
 ```bash
-python3 scripts/data-transformer/run_technical_analysis.py --start 2026-01-01 --end 2026-01-31
+python3 scripts/data-transformer/run_technical.py --start 2026-01-01 --end 2026-01-31
 ```
 
 說明：
@@ -90,7 +90,7 @@ python3 scripts/data-transformer/run_technical_analysis.py --start 2026-01-01 --
 
 **執行命令**：
 ```bash
-python3 scripts/data-transformer/run_technical_analysis.py --date 2026-02-03 --stock-id 2330
+python3 scripts/data-transformer/run_technical.py --date 2026-02-03 --stock-id 2330
 ```
 
 說明：
@@ -102,7 +102,7 @@ python3 scripts/data-transformer/run_technical_analysis.py --date 2026-02-03 --s
 
 **執行命令**：
 ```bash
-python3 scripts/data-transformer/run_technical_analysis.py --date 2026-02-03 --output result.csv
+python3 scripts/data-transformer/run_technical.py --date 2026-02-03 --output result.csv
 ```
 
 說明：
@@ -114,7 +114,7 @@ python3 scripts/data-transformer/run_technical_analysis.py --date 2026-02-03 --o
 
 **執行命令**：
 ```bash
-python3 scripts/data-transformer/run_technical_analysis.py --date 2026-02-03 --no-save
+python3 scripts/data-transformer/run_technical.py --date 2026-02-03 --no-save
 ```
 
 說明：
@@ -150,7 +150,7 @@ python3 scripts/data-transformer/run_technical_analysis.py --date 2026-02-03 --n
 
 ## 參數說明
 
-### scripts/data-transformer/run_technical_analysis.py
+### scripts/data-transformer/run_technical.py
 
 **日期參數**（擇一必填）：
 - `--date YYYY-MM-DD`: 單一日期轉換
@@ -176,11 +176,11 @@ python3 scripts/data-transformer/run_technical_analysis.py --date 2026-02-03 --n
 
 ### 預設輸出路徑（JSON）
 ```
-data/transformed/technical_analysis/YYYY/MM/YYYY-MM-DD.json
+data/transformed/technical/YYYY/MM/YYYY-MM-DD.json
 ```
 
 範例：
-- `data/transformed/technical_analysis/2026/02/2026-02-03.json`
+- `data/transformed/technical/2026/02/2026-02-03.json`
 
 ### 自訂輸出路徑
 使用 `--output` 參數時：
@@ -299,7 +299,7 @@ date,stock_id,stock_name,close,ma_5,ma_20,rsi_14,macd,adx_14,...
 
 **助手回應**:
 ```
-我會使用 run_technical_analysis.py 計算昨天（2026-02-03）的技術指標。
+我會使用 run_technical.py 計算昨天（2026-02-03）的技術指標。
 
 執行前檢查：
 ✓ PostgreSQL 資料庫已連線
@@ -307,13 +307,13 @@ date,stock_id,stock_name,close,ma_5,ma_20,rsi_14,macd,adx_14,...
 ✓ 歷史資料充足（513 個交易日）
 
 執行命令：
-python3 scripts/data-transformer/run_technical_analysis.py --date 2026-02-03
+python3 scripts/data-transformer/run_technical.py --date 2026-02-03
 
 [執行結果...]
 ✓ 成功計算 1,954 檔股票的技術指標
 ✓ 計算指標數: 30 個
 ✓ 處理時間: 18.5 秒
-✓ 輸出檔案: data/transformed/technical_analysis/2026/02/2026-02-03.json
+✓ 輸出檔案: data/transformed/technical/2026/02/2026-02-03.json
 
 指標包含：
 - 移動平均: MA5/10/20/60/120/240
@@ -333,10 +333,10 @@ python3 scripts/data-transformer/run_technical_analysis.py --date 2026-02-03
 我會分別執行兩次並合併結果。
 
 執行命令 1：
-python3 scripts/data-transformer/run_technical_analysis.py --date 2026-02-03 --stock-id 2330 --output tsmc.csv
+python3 scripts/data-transformer/run_technical.py --date 2026-02-03 --stock-id 2330 --output tsmc.csv
 
 執行命令 2：
-python3 scripts/data-transformer/run_technical_analysis.py --date 2026-02-03 --stock-id 2317 --output hon_hai.csv
+python3 scripts/data-transformer/run_technical.py --date 2026-02-03 --stock-id 2317 --output hon_hai.csv
 
 [執行結果...]
 ✓ 台積電指標已輸出至: tsmc.csv
@@ -364,8 +364,8 @@ python3 scripts/data-transformer/run_technical_analysis.py --date 2026-02-03 --s
 
 ## 相關檔案
 
-- `scripts/data-transformer/run_technical_analysis.py` - 轉換腳本
-- `services/data-transformer/app/technical_analysis_transformer.py` - 轉換服務
+- `scripts/data-transformer/run_technical.py` - 轉換腳本
+- `services/data-transformer/app/technical_transformer.py` - 轉換服務
 - `services/data-transformer/app/indicators/` - 技術指標計算模組
-- `services/common/database/models/technical_analysis.py` - 資料模型
+- `services/common/database/models/technical.py` - 資料模型
 - `scripts/data-transformer/README.md` - 詳細說明文件

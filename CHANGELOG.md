@@ -5,6 +5,40 @@
 ## [Unreleased]
 
 ### 新增
+- **ETF 持股篩選系統 - 標註版策略**
+  - 新增 3 個標註版 SQL（不強制 ETF 持有，改為標註）：
+    - `analysis/ETF持股篩選/回頭買上漲_ETF標註版.sql`：完整版（25 檔）
+    - `analysis/ETF持股篩選/回頭買上漲_ETF標註版_含明細.sql`：含 ETF 明細
+    - `analysis/ETF持股篩選/寬鬆版選股_ETF標註.sql`：寬鬆版（131 檔）
+  - 綜合評分系統（0-100 分）：漲幅（40%）+ 量比（30%）+ ETF持有（20%）+ 流動性（10%）
+  - 趨勢標註：📈 多頭 / 📉 整理
+  - ETF 明細顯示：具體 ETF 名稱與權重
+
+- **分析報告自動生成**（2026-02-05）
+  - 完整 Markdown 報告（含統計分析、投資建議、風險提示）
+  - 自動轉換 HTML + PDF（使用 `scripts/common-tools/markdown_to_pdf.py`）
+  - 報告目錄：`analysis/reports/ETF持股篩選/2026-02-05/`
+
+- **Google Apps Script 整合工具**
+  - 新增 `scripts/gas/` 目錄：GAS 呼叫器與網路診斷分析器
+  - 安全配置：`.gitignore` 排除 `config.gs` 和 `*_secret.gs`
+
+### 修正
+- **技術分析路徑統一**
+  - `services/data-transformer/app/json_saver.py`：目錄名稱修正
+  - `technical_analysis` → `technical`（與其他模組一致）
+
+### 資料更新
+- **2026-02-05 資料收集**
+  - price: 1,958 筆
+  - margin: 1,820 筆
+  - top20_volume: 20 筆
+  - 技術分析轉換：2026/ 目錄
+
+- **2026-02-04 資料重新處理**
+  - institutional, lending, margin, price 的 MD5 更新
+  - 報告文件同步更新
+
 - **ETF 持股篩選系統**
   - 資料庫 Schema：新增 3 個表格（etfs, etf_holdings, etf_stock_union）
   - ETF 持股資料：2 個 ETF（00733 富邦臺灣中小、0051 元大中型100）

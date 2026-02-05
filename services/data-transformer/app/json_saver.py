@@ -35,7 +35,7 @@ class JSONSaver:
         self,
         df: pd.DataFrame,
         date: str,
-        data_type: str = 'technical_analysis'
+        data_type: str = 'technical'
     ) -> bool:
         """
         儲存 DataFrame 為 JSON 檔案
@@ -43,7 +43,7 @@ class JSONSaver:
         Args:
             df: 要儲存的 DataFrame
             date: 日期 (YYYY-MM-DD)
-            data_type: 資料類型
+            data_type: 資料類型（預設: 'technical'）
 
         Returns:
             bool: 是否成功
@@ -87,7 +87,7 @@ class JSONSaver:
         year = date_obj.year
         month = f'{date_obj.month:02d}'
 
-        # data/transformed/technical_analysis/2026/01/2026-01-30.json
+        # data/transformed/technical/2026/01/2026-01-30.json
         file_path = self.base_path / data_type / str(year) / month / f'{date}.json'
 
         return file_path

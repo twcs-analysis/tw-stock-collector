@@ -85,3 +85,10 @@ dmypy.json
 venv/
 *_backup.py
 *_old.py
+
+# Google Apps Script 配置檔（包含敏感資訊）
+scripts/gas/config.gs
+scripts/gas/*_secret.gs
+
+# GAS 測試檔案
+scripts/gas/test_payload_*.json
