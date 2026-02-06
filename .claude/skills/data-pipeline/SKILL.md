@@ -7,11 +7,11 @@ allowed-tools: Bash(python3:*), Read, Grep, Glob, TodoWrite
 
 # 台股資料處理 Pipeline Skill
 
-自動執行完整的台股資料處理流程，包含資料收集、資料庫匯入、技術分析轉換三個階段。
+自動執行完整的台股資料處理流程，包含資料收集、資料庫匯入、技術分析轉換、Git 提交四個階段。
 
 ## 功能說明
 
-此 skill 按順序執行以下三個階段：
+此 skill 按順序執行以下四個階段：
 
 1. **資料收集（data-collect）**
    - 使用 `scripts/run_collection.py`
@@ -24,6 +24,10 @@ allowed-tools: Bash(python3:*), Read, Grep, Glob, TodoWrite
 3. **資料轉換（data-transform）**
    - 使用 `scripts/data-transformer/transform.sh`
    - 計算 30 個技術指標
+
+4. **Git 提交（git commit & push）**
+   - 使用 Skill tool 呼叫 git skill
+   - 自動分析變更、code review、更新文檔、提交並推送
 
 ## 使用場景
 
@@ -121,6 +125,7 @@ scripts/data-transformer/transform.sh $TARGET_DATE
 1. ⏳ 收集資料（data-collect）
 2. ⏳ 匯入資料庫（data-import）
 3. ⏳ 計算技術指標（data-transform）
+4. ⏳ Git 提交（git commit & push）
 ```
 
 ### 📋 Step 3: 階段 1 - 資料收集
@@ -177,7 +182,37 @@ ls -lh data/transformed/technical/$YEAR/$MONTH/$TARGET_DATE.json
 
 **更新 Todo**: 標記「計算技術指標」為 completed
 
-### 📋 Step 6: 完成報告
+### 📋 Step 6: Git 提交
+
+**執行步驟**：
+1. 使用 Skill tool 呼叫 git skill
+2. Git skill 會自動執行：
+   - 分析變更內容（git status, git diff）
+   - Code review（檢查安全性、邏輯錯誤）
+   - 更新 CHANGELOG.md
+   - 建立 commit（使用繁體中文訊息）
+   - 推送到遠端 repo
+
+**Commit 訊息格式**：
+```
+data: Daily collection for YYYY-MM-DD
+
+- price: X 筆
+- institutional: X 筆
+- margin: X 筆
+- top20_volume: X 筆
+- 技術分析: X 檔股票
+
+Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
+```
+
+**成功條件**：
+- ✅ Commit 建立成功
+- ✅ 推送到 origin/main
+
+**更新 Todo**: 標記「Git 提交」為 completed
+
+### 📋 Step 7: 完成報告
 
 輸出摘要：
 ```
@@ -189,6 +224,7 @@ ls -lh data/transformed/technical/$YEAR/$MONTH/$TARGET_DATE.json
 - 收集股票數: 1,958 檔
 - 匯入資料庫: 1,958 筆
 - 技術分析: 1,921 檔（30 個指標）
+- Git Commit: 32deeb51
 
 📁 生成的檔案：
 - data/raw/price/2026/02/2026-02-05.json

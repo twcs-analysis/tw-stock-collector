@@ -278,7 +278,7 @@ scripts/data-transformer/transform.sh latest 7
 #### 完整 Pipeline
 ```bash
 # 使用 data-pipeline skill 自動執行完整流程
-# 包含：收集 → 匯入 → 轉換
+# 包含：收集 → 匯入 → 轉換 → Git 提交
 # 詳見：.claude/skills/data-pipeline/SKILL.md
 ```
 

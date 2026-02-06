@@ -6,9 +6,10 @@
 
 ### 新增
 - **Claude Code Skill: data-pipeline**（2026-02-06）
-  - 自動化資料處理完整流程：收集 → 匯入 → 轉換
+  - 自動化資料處理完整流程：收集 → 匯入 → 轉換 → Git 提交
   - 支援日期指定（預設今日）、資料類型篩選
-  - TodoWrite 任務追蹤，三階段錯誤處理
+  - TodoWrite 任務追蹤，四階段錯誤處理
+  - 自動呼叫 git skill 完成提交與推送
   - 檔案位置：`.claude/skills/data-pipeline/SKILL.md`
 
 ### 改進
