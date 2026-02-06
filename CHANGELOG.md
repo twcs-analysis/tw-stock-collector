@@ -5,6 +5,27 @@
 ## [Unreleased]
 
 ### 新增
+- **月營收資料收集系統**（2026-02-06）
+  - 新增 `RevenueCollector` 支援雙模式收集
+  - **Daily 模式**（1-10 日）：MOPS API 逐一查詢，增量更新
+  - **Monthly 模式**（10 日後）：OpenAPI 批次取得完整資料
+  - 自動從 OpenAPI 取得上月營收並計算月增率 (MoM)
+  - 增量更新機制：載入已收集資料，只查詢未公告股票
+  - 檔案位置：
+    - `services/common/collectors/revenue_collector.py`
+    - `services/common/datasources/twse_revenue_datasource.py`
+    - `services/common/datasources/tpex_revenue_datasource.py`
+    - `services/common/datasources/mops_revenue_datasource.py`
+    - `scripts/data-collector/collect_revenue.py`
+  - 資料儲存：
+    - `data/raw/revenue-daily/YYYY/YYYY-MM.json`（同月同檔案）
+    - `data/raw/revenue-monthly/YYYY/YYYY-MM.json`
+  - 文檔：
+    - `data/raw/revenue-daily/README.md`
+    - `data/raw/revenue-monthly/README.md`
+    - `docs/specifications/MONTHLY_REVENUE_COLLECTION_DESIGN.md`
+    - `docs/specifications/HISTORICAL_REVENUE_BACKFILL_STRATEGY.md`
+
 - **Claude Code Skill: data-pipeline**（2026-02-06）
   - 自動化資料處理完整流程：收集 → 匯入 → 轉換 → Git 提交
   - 支援日期指定（預設今日）、資料類型篩選
@@ -15,6 +36,18 @@
   - 檔案位置：`.claude/skills/data-pipeline/SKILL.md`
 
 ### 改進
+- **TWSE API 參考文檔擴充**（2026-02-06）
+  - 新增月營收 API (`t187ap05_L`, `t187ap05_P`) 詳細說明
+  - 新增 API 分類概覽表（證券交易、公司治理、財務報表等）
+  - 補充 Swagger UI 和 API 總數資訊（145 個 endpoints）
+  - 檔案：`docs/TWSE_API_REFERENCE.md`
+
+- **CLAUDE.md 文檔優化**（2026-02-06）
+  - 新增月營收資料類型與檔案組織說明
+  - 更新資料源整合章節，新增 `RevenueCollector` 雙模式說明
+  - 新增月營收收集指令範例（daily/monthly 模式）
+  - 優化專案結構說明，新增 `revenue-daily/` 和 `revenue-monthly/` 目錄
+
 - **CLAUDE.md 文檔優化**（2026-02-06）
   - 新增「資料匯入」和「技術分析轉換」指令範例
   - 強調優先使用 shell 腳本（而非直接執行 Python）

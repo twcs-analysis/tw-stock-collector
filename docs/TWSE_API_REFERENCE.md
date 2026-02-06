@@ -2,14 +2,95 @@
 
 ## 📚 官方文件
 
-- **官方 Swagger JSON**: https://openapi.twse.com.tw/v1/swagger.json
-- **Base URL**: `https://openapi.twse.com.tw/v1`
-- **API 版本**: 1.0
-- **使用條款**: https://www.twse.com.tw/zh/page/terms/use.html
+### 主要入口
+
+- **🌐 官方 Swagger UI**: https://openapi.twse.com.tw/
+  - 互動式 API 文檔
+  - 可直接測試 API 請求
+  - 包含完整的 endpoints 說明與範例
+  - 145 個可用 API endpoints
+
+- **📄 Swagger JSON 規格**: https://openapi.twse.com.tw/v1/swagger.json
+  - 機器可讀的 API 規格
+  - 包含所有 endpoints 定義
+  - 可用於自動生成客戶端程式碼
+
+- **🔗 Base URL**: `https://openapi.twse.com.tw/v1`
+- **📋 API 版本**: 1.0
+- **⚖️ 使用條款**: https://www.twse.com.tw/zh/page/terms/use.html
+
+### API 分類概覽
+
+根據官方文檔，OpenAPI 提供以下類別：
+
+| 分類 | 說明 | 範例 endpoints |
+|------|------|---------------|
+| **證券交易** | 每日價量、市場統計 | STOCK_DAY_ALL, MI_INDEX, MI_MARGN |
+| **公司治理** | ESG 資訊、股利分派、董監持股 | ~56 個 endpoints |
+| **財務報表** | 月營收、季報、年報 | t187ap05_L (月營收彙總) |
+| **指數資訊** | 加權指數、類股指數 | FRMSA, TAI50I |
+| **法人資訊** | 外資持股、三大法人 | MI_QFIIS_cat, MI_QFIIS_sort_20 |
+| **其他資訊** | 公告事項、新聞、休市日曆 | eventList, newsList, holidaySchedule |
+
+**總計**: 145 個 API endpoints
 
 ---
 
 ## 🎯 本專案使用的 API
+
+### 0. 月營收資料 (Monthly Revenue) 🆕
+
+#### `/opendata/t187ap05_L`
+- **說明**: 上市公司每月營業收入彙總表
+- **完整 URL**: https://openapi.twse.com.tw/v1/opendata/t187ap05_L
+- **方法**: GET
+- **回傳格式**: JSON / CSV
+- **分類**: 財務報表
+- **本專案使用**: ⏳ 規劃中（搭配 MOPS API 使用）
+
+**回傳欄位**:
+- `出表日期`: 資料公告日期（民國年格式，如 1150117）
+- `資料年月`: 營收年月（民國年格式，如 11412）
+- `公司代號`: 股票代號
+- `公司名稱`: 公司名稱
+- `產業別`: 產業分類
+- `營業收入-當月營收`: 當月營業收入（千元）
+- `營業收入-上月營收`: 上月營業收入（千元）
+- `營業收入-去年當月營收`: 去年同月營業收入（千元）
+- `營業收入-上月比較增減(%)`: 月增率
+- `營業收入-去年同月增減(%)`: 年增率
+- `累計營業收入-當月累計營收`: 年初至今累計營收（千元）
+- `累計營業收入-去年累計營收`: 去年同期累計營收（千元）
+- `累計營業收入-前期比較增減(%)`: 累計年增率
+- `備註`: 營收變動說明
+
+**範例**:
+```bash
+# 取得所有上市公司最新月營收
+curl "https://openapi.twse.com.tw/v1/opendata/t187ap05_L"
+```
+
+**重要說明**:
+- ⚠️ 此 API **僅提供最新一期**月營收資料
+- ⚠️ 無法指定歷史年月查詢
+- ⚠️ 資料更新有 1-2 天延遲（每月 10 號公司公告，11 號後 API 更新）
+- ✅ 一次請求即可取得所有上市公司資料（~1,000 檔）
+- 💡 搭配使用 MOPS API 可查詢歷史資料與即時資料
+
+#### `/opendata/t187ap05_P`
+- **說明**: 公開發行公司每月營業收入彙總表（包含上市上櫃）
+- **完整 URL**: https://openapi.twse.com.tw/v1/opendata/t187ap05_P
+- **方法**: GET
+- **回傳格式**: JSON / CSV
+- **分類**: 公司治理
+- **本專案使用**: ⏳ 規劃中
+
+**說明**:
+- 包含所有公開發行公司（上市 + 上櫃 + 興櫃）
+- 資料欄位與 `t187ap05_L` 相同
+- 筆數更多（~2,000 檔）
+
+---
 
 ### 1. 價格資料 (Price Data)
 

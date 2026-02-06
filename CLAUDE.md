@@ -110,7 +110,9 @@ tw-stock-collector/
 │   ├── margin/                  # 融資融券資料
 │   ├── institutional/           # 三大法人資料
 │   ├── lending/                 # 借券賣出資料
-│   └── top20_volume/            # 成交量前 20 名
+│   ├── top20_volume/            # 成交量前 20 名
+│   ├── revenue-daily/           # 月營收資料（每日模式）
+│   └── revenue-monthly/         # 月營收資料（月度模式）
 │
 ├── .github/workflows/           # GitHub Actions
 │   ├── daily-collection.yml     # 每日資料收集
@@ -134,21 +136,30 @@ tw-stock-collector/
 
 ### 資料類型
 
-系統收集五種資料類型：
+系統收集六種資料類型：
 
 1. **price** - 每日價量資料（開高低收、成交量）
 2. **institutional** - 三大法人買賣超（外資、投信、自營商）
 3. **margin** - 融資融券餘額與變化
 4. **lending** - 借券賣出餘額
 5. **top20_volume** - 成交量前 20 名個股
+6. **revenue** - 月營收資料（支援 daily 和 monthly 兩種模式）
 
 ### 檔案組織
 
+**每日資料**（price, institutional, margin, lending, top20_volume）:
 ```
 data/raw/{type}/YYYY/MM/YYYY-MM-DD.json
 ```
 
-- 一個日期一個檔案，包含所有股票資料
+**月營收資料**（revenue）:
+```
+data/raw/revenue-daily/YYYY/YYYY-MM.json    # 每日模式（1-10 日，增量更新）
+data/raw/revenue-monthly/YYYY/YYYY-MM.json  # 月度模式（10 日後，完整資料）
+```
+
+- 每日資料：一個日期一個檔案，包含所有股票資料
+- 月營收資料：同一個月同一個檔案（daily 模式增量更新）
 - 依年份（YYYY）和月份（MM）分目錄
 - 統一的 JSON 格式，包含 metadata 和 data
 
@@ -209,6 +220,18 @@ class BaseCollector:
 
 **TPExDataSource** - 櫃買中心 API（上櫃股票）
 
+**RevenueCollector** - 月營收資料收集器（雙模式）：
+1. **Daily 模式**（1-10 日，增量更新）
+   - 當月資料：MOPS API（逐一查詢）`https://mops.twse.com.tw/mops/api/t05st10_ifrs`
+   - 上月資料：OpenAPI（用於計算 MoM）
+   - 速度：5-10 分鐘（增量，跳過已公告股票）
+   - 特性：增量更新同一檔案，支援中斷續傳
+
+2. **Monthly 模式**（10 日後，完整資料）
+   - API: TWSE/TPEx OpenAPI `t187ap05_L` / `mopsfin_t187ap05_O`
+   - 速度：2-3 秒
+   - 特性：一次取得所有公司完整資料（~1,940 檔）
+
 每個收集器會整合兩個資料源的資料。
 
 ### 驗證機制
@@ -242,6 +265,12 @@ python3 scripts/run_collection.py --date 2024-12-27 --skip-trading-day-check
 
 # 回補歷史資料
 python3 scripts/backfill.py --start 2025-01-01 --end 2025-01-31
+
+# 月營收收集（每日模式，1-10 日使用）
+python3.11 scripts/data-collector/collect_revenue.py --mode daily --year-month 2026-01
+
+# 月營收收集（月度模式，10 日後使用）
+python3.11 scripts/data-collector/collect_revenue.py --mode monthly --year-month 2026-01
 ```
 
 #### 資料匯入（data-import）
