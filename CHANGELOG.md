@@ -5,6 +5,24 @@
 ## [Unreleased]
 
 ### 新增
+- **Claude Code Skill: data-pipeline**（2026-02-06）
+  - 自動化資料處理完整流程：收集 → 匯入 → 轉換
+  - 支援日期指定（預設今日）、資料類型篩選
+  - TodoWrite 任務追蹤，三階段錯誤處理
+  - 檔案位置：`.claude/skills/data-pipeline/SKILL.md`
+
+### 改進
+- **CLAUDE.md 文檔優化**（2026-02-06）
+  - 新增「資料匯入」和「技術分析轉換」指令範例
+  - 強調優先使用 shell 腳本（而非直接執行 Python）
+  - 更新「執行腳本規範」：明確標註必須使用 `transform.sh`
+  - 移除硬編碼密碼，改為佔位符
+
+- **data-pipeline SKILL.md 修正**（2026-02-06）
+  - 修正腳本路徑：`transform_technical.py` → `transform.sh`
+  - 調整參數格式：`--date` → 直接日期參數
+  - 移除硬編碼密碼，統一使用佔位符
+
 - **ETF 持股篩選系統 - 標註版策略**
   - 新增 3 個標註版 SQL（不強制 ETF 持有，改為標註）：
     - `analysis/ETF持股篩選/回頭買上漲_ETF標註版.sql`：完整版（25 檔）
@@ -29,6 +47,13 @@
   - `technical_analysis` → `technical`（與其他模組一致）
 
 ### 資料更新
+- **2026-02-06 資料收集**
+  - price: 1,958 筆（上市 1,080 + 上櫃 878）
+  - institutional: 1,838 筆（上市 1,068 + 上櫃 770）
+  - margin: 1,821 筆（上市 1,044 + 上櫃 777）
+  - top20_volume: 20 筆
+  - 技術分析轉換：1,921 檔股票（30 個指標）
+
 - **2026-02-05 資料收集**
   - price: 1,958 筆
   - margin: 1,820 筆

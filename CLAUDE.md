@@ -224,21 +224,62 @@ class BaseCollector:
 
 ### 本地執行
 
+**⚠️ 重要：所有資料處理任務都應使用 `scripts/` 目錄下的 shell 腳本，而非直接執行 Python 檔案**
+
+#### 資料收集（data-collect）
 ```bash
 # 收集當天資料（預設使用當天日期）
-python scripts/run_collection.py
+python3 scripts/run_collection.py
 
 # 收集指定日期的所有資料
-python scripts/run_collection.py --date 2024-12-27
+python3 scripts/run_collection.py --date 2024-12-27
 
 # 收集特定類型資料
-python scripts/run_collection.py --date 2024-12-27 --types price margin
+python3 scripts/run_collection.py --date 2024-12-27 --types price margin
 
 # 跳過交易日檢查
-python scripts/run_collection.py --date 2024-12-27 --skip-trading-day-check
+python3 scripts/run_collection.py --date 2024-12-27 --skip-trading-day-check
 
 # 回補歷史資料
-python scripts/backfill.py --start 2025-01-01 --end 2025-01-31
+python3 scripts/backfill.py --start 2025-01-01 --end 2025-01-31
+```
+
+#### 資料匯入（data-import）
+```bash
+# 匯入所有資料類型（需設定 DB_PASSWORD）
+export DB_PASSWORD=<your_password>
+scripts/data-importer/import.sh all --date 2026-02-06
+
+# 匯入特定資料類型
+scripts/data-importer/import.sh price,institutional --date 2026-02-06
+```
+
+#### 技術分析轉換（data-transform）
+```bash
+# 使用 shell 腳本執行（推薦）
+export DB_PASSWORD=<your_password>
+
+# 轉換今天的資料
+scripts/data-transformer/transform.sh today
+
+# 轉換指定日期
+scripts/data-transformer/transform.sh 2026-02-06
+
+# 轉換指定日期的特定股票
+scripts/data-transformer/transform.sh 2026-02-06 2330
+
+# 轉換日期區間
+scripts/data-transformer/transform.sh range 2026-01-01 2026-01-31
+
+# 轉換最近 N 天
+scripts/data-transformer/transform.sh latest 7
+```
+
+#### 完整 Pipeline
+```bash
+# 使用 data-pipeline skill 自動執行完整流程
+# 包含：收集 → 匯入 → 轉換
+# 詳見：.claude/skills/data-pipeline/SKILL.md
 ```
 
 ### Docker 部署
@@ -303,8 +344,9 @@ cat data/raw/price/2024/12/2024-12-27.json | jq '.data | length'
    - ❌ 禁止: 自行撰寫匯入程式
 
 3. **資料轉換** (`data-transform`)
-   - ✅ 使用: `scripts/data-transformer/` 下的腳本
-   - ❌ 禁止: 自行撰寫轉換程式
+   - ✅ 使用: `scripts/data-transformer/transform.sh`（shell 腳本）
+   - ❌ 禁止: 直接執行 Python 檔案或自行撰寫轉換程式
+   - **重要**: 必須使用 `transform.sh`，不可使用 `run_technical_analysis.py`
 
 4. **資料分析** (`analysis`)
    - ✅ 使用: `scripts/analysis/` 或 `analysis/` 下的 SQL 腳本
@@ -521,6 +563,7 @@ gh workflow run backfill.yml
 - [data/README.md](data/README.md) - 資料結構說明
 - [deployment/README.md](deployment/README.md) - 部署說明
 - [.claude/skills/git/SKILL.md](.claude/skills/git/SKILL.md) - Git 提交流程
+- [.claude/skills/data-pipeline/SKILL.md](.claude/skills/data-pipeline/SKILL.md) - 資料處理 Pipeline（收集→匯入→轉換）
 
 ### 規格書
 
