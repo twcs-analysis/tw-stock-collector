@@ -143,8 +143,42 @@ ls -lh data/raw/price/$YEAR/$MONTH/$TARGET_DATE.json
 - ✅ 檔案大小 > 0
 - ✅ metadata.total_count > 0
 
+**🔍 日期驗證（關鍵步驟）**：
+收集完成後，**必須驗證資料日期是否正確**，避免使用錯誤日期的資料。
+
+**驗證步驟**：
+```bash
+# 1. 從 JSON 檔案提取 metadata.date
+COLLECTED_DATE=$(cat data/raw/price/$YEAR/$MONTH/$TARGET_DATE.json | jq -r '.metadata.date')
+
+# 2. 比對日期
+if [ "$COLLECTED_DATE" != "$TARGET_DATE" ]; then
+    echo "❌ 日期驗證失敗！"
+    echo "目標日期: $TARGET_DATE"
+    echo "實際收集日期: $COLLECTED_DATE"
+    echo ""
+    echo "⚠️  警告：資料日期不符，停止後續處理！"
+    echo "可能原因："
+    echo "  - API 回傳的是最新交易日資料（非指定日期）"
+    echo "  - 指定日期為非交易日"
+    echo "  - API 資料尚未更新"
+    exit 1
+fi
+
+echo "✅ 日期驗證通過：$COLLECTED_DATE"
+```
+
+**失敗處理**：
+- 🛑 日期不符時，**立即停止**，不執行後續的「匯入」和「轉換」階段
+- ⚠️ 顯示詳細的錯誤訊息和可能原因
+- 📋 更新 Todo：標記「收集資料」為 failed
+- 🔄 建議使用者：
+  1. 確認指定日期是否為交易日
+  2. 檢查 API 資料是否已更新
+  3. 使用 `--skip-trading-day-check` 測試（僅開發用）
+
 **📊 顯示重點股票資訊**：
-收集完成後，自動從 JSON 檔案中提取並顯示以下股票的當日價格：
+日期驗證通過後，自動從 JSON 檔案中提取並顯示以下股票的當日價格：
 - **台積電 (2330)**
 - **櫻花建 (2539)**
 
@@ -159,7 +193,7 @@ ls -lh data/raw/price/$YEAR/$MONTH/$TARGET_DATE.json
 - volume: 成交量
 - change: 漲跌幅 (計算方式：如有前一日收盤價則顯示)
 
-**實作方式**：
+**實作方式**（僅在日期驗證通過後執行）：
 ```bash
 # 使用 jq 提取台積電和櫻花建的資料
 cat data/raw/price/$YEAR/$MONTH/$TARGET_DATE.json | jq -r '
@@ -272,14 +306,29 @@ Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
 
 ### 階段 1 失敗：資料收集
 
-**常見錯誤**：
-- API 無回應
-- 非交易日
+**常見錯誤 1：日期驗證失敗** 🔴
+- **錯誤訊息**：「❌ 日期驗證失敗！目標日期: YYYY-MM-DD, 實際收集日期: YYYY-MM-DD」
+- **原因**：
+  - API 回傳的是最新交易日資料（非指定日期）
+  - 指定日期為非交易日或假日
+  - API 資料尚未更新
+- **處理方式**：
+  1. 🛑 **立即停止後續階段**（匯入、轉換、Git 提交）
+  2. 檢查指定日期是否為交易日：
+     ```bash
+     python scripts/common-tools/get_trading_days.py check YYYY-MM-DD
+     ```
+  3. 若為交易日但 API 未更新，等待 API 更新後重試
+  4. 若要收集最新交易日資料，使用 `today` 參數
 
-**處理方式**：
-1. 檢查日期是否為交易日
-2. 使用 `--skip-trading-day-check` 強制執行（僅測試用）
-3. 停止後續階段
+**常見錯誤 2：API 無回應**
+- **處理方式**：檢查網路連線，稍後重試
+
+**常見錯誤 3：收集腳本執行失敗**
+- **處理方式**：
+  1. 檢查 Python 環境
+  2. 查看錯誤日誌
+  3. 停止後續階段
 
 ---
 
