@@ -143,6 +143,41 @@ ls -lh data/raw/price/$YEAR/$MONTH/$TARGET_DATE.json
 - ✅ 檔案大小 > 0
 - ✅ metadata.total_count > 0
 
+**📊 顯示重點股票資訊**：
+收集完成後，自動從 JSON 檔案中提取並顯示以下股票的當日價格：
+- **台積電 (2330)**
+- **櫻花建 (2539)**
+
+顯示欄位：
+- stock_id: 股票代碼
+- stock_name: 股票名稱
+- date: 日期
+- open: 開盤價
+- high: 最高價
+- low: 最低價
+- close: 收盤價
+- volume: 成交量
+- change: 漲跌幅 (計算方式：如有前一日收盤價則顯示)
+
+**實作方式**：
+```bash
+# 使用 jq 提取台積電和櫻花建的資料
+cat data/raw/price/$YEAR/$MONTH/$TARGET_DATE.json | jq -r '
+  ["股票代碼", "股票名稱", "日期", "開盤", "最高", "最低", "收盤", "漲跌", "成交量"],
+  (.data[] |
+   select(.stock_id == "2330" or .stock_id == "2539") |
+   [.stock_id, .stock_name, .date, .open, .high, .low, .close, .change_price, .volume]
+  ) | @tsv
+' | column -t -s $'\t'
+```
+
+**輸出範例**：
+```
+股票代碼  股票名稱  日期          開盤    最高    最低    收盤    漲跌   成交量
+2330      台積電    2026-02-06   1745.0  1780.0  1740.0  1780.0  15.0   36484181
+2539      櫻花建    2026-02-06   47.1    48.05   46.7    47.9    0.4    785721
+```
+
 **更新 Todo**: 標記「收集資料」為 completed
 
 ### 📋 Step 4: 階段 2 - 資料庫匯入
