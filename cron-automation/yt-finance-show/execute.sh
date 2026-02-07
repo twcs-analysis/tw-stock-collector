@@ -60,15 +60,31 @@ echo ""
 if [ -z "$VIDEO_ID" ]; then
     echo "[Step 1] 抓取理財達人秀最新影片..."
 
-    # 使用 yt-dlp 抓取最新「電視完整版」影片（優先）
-    VIDEO_INFO=$(yt-dlp --flat-playlist --print "%(id)s|%(title)s|%(upload_date)s" \
-        "https://www.youtube.com/@EBCmoneyshow/videos" 2>/dev/null | grep "電視完整版" | head -1)
+    # 使用時長 + 關鍵字精確抓取「電視完整版」影片
+    # 條件：時長 > 2800 秒（約 46 分鐘）且包含「理財達人秀」和「電視完整版」
+    VIDEO_INFO=$(yt-dlp --flat-playlist --print "%(id)s|%(title)s|%(upload_date)s|%(duration)s" \
+        "https://www.youtube.com/@EBCmoneyshow/videos" 2>/dev/null | \
+        grep "理財達人秀" | \
+        grep "電視完整版" | \
+        awk -F'|' '$4 > 2800 {print $1 "|" $2 "|" $3; exit}')
 
-    # 如果沒有完整版，則抓取最新影片
+    # 如果沒有找到，降級為關鍵字搜尋
     if [ -z "$VIDEO_INFO" ]; then
-        echo "⚠️  找不到「電視完整版」，改抓最新影片..."
-        VIDEO_INFO=$(yt-dlp --flat-playlist --print "%(id)s|%(title)s|%(upload_date)s" \
-            "https://www.youtube.com/@EBCmoneyshow/videos" 2>/dev/null | head -1)
+        echo "⚠️  找不到符合條件的完整版，嘗試關鍵字搜尋..."
+        VIDEO_INFO=$(yt-dlp --flat-playlist --print "%(id)s|%(title)s|%(upload_date)s|%(duration)s" \
+            "https://www.youtube.com/@EBCmoneyshow/videos" 2>/dev/null | \
+            grep "電視完整版" | \
+            awk -F'|' '{print $1 "|" $2 "|" $3; exit}')
+    fi
+
+    # 最後降級：抓取最新理財達人秀影片（排除 part）
+    if [ -z "$VIDEO_INFO" ]; then
+        echo "⚠️  改抓最新理財達人秀影片（排除片段）..."
+        VIDEO_INFO=$(yt-dlp --flat-playlist --print "%(id)s|%(title)s|%(upload_date)s|%(duration)s" \
+            "https://www.youtube.com/@EBCmoneyshow/videos" 2>/dev/null | \
+            grep "理財達人秀" | \
+            grep -v "part" | \
+            awk -F'|' '{print $1 "|" $2 "|" $3; exit}')
     fi
 
     if [ -z "$VIDEO_INFO" ]; then

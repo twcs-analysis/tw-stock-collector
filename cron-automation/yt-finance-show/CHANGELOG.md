@@ -9,6 +9,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [Unreleased]
 
 ### Fixed
+- 🔧 **精確篩選完整版影片**（2026-02-07）
+  - 使用時長（> 2800 秒）+ 關鍵字雙重條件精確篩選
+  - 不再依賴單純字串匹配，避免誤判
+  - 三層降級機制：
+    1. 時長 + 「理財達人秀」+ 「電視完整版」
+    2. 僅「電視完整版」關鍵字
+    3. 「理財達人秀」且排除 part
+  - 確保每次都能抓到 48 分鐘完整版
+
 - 🔧 **修正目錄結構**（2026-02-07）
   - 修改輸出路徑為 `data/transcripts/yt-finance-show/{date}/`
   - 遵循 skill 名稱 → 日期的目錄層級規範
