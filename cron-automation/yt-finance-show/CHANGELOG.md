@@ -8,6 +8,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
+### Fixed
+- 🔧 **優先抓取電視完整版**（2026-02-07）
+  - 修改 `execute.sh` Step 1 邏輯
+  - 優先抓取「電視完整版」影片（約 48 分鐘）
+  - 若無完整版則降級抓取最新片段
+  - 解決之前只抓到 part3 的問題
+
 ### Planned
 - 整合完整的 Claude API 分析功能
 - 支援多集影片批次處理

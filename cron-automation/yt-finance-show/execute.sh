@@ -60,9 +60,16 @@ echo ""
 if [ -z "$VIDEO_ID" ]; then
     echo "[Step 1] 抓取理財達人秀最新影片..."
 
-    # 使用 yt-dlp 抓取最新影片
+    # 使用 yt-dlp 抓取最新「電視完整版」影片（優先）
     VIDEO_INFO=$(yt-dlp --flat-playlist --print "%(id)s|%(title)s|%(upload_date)s" \
-        "https://www.youtube.com/@EBCmoneyshow/videos" 2>/dev/null | head -1)
+        "https://www.youtube.com/@EBCmoneyshow/videos" 2>/dev/null | grep "電視完整版" | head -1)
+
+    # 如果沒有完整版，則抓取最新影片
+    if [ -z "$VIDEO_INFO" ]; then
+        echo "⚠️  找不到「電視完整版」，改抓最新影片..."
+        VIDEO_INFO=$(yt-dlp --flat-playlist --print "%(id)s|%(title)s|%(upload_date)s" \
+            "https://www.youtube.com/@EBCmoneyshow/videos" 2>/dev/null | head -1)
+    fi
 
     if [ -z "$VIDEO_INFO" ]; then
         echo "✗ 無法抓取影片資訊"
