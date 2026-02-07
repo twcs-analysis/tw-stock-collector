@@ -63,6 +63,9 @@ data/*.parquet
 data/temp/
 data/transcripts/
 
+# Cron automation logs (keep .gitkeep)
+cron-automation/**/logs/*.log
+
 # Configuration (keep examples)
 config/database.yaml
 !config/*.example
