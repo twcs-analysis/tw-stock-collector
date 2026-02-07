@@ -59,9 +59,8 @@ data/*.json
 data/*.parquet
 !data/.gitkeep
 
-# Media temp files and transcripts
+# Media temp files
 data/temp/
-data/transcripts/
 
 # Cron automation logs (keep .gitkeep)
 cron-automation/**/logs/*.log
