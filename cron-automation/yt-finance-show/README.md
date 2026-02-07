@@ -15,12 +15,12 @@
 2. **轉換為逐字稿**
    - 使用 `scripts/media-tools/video_to_transcript.py`
    - whisper-cpp 語音轉文字（中文）
-   - 儲存到 `data/transcripts/{日期}/`
+   - 儲存到 `data/transcripts/yt-finance-show/{日期}/`
 
 3. **AI 分析報告**
    - 使用 Claude API 深度分析（需設定 API Key）
    - 產生結構化 Markdown 報告
-   - 儲存到 `data/transcripts/{日期}/{檔名}_analysis.md`
+   - 儲存到 `data/transcripts/yt-finance-show/{日期}/{檔名}_analysis.md`
 
 4. **日誌記錄**
    - 自動儲存執行日誌到 `logs/YYYY-MM-DD.log`

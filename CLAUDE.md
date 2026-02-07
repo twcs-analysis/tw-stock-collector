@@ -125,8 +125,11 @@ tw-stock-collector/
 │   ├── lending/                 # 借券賣出資料
 │   ├── top20_volume/            # 成交量前 20 名
 │   ├── revenue-daily/           # 月營收資料（每日模式）
-│   ├── revenue-monthly/         # 月營收資料（月度模式）
-│   └── transcripts/             # YouTube 影片逐字稿與分析報告
+│   └── revenue-monthly/         # 月營收資料（月度模式）
+│
+├── data/transcripts/            # YouTube 影片逐字稿與分析報告
+│   └── yt-finance-show/         # 理財達人秀
+│       └── YYYY-MM-DD/          # 日期目錄
 │
 ├── cron-automation/             # Cron 自動化腳本
 │   ├── revenue-pipeline/        # 月營收自動處理

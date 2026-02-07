@@ -44,7 +44,7 @@ done
 
 # 設定變數
 TODAY=$(date '+%Y-%m-%d')
-TRANSCRIPT_DIR="data/transcripts/$TODAY"
+TRANSCRIPT_DIR="data/transcripts/yt-finance-show/$TODAY"
 
 echo "============================================================"
 echo "YT Finance Show 執行開始"

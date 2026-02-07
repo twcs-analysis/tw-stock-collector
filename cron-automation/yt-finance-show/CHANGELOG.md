@@ -9,6 +9,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [Unreleased]
 
 ### Fixed
+- 🔧 **修正目錄結構**（2026-02-07）
+  - 修改輸出路徑為 `data/transcripts/yt-finance-show/{date}/`
+  - 遵循 skill 名稱 → 日期的目錄層級規範
+  - 更新文檔說明
+
 - 🔧 **優先抓取電視完整版**（2026-02-07）
   - 修改 `execute.sh` Step 1 邏輯
   - 優先抓取「電視完整版」影片（約 48 分鐘）
@@ -50,8 +55,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - `--skip-transcript`: 跳過逐字稿轉換
 
 ### Output
-- 逐字稿: `data/transcripts/{date}/{filename}.txt`
-- 分析報告: `data/transcripts/{date}/{filename}_analysis.md`
+- 逐字稿: `data/transcripts/yt-finance-show/{date}/{filename}.txt`
+- 分析報告: `data/transcripts/yt-finance-show/{date}/{filename}_analysis.md`
 - 執行日誌: `logs/{date}.log`
 
 ---
