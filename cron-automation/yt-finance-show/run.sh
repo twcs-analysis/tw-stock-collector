@@ -1,24 +1,24 @@
 #!/bin/bash
 #
-# Revenue Pipeline 自動化執行腳本
+# YT Finance Show 自動化執行腳本
 #
 # 功能：
-#   - 自動執行月營收資料處理流程
-#   - 智慧收集 → 匯入資料庫 → 展示結果
+#   - 自動執行理財達人秀影片處理流程
+#   - 抓取最新影片 → 轉換逐字稿 → AI 分析
 #   - 日誌自動儲存到 logs/ 目錄（以日期命名）
 #
 # 使用方式：
-#   ./cron-automation/revenue-pipeline/run.sh
+#   ./cron-automation/yt-finance-show/run.sh
 #
 # Cron 設定範例：
-#   # 每天早上 8:30 執行
-#   30 8 * * * /Users/jasonhuang/github/personal/tw-stock-collector/cron-automation/revenue-pipeline/run.sh
+#   # 每天晚上 22:00 執行（理財達人秀通常晚上 8-9 點播出）
+#   0 22 * * * /Users/jasonhuang/github/personal/tw-stock-collector/cron-automation/yt-finance-show/run.sh
 #
-#   # 每月 1-10 號早上 8:30 執行（公告期）
-#   30 8 1-10 * * /Users/jasonhuang/github/personal/tw-stock-collector/cron-automation/revenue-pipeline/run.sh
+#   # 每週一到五晚上 22:00 執行
+#   0 22 * * 1-5 /Users/jasonhuang/github/personal/tw-stock-collector/cron-automation/yt-finance-show/run.sh
 #
 # 日誌位置：
-#   cron-automation/revenue-pipeline/logs/YYYY-MM-DD.log
+#   cron-automation/yt-finance-show/logs/YYYY-MM-DD.log
 #
 
 set -e
@@ -47,7 +47,7 @@ export CLAUDE_TRUST_WORKSPACE=1
 
 # 記錄開始時間
 log "============================================================"
-log "Revenue Pipeline 自動化執行"
+log "YT Finance Show 自動化執行"
 log "============================================================"
 log "開始時間: $(date '+%Y-%m-%d %H:%M:%S')"
 log "專案路徑: $PROJECT_ROOT"

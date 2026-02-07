@@ -9,8 +9,14 @@
 ```
 cron-automation/
 ├── README.md                    # 本檔案
-└── revenue-pipeline/            # 月營收資料處理
+├── revenue-pipeline/            # 月營收資料處理
+│   ├── run.sh                   # 執行腳本
+│   ├── execute.sh               # 獨立執行腳本
+│   └── README.md                # 使用說明
+└── yt-finance-show/             # 理財達人秀影片處理
     ├── run.sh                   # 執行腳本
+    ├── execute.sh               # 獨立執行腳本
+    ├── analyze_transcript.py    # AI 分析腳本
     └── README.md                # 使用說明
 ```
 
@@ -35,10 +41,34 @@ cron-automation/
 **Cron 設定**:
 ```cron
 # 每天早上 8:30 執行
-30 8 * * * /Users/jasonhuang/github/personal/tw-stock-collector/cron-automation/revenue-pipeline/run.sh >> /tmp/revenue-pipeline.log 2>&1
+30 8 * * * /Users/jasonhuang/github/personal/tw-stock-collector/cron-automation/revenue-pipeline/run.sh
 ```
 
 **詳細說明**: 請參考 [revenue-pipeline/README.md](revenue-pipeline/README.md)
+
+---
+
+### 2. YT Finance Show（理財達人秀影片處理）
+
+**路徑**: `cron-automation/yt-finance-show/`
+
+**功能**:
+- 自動抓取理財達人秀 YouTube 頻道最新影片
+- 使用 whisper-cpp 轉換為中文逐字稿
+- AI 分析並產生結構化報告
+
+**執行**:
+```bash
+./cron-automation/yt-finance-show/run.sh
+```
+
+**Cron 設定**:
+```cron
+# 每天晚上 22:00 執行（理財達人秀通常晚上 8-9 點播出）
+0 22 * * * /Users/jasonhuang/github/personal/tw-stock-collector/cron-automation/yt-finance-show/run.sh
+```
+
+**詳細說明**: 請參考 [yt-finance-show/README.md](yt-finance-show/README.md)
 
 ---
 

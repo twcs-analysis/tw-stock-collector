@@ -5,9 +5,20 @@
 ## [Unreleased]
 
 ### 新增
+- **YT Finance Show 自動化處理系統**（2026-02-07）
+  - 新增 `cron-automation/yt-finance-show/` 自動化目錄
+  - 自動抓取理財達人秀 YouTube 頻道最新影片
+  - 使用 whisper-cpp 轉換為中文逐字稿
+  - AI 分析逐字稿產生結構化報告（支援 Claude API）
+  - 完整的執行腳本：`run.sh`（日誌管理）、`execute.sh`（獨立執行）
+  - 支援參數：`--video-id`（指定影片）、`--skip-transcript`（跳過轉換）
+  - 範例 cron 設定：每晚 22:00 自動執行
+  - 檔案位置：`cron-automation/yt-finance-show/`
+
 - **Cron 自動化執行框架**（2026-02-07）
   - 新增 `cron-automation/revenue-pipeline/` 自動化執行目錄
-  - `run.sh`：自動執行腳本，支援 crontab 排程
+  - `run.sh`：主執行腳本（日誌管理 + 呼叫 execute.sh）
+  - `execute.sh`：獨立執行腳本（完整 pipeline 流程，不依賴 Claude CLI）
   - 日誌自動儲存到 `logs/YYYY-MM-DD.log`（以日期命名）
   - 支援同時輸出到終端和日誌檔案
   - 完整的錯誤處理和執行狀態記錄
@@ -33,6 +44,14 @@
   - 檔案位置：`.claude/skills/revenue-pipeline/`
 
 ### 改進
+- **Revenue Pipeline 獨立執行架構**（2026-02-07）
+  - 從呼叫 Claude CLI 改為獨立執行模式
+  - `execute.sh`：實作完整 pipeline 邏輯（PostgreSQL 檢查 → 收集 → 匯入 → 展示）
+  - 支援參數：`--year-month`、`--sample`、`--dry-run`
+  - 更新文檔：`cron-automation/README.md`、`revenue-pipeline/README.md`
+  - 新增 Step 2 容錯機制：API 失敗不影響後續步驟
+  - 改進展示格式：表格 + 詳細資料（前 3 檔）
+
 - **營收單位轉換規則文檔化**（2026-02-07）
   - CLAUDE.md 新增「月營收資料處理」區塊
   - 明確標示資料庫儲存單位：千元

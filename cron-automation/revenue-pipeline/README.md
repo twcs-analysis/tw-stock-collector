@@ -6,7 +6,9 @@
 
 ## 📁 檔案說明
 
-- **run.sh**: 執行腳本（執行 `/revenue-pipeline` skill）
+- **run.sh**: 主執行腳本（呼叫 execute.sh + 日誌管理）
+- **execute.sh**: 獨立執行腳本（直接執行 Pipeline 流程）
+- **logs/**: 日誌目錄（以日期命名）
 - **README.md**: 使用說明（本檔案）
 
 ---
@@ -58,10 +60,11 @@ crontab -e
 
 腳本會自動執行以下步驟：
 
-1. ✅ **檢查 monthly 完整資料**（若有新月份則保存）
-2. ✅ **智慧收集目標月營收**（自動判斷 daily/monthly 模式）
-3. ✅ **匯入資料庫**（寫入 `stock_revenues` 表）
-4. ✅ **隨機展示 5-10 檔股票**（月增率、年增率）
+1. ✅ **確認 PostgreSQL 啟動**（自動檢查並啟動）
+2. ✅ **檢查 monthly 完整資料**（若有新月份則保存）
+3. ✅ **智慧收集目標月營收**（自動判斷 daily/monthly 模式）
+4. ✅ **匯入資料庫**（寫入 `stock_revenues` 表）
+5. ✅ **展示最新月份營收**（隨機挑選 8 檔股票，表格格式）
 
 ---
 
@@ -113,20 +116,23 @@ cat cron-automation/revenue-pipeline/logs/2026-02-07.log
 
 ### 修改執行參數
 
-編輯 `run.sh`，修改 Claude 指令：
+編輯 `execute.sh` 或在 `run.sh` 中傳遞參數：
 
 ```bash
-# 原始指令
-claude "/revenue-pipeline"
+# 原始指令（使用預設參數）
+./cron-automation/revenue-pipeline/run.sh
 
 # 指定年月
-claude "/revenue-pipeline --year-month 2026-01"
+./cron-automation/revenue-pipeline/execute.sh --year-month 2026-01
 
 # 增加展示數量
-claude "/revenue-pipeline --sample 15"
+./cron-automation/revenue-pipeline/execute.sh --sample 15
 
 # 測試模式（不實際儲存）
-claude "/revenue-pipeline --dry-run"
+./cron-automation/revenue-pipeline/execute.sh --dry-run
+
+# 組合參數
+./cron-automation/revenue-pipeline/execute.sh --year-month 2026-01 --sample 15
 ```
 
 ### 修改日誌路徑
@@ -157,13 +163,30 @@ launchctl list | grep cron
 tail -f /var/log/system.log | grep cron
 ```
 
-### Claude 找不到
+### 資料庫連線失敗
 
 ```bash
-# 確認 Claude CLI 已安裝
-which claude
+# 確認 PostgreSQL 狀態
+brew services list | grep postgresql
 
-# 若未安裝，請參考 Claude Code 安裝文件
+# 手動啟動
+brew services start postgresql@17
+
+# 測試連線
+psql-17 -h localhost -U postgres -d tw_stock -c "SELECT 1;"
+```
+
+### API 請求超時
+
+```bash
+# 症狀：Step 2 顯示 "Read timed out" 錯誤
+# 原因：網路不穩定或 API 暫時不可用
+# 影響：Step 2 會跳過，但不影響後續步驟執行
+
+# 解決方案：
+# 1. 檢查網路連線
+# 2. 稍後重新執行
+# 3. Step 2 失敗不影響主要收集流程（Step 3）
 ```
 
 ---
@@ -179,7 +202,8 @@ which claude
 
 ## 🔗 相關檔案
 
-- **Skill 定義**: `.claude/skills/revenue-pipeline/SKILL.md`
+- **執行腳本**: `cron-automation/revenue-pipeline/execute.sh`（獨立執行）
+- **Skill 定義**: `.claude/skills/revenue-pipeline/SKILL.md`（互動式使用）
 - **執行指令**: `.claude/skills/revenue-pipeline/instructions.md`
 - **收集腳本**: `scripts/data-collector/collect_revenue.py`
 - **匯入腳本**: `scripts/data-importer/import.sh`

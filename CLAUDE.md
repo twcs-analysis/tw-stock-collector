@@ -125,7 +125,19 @@ tw-stock-collector/
 │   ├── lending/                 # 借券賣出資料
 │   ├── top20_volume/            # 成交量前 20 名
 │   ├── revenue-daily/           # 月營收資料（每日模式）
-│   └── revenue-monthly/         # 月營收資料（月度模式）
+│   ├── revenue-monthly/         # 月營收資料（月度模式）
+│   └── transcripts/             # YouTube 影片逐字稿與分析報告
+│
+├── cron-automation/             # Cron 自動化腳本
+│   ├── revenue-pipeline/        # 月營收自動處理
+│   │   ├── run.sh               # 主執行腳本（日誌管理）
+│   │   ├── execute.sh           # 獨立執行腳本（完整流程）
+│   │   └── logs/                # 執行日誌
+│   └── yt-finance-show/         # 理財達人秀影片處理
+│       ├── run.sh               # 主執行腳本（日誌管理）
+│       ├── execute.sh           # 獨立執行腳本（完整流程）
+│       ├── analyze_transcript.py # AI 分析腳本
+│       └── logs/                # 執行日誌
 │
 ├── .github/workflows/           # GitHub Actions
 │   ├── daily-collection.yml     # 每日資料收集
@@ -315,6 +327,23 @@ scripts/data-transformer/transform.sh range 2026-01-01 2026-01-31
 
 # 轉換最近 N 天
 scripts/data-transformer/transform.sh latest 7
+```
+
+#### Cron 自動化執行
+```bash
+# Revenue Pipeline（月營收自動處理）
+./cron-automation/revenue-pipeline/run.sh
+# 或使用獨立執行腳本（不依賴 Claude CLI）
+./cron-automation/revenue-pipeline/execute.sh --year-month 2026-01 --sample 10
+
+# YT Finance Show（理財達人秀影片處理）
+./cron-automation/yt-finance-show/run.sh
+# 或使用獨立執行腳本
+./cron-automation/yt-finance-show/execute.sh --video-id ABC123xyz
+
+# 設定 crontab（範例）
+30 8 * * * /path/to/tw-stock-collector/cron-automation/revenue-pipeline/run.sh
+0 22 * * * /path/to/tw-stock-collector/cron-automation/yt-finance-show/run.sh
 ```
 
 #### 完整 Pipeline
