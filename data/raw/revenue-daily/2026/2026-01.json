@@ -2,13 +2,13 @@
   "metadata": {
     "year_month": "2026-01",
     "mode": "daily",
-    "collection_date": "2026-02-06",
+    "collection_date": "2026-02-07",
     "total_count": 618,
     "twse_count": 337,
     "tpex_count": 281,
     "total_stocks": 1940,
     "announced_ratio": "31.9%",
-    "new_announced": 618,
+    "new_announced": 0,
     "source": "MOPS API"
   },
   "data": [

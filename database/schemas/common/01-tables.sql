@@ -317,3 +317,39 @@ CREATE TABLE IF NOT EXISTS etf_stock_union (
 
     FOREIGN KEY (stock_id) REFERENCES stocks(stock_id) ON DELETE CASCADE
 );
+
+-- ==========================================
+-- 12. 月營收資料表 (stock_revenues)
+-- ==========================================
+-- 說明: 儲存個股月營收與年增率、累計營收資料
+-- 更新頻率: 每月 1-10 日漸進式收集，10 日後完整收集
+-- 資料來源: data/raw/revenue-daily/ 或 data/raw/revenue-monthly/
+CREATE TABLE IF NOT EXISTS stock_revenues (
+    id BIGINT PRIMARY KEY,
+    year_month VARCHAR(7) NOT NULL,           -- 資料年月 (YYYY-MM)
+    stock_id VARCHAR(10) NOT NULL,            -- 股票代碼
+
+    -- 營收資料
+    current_month_revenue DECIMAL(20, 2),     -- 當月營收（千元）
+    last_month_revenue DECIMAL(20, 2),        -- 上月營收（千元）
+    last_year_revenue DECIMAL(20, 2),         -- 去年同月營收（千元）
+
+    -- 成長率
+    mom_change_pct DECIMAL(10, 4),            -- 月增率 (%)
+    yoy_change_pct DECIMAL(10, 4),            -- 年增率 (%)
+
+    -- 累計資料
+    ytd_revenue DECIMAL(20, 2),               -- 年初至今累計營收（千元）
+    ytd_last_year_revenue DECIMAL(20, 2),     -- 去年同期累計營收（千元）
+    ytd_yoy_change_pct DECIMAL(10, 4),        -- 累計年增率 (%)
+
+    -- 其他欄位
+    note VARCHAR(500),                        -- 營收變動說明
+    data_source VARCHAR(20),                  -- 資料來源: daily, monthly, mops
+    collection_date DATE,                     -- 收集日期
+
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (stock_id) REFERENCES stocks(stock_id) ON DELETE CASCADE,
+    UNIQUE (year_month, stock_id)
+);

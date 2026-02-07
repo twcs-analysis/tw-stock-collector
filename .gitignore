@@ -59,6 +59,10 @@ data/*.json
 data/*.parquet
 !data/.gitkeep
 
+# Media temp files and transcripts
+data/temp/
+data/transcripts/
+
 # Configuration (keep examples)
 config/database.yaml
 !config/*.example

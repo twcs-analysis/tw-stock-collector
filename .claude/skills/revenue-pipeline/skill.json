@@ -1,0 +1,26 @@
+{
+  "name": "revenue-pipeline",
+  "title": "月營收資料處理 Pipeline",
+  "description": "一鍵執行月營收資料處理流程：智慧收集 → 匯入資料庫 → 隨機展示",
+  "version": "1.0.0",
+  "author": "Jason Huang",
+  "created": "2026-02-07",
+  "tags": ["revenue", "pipeline", "database", "automation"],
+  "invocable": true,
+  "dependencies": {
+    "python": "3.11+",
+    "postgresql": "17+",
+    "env": ["DB_PASSWORD"]
+  },
+  "capabilities": [
+    "智慧判斷收集模式（10號前=daily，10號後=monthly）",
+    "自動切換模式（API 返回不符時降級為 daily）",
+    "資料庫匯入（支援覆蓋更新）",
+    "隨機展示股票營收資訊"
+  ],
+  "related_skills": [
+    "data-pipeline",
+    "data-collect",
+    "data-import"
+  ]
+}

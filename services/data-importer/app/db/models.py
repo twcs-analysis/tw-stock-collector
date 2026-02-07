@@ -253,6 +253,46 @@ class DataImportLog(Base):
         return f"<DataImportLog(date={self.import_date}, type={self.data_type}, status={self.status})>"
 
 
+class StockRevenue(Base):
+    """月營收資料表"""
+    __tablename__ = 'stock_revenues'
+    __table_args__ = (
+        UniqueConstraint('year_month', 'stock_id', name='uq_revenue_yearmonth_stock'),
+        Index('idx_revenue_yearmonth', 'year_month'),
+        Index('idx_revenue_stock', 'stock_id'),
+    )
+
+    id = Column(BigInteger, primary_key=True, autoincrement=True)
+    year_month = Column(String(7), nullable=False, comment='資料年月 (YYYY-MM)')
+    stock_id = Column(String(10), ForeignKey('stocks.stock_id', ondelete='CASCADE'), nullable=False)
+
+    # 營收資料
+    current_month_revenue = Column(DECIMAL(20, 2), comment='當月營收（千元）')
+    last_month_revenue = Column(DECIMAL(20, 2), comment='上月營收（千元）')
+    last_year_revenue = Column(DECIMAL(20, 2), comment='去年同月營收（千元）')
+
+    # 成長率
+    mom_change_pct = Column(DECIMAL(10, 4), comment='月增率 (%)')
+    yoy_change_pct = Column(DECIMAL(10, 4), comment='年增率 (%)')
+
+    # 累計資料
+    ytd_revenue = Column(DECIMAL(20, 2), comment='年初至今累計營收（千元）')
+    ytd_last_year_revenue = Column(DECIMAL(20, 2), comment='去年同期累計營收（千元）')
+    ytd_yoy_change_pct = Column(DECIMAL(10, 4), comment='累計年增率 (%)')
+
+    # 其他欄位
+    note = Column(String(500), comment='營收變動說明')
+    data_source = Column(String(20), comment='資料來源: daily, monthly, mops')
+    collection_date = Column(Date, comment='收集日期')
+
+    created_at = Column(TIMESTAMP, server_default=text('CURRENT_TIMESTAMP'))
+
+    stock = relationship("Stock", backref="revenue_data")
+
+    def __repr__(self):
+        return f"<StockRevenue(year_month={self.year_month}, stock={self.stock_id})>"
+
+
 class StockAnalysisDaily(Base):
     """技術分析寬表 - 30+ 技術指標"""
     __tablename__ = 'stock_analysis_daily'

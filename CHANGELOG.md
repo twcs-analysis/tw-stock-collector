@@ -5,6 +5,37 @@
 ## [Unreleased]
 
 ### 新增
+- **月營收資料庫整合系統**（2026-02-07）
+  - 新增 `stock_revenues` 資料表與 5 個索引
+  - 新增 `RevenueImporter` 匯入器支援 UPSERT 機制
+  - 資料匯入支援 monthly/daily 兩種模式檔案自動判斷
+  - 檔案位置：
+    - `database/schemas/common/01-tables.sql`（表結構）
+    - `database/schemas/common/02-indexes.sql`（索引）
+    - `services/data-importer/app/importers/revenue_importer.py`（匯入器）
+    - `services/data-importer/app/db/models.py`（ORM 模型）
+
+- **Claude Code Skill: revenue-pipeline**（2026-02-07）
+  - 一鍵執行月營收資料處理流程：智慧收集 → 匯入 → 展示
+  - 智慧模式判斷：10號前自動 daily，10號後自動 monthly，API 不符自動切換
+  - 支援參數：`--mode`, `--year-month`, `--date`, `--sample`, `--dry-run`, `--force`
+  - 隨機展示 5-10 檔股票營收數據（包含月增率、年增率）
+  - 檔案位置：`.claude/skills/revenue-pipeline/`
+
+### 改進
+- **月營收收集腳本智慧化**（2026-02-07）
+  - `collect_revenue.py` 新增智慧模式：不指定 `--mode` 時自動判斷（10號前=daily，10號後=monthly）
+  - API 年月不符時自動切換模式（monthly 返回舊月份 → 自動降級 daily）
+  - 新增 `--force` 參數強制重新收集
+  - 新增本地檔案存在檢查，避免重複下載
+  - 檔案：`scripts/data-collector/collect_revenue.py`
+
+- **資料匯入腳本增強**（2026-02-07）
+  - `import.sh` 新增 revenue 資料類型支援
+  - `all` 類型自動包含 revenue（price, institutional, margin, lending, top20_volume, revenue）
+  - 匯入器支援 revenue-monthly 和 revenue-daily 檔案自動優先順序判斷
+  - 檔案：`scripts/data-importer/import.sh`, `services/data-importer/app/main.py`
+
 - **月營收資料收集系統**（2026-02-06）
   - 新增 `RevenueCollector` 支援雙模式收集
   - **Daily 模式**（1-10 日）：MOPS API 逐一查詢，增量更新

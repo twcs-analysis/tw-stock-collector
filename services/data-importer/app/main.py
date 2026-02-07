@@ -18,6 +18,7 @@ from .importers import (
     MarginImporter,
     LendingImporter,
     Top20VolumeImporter,
+    RevenueImporter,
     AnalysisImporter,
 )
 
@@ -41,6 +42,7 @@ IMPORTERS = {
     'margin': MarginImporter,
     'lending': LendingImporter,
     'top20_volume': Top20VolumeImporter,
+    'revenue': RevenueImporter,
     'analysis': AnalysisImporter,
 }
 
@@ -66,10 +68,11 @@ class DataImportService:
             date: 日期
 
         Returns:
-            檔案路徑 (data/raw/{type}/YYYY/MM/YYYY-MM-DD.json 或 data/transformed/{type}/YYYY/MM/YYYY-MM-DD.json)
+            檔案路徑 (data/raw/{type}/YYYY/MM/YYYY-MM-DD.json 或其他格式)
         """
         year = date.strftime("%Y")
         month = date.strftime("%m")
+        year_month = date.strftime("%Y-%m")
         filename = date.strftime("%Y-%m-%d.json")
 
         # analysis 資料在 transformed 目錄，需要特殊處理
@@ -77,6 +80,15 @@ class DataImportService:
             # 從 data/raw 找到 data/transformed/technical_analysis
             base_path = self.data_root.parent / 'transformed' / 'technical_analysis'
             file_path = base_path / year / month / filename
+        # revenue 資料按月存檔（優先使用 revenue-monthly，若不存在則使用 revenue-daily）
+        elif data_type == 'revenue':
+            # 先嘗試 revenue-monthly
+            monthly_path = self.data_root / 'revenue-monthly' / year / f"{year_month}.json"
+            if monthly_path.exists():
+                file_path = monthly_path
+            else:
+                # 若不存在，則使用 revenue-daily
+                file_path = self.data_root / 'revenue-daily' / year / f"{year_month}.json"
         else:
             file_path = self.data_root / data_type / year / month / filename
 

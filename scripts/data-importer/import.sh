@@ -43,6 +43,7 @@ ${YELLOW}資料類型:${NC}
   margin
   lending
   top20_volume
+  revenue             月營收資料
   technical           技術分析指標
 
   price,institutional  多個類型（逗號分隔）
@@ -126,7 +127,7 @@ fi
 
 # 檢查是否為 all 類型
 if [ "$DATA_TYPE" = "all" ]; then
-    DATA_TYPE="price,institutional,margin,lending,top20_volume"
+    DATA_TYPE="price,institutional,margin,lending,top20_volume,revenue"
     info "匯入所有原始資料類型: $DATA_TYPE"
 fi
 
@@ -148,7 +149,7 @@ if [ "$IS_TECHNICAL" = true ]; then
     python3.11 scripts/data-importer/import_technical_analysis.py "$@"
 
 else
-    # 原始資料匯入（price, institutional, margin, lending, top20_volume）
+    # 原始資料匯入（price, institutional, margin, lending, top20_volume, revenue）
     info "匯入原始資料類型: $DATA_TYPE"
 
     # 將逗號分隔的類型轉換為空格分隔

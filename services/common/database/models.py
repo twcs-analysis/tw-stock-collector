@@ -381,3 +381,49 @@ class StockAnalysisDaily(Base):
 
     def __repr__(self):
         return f"<StockAnalysisDaily(date={self.trade_date}, stock={self.stock_id})>"
+
+
+class StockRevenue(Base):
+    """月營收資料表"""
+    __tablename__ = 'stock_revenues'
+    __table_args__ = (
+        UniqueConstraint('year_month', 'stock_id', name='uq_revenue_yearmonth_stock'),
+        Index('idx_revenue_yearmonth', 'year_month'),
+        Index('idx_revenue_stock', 'stock_id'),
+        Index('idx_revenue_yearmonth_stock', 'year_month', 'stock_id'),
+    )
+
+    id = Column(BigInteger, primary_key=True, autoincrement=True)
+    year_month = Column(String(7), nullable=False, comment='資料年月 (YYYY-MM)')
+    stock_id = Column(String(10), ForeignKey('stocks.stock_id', ondelete='CASCADE'), nullable=False)
+    stock_name = Column(String(100), comment='股票名稱')
+    market_type = Column(String(10), comment='市場類型: twse 或 tpex')
+
+    # 當月營收
+    current_month_revenue = Column(DECIMAL(20, 2), comment='當月營收（千元）')
+    last_month_revenue = Column(DECIMAL(20, 2), comment='上月營收（千元）')
+    last_year_revenue = Column(DECIMAL(20, 2), comment='去年同月營收（千元）')
+
+    # 營收變化
+    revenue_change = Column(DECIMAL(20, 2), comment='營收變化金額（千元）')
+    mom_change_pct = Column(DECIMAL(10, 4), comment='月增率 (%)')
+    yoy_change_pct = Column(DECIMAL(10, 4), comment='年增率 (%)')
+
+    # 累計營收
+    ytd_revenue = Column(DECIMAL(20, 2), comment='年初至今累計營收（千元）')
+    ytd_last_year_revenue = Column(DECIMAL(20, 2), comment='去年同期累計營收（千元）')
+    ytd_yoy_change_pct = Column(DECIMAL(10, 4), comment='累計年增率 (%)')
+
+    # 備註
+    note = Column(String(500), comment='營收變動說明')
+
+    # 資料來源與時間
+    data_source = Column(String(20), comment='資料來源: daily, monthly, mops')
+    collection_date = Column(Date, comment='收集日期')
+    created_at = Column(TIMESTAMP, server_default=text('CURRENT_TIMESTAMP'))
+    updated_at = Column(TIMESTAMP, server_default=text('CURRENT_TIMESTAMP'))
+
+    stock = relationship("Stock", backref="revenues")
+
+    def __repr__(self):
+        return f"<StockRevenue(year_month={self.year_month}, stock={self.stock_id}, revenue={self.current_month_revenue})>"

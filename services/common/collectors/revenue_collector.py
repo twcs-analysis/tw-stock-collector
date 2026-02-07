@@ -60,21 +60,39 @@ class RevenueCollector(BaseCollector):
         """取得資料類型"""
         return "revenue"
 
-    def get_save_path(self) -> str:
+    def get_save_path(self, actual_year_month: str = None) -> str:
         """
-        覆寫儲存路徑方法，根據模式決定儲存路徑
+        取得儲存路徑，根據模式決定儲存路徑
+
+        Args:
+            actual_year_month: 實際年月（若未提供則使用 self.year_month）
 
         Returns:
             str: 儲存路徑
         """
+        # 使用實際年月或預設年月
+        year_month = actual_year_month or self.year_month
+        year, month = year_month.split('-')
+
         if self.mode == "daily":
             # daily 模式：data/raw/revenue-daily/YYYY/YYYY-MM.json（同一個月同一個檔案）
-            year, month = self.year_month.split('-')
-            return f"data/raw/revenue-daily/{year}/{self.year_month}.json"
+            return f"data/raw/revenue-daily/{year}/{year_month}.json"
         else:
-            # monthly 模式：data/raw/revenue-monthly/YYYY/YYYY-MM.json
-            year, month = self.year_month.split('-')
-            return f"data/raw/revenue-monthly/{year}/{self.year_month}.json"
+            # monthly 模式：data/raw/revenue-monthly/YYYY/YYYY-MM.json（使用實際年月）
+            return f"data/raw/revenue-monthly/{year}/{year_month}.json"
+
+    def get_file_path(self) -> str:
+        """
+        覆寫 BaseCollector 的 get_file_path 方法
+
+        Returns:
+            str: 檔案路徑
+        """
+        # 如果有實際年月（從上次收集結果中取得），使用實際年月
+        # 否則使用預設年月
+        if hasattr(self, '_actual_year_month') and self._actual_year_month:
+            return self.get_save_path(self._actual_year_month)
+        return self.get_save_path()
 
     def collect(self) -> Dict[str, Any]:
         """
@@ -84,9 +102,15 @@ class RevenueCollector(BaseCollector):
             dict: 包含 metadata 和 data 的字典
         """
         if self.mode == "daily":
-            return self._collect_daily()
+            result = self._collect_daily()
         else:
-            return self._collect_monthly()
+            result = self._collect_monthly()
+
+        # 儲存實際年月供 get_file_path() 使用
+        if result and 'metadata' in result:
+            self._actual_year_month = result['metadata'].get('year_month')
+
+        return result
 
     def _collect_monthly(self) -> Dict[str, Any]:
         """

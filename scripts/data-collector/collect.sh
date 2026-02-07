@@ -4,13 +4,17 @@
 #
 # 功能：
 #   - 收集指定日期的台股資料
-#   - 支援指定資料類型
+#   - 支援指定資料類型：price, margin, institutional, lending, top20_volume
 #   - 自動判斷交易日
+#   - ⚠️ 月營收資料請使用 collect_revenue.py
 #
 # 使用方式：
 #   ./scripts/data-collector/collect.sh                           # 收集當天所有資料
 #   ./scripts/data-collector/collect.sh 2026-02-02                # 收集指定日期所有資料
 #   ./scripts/data-collector/collect.sh 2026-02-02 price margin   # 收集指定類型
+#
+# 月營收收集：
+#   python3.11 scripts/data-collector/collect_revenue.py          # 智慧模式（自動判斷 daily/monthly）
 #
 
 set -e

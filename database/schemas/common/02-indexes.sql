@@ -196,3 +196,26 @@ ON etf_stock_union (etf_count DESC, total_weight DESC);
 -- 用途: 查詢權重最高的成分股
 CREATE INDEX IF NOT EXISTS idx_etf_union_weight
 ON etf_stock_union (total_weight DESC);
+
+-- ==========================================
+-- 10. stock_revenues 索引
+-- ==========================================
+-- 用途: 查詢特定股票的營收歷史
+CREATE INDEX IF NOT EXISTS idx_revenues_stock_yearmonth
+ON stock_revenues (stock_id, year_month DESC);
+
+-- 用途: 查詢特定年月的所有股票營收
+CREATE INDEX IF NOT EXISTS idx_revenues_yearmonth
+ON stock_revenues (year_month DESC);
+
+-- 用途: 篩選營收年增率高的股票
+CREATE INDEX IF NOT EXISTS idx_revenues_yoy
+ON stock_revenues (year_month DESC, yoy_change_pct DESC);
+
+-- 用途: 篩選月增率高的股票
+CREATE INDEX IF NOT EXISTS idx_revenues_mom
+ON stock_revenues (year_month DESC, mom_change_pct DESC);
+
+-- 用途: 篩選營收成長的股票（YoY > 0 且 MoM > 0）
+CREATE INDEX IF NOT EXISTS idx_revenues_growth
+ON stock_revenues (year_month DESC, yoy_change_pct, mom_change_pct);
