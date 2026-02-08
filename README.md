@@ -22,6 +22,11 @@
 - ✅ 還原股價 (除權息調整)
 - ✅ 技術指標 (MA, MACD, RSI, KD, 布林通道, OBV)
 
+### 基本面資料
+- ✅ **[月營收資料](data/raw/revenue-daily/)** - 每月營業收入、年增率、月增率（2025 年完整資料）
+- 📅 財報資料（規劃中）
+- 📅 股利政策（規劃中）
+
 ### 籌碼面資料
 - ✅ **[三大法人買賣超](data/raw/institutional/)** - 外資、投信、自營商
 - ✅ **[融資融券餘額](data/raw/margin/)** - 融資融券餘額與變化
@@ -79,7 +84,7 @@
 #### 使用 Shell 腳本（推薦）
 
 ```bash
-# 收集當天資料
+# 收集每日資料（價格、籌碼面）
 ./scripts/data-collector/collect.sh
 
 # 收集指定日期的所有資料
@@ -91,6 +96,13 @@
 
 # 回補歷史資料（自動完成：收集 → 匯入 → 轉換）
 ./scripts/data-collector/backfill.sh 2026-01-01 2026-01-31
+
+# 收集月營收資料
+# Daily 模式（1-10 日使用，增量更新）
+python3.11 scripts/data-collector/collect_revenue.py --mode daily --year-month 2026-01
+
+# Monthly 模式（10 日後使用，完整資料）
+python3.11 scripts/data-collector/collect_revenue.py --mode monthly --year-month 2026-01
 ```
 
 #### 使用 Python 腳本
@@ -167,12 +179,19 @@ data/raw/
 ├── margin/                      # 融資融券資料
 │   └── YYYY/MM/YYYY-MM-DD.json
 │
-└── lending/                     # 借券賣出資料
-    └── YYYY/MM/YYYY-MM-DD.json
+├── lending/                     # 借券賣出資料
+│   └── YYYY/MM/YYYY-MM-DD.json
+│
+├── revenue-daily/               # 月營收資料（Daily 模式）
+│   └── YYYY/YYYY-MM.json        # 單月檔案，包含所有股票
+│
+└── revenue-monthly/             # 月營收資料（Monthly 模式）
+    └── YYYY/YYYY-MM.json        # 單月檔案，包含所有股票
 ```
 
 **已收集資料快速連結**：
 - [價格資料](data/raw/price/) - 每日股票開高低收與成交量
+- [月營收資料](data/raw/revenue-daily/) - 每月營業收入、年增率、月增率（2025 年完整資料）
 - [三大法人](data/raw/institutional/) - 外資、投信、自營商買賣超
 - [融資融券](data/raw/margin/) - 融資融券餘額與變化
 - [借券賣出](data/raw/lending/) - 借券賣出餘額資料
@@ -266,7 +285,9 @@ tw-stock-collector/
 │   │   ├── margin/              # 融資融券資料
 │   │   ├── institutional/       # 三大法人資料
 │   │   ├── lending/             # 借券賣出資料
-│   │   └── top20_volume/        # 成交量前 20 名
+│   │   ├── top20_volume/        # 成交量前 20 名
+│   │   ├── revenue-daily/       # 月營收資料（Daily 模式）
+│   │   └── revenue-monthly/     # 月營收資料（Monthly 模式）
 │   └── transformed/             # 轉換後資料
 │       └── technical/           # 技術指標（CSV 格式）
 │
@@ -389,13 +410,18 @@ python scripts/common-tools/get_trading_days.py special
 ## 📈 效能指標
 
 ### 資料收集
-- **收集時間**: 約 2-3 分鐘（五種資料類型）
+- **每日資料收集時間**: 約 2-3 分鐘（五種資料類型）
 - **單日資料量**: 約 6.1 MB（6,528 筆記錄）
   - 價格資料: 604 KB（1,954 檔股票）
   - 三大法人: 4.1 MB（1,721 檔股票）
   - 融資融券: 980 KB（1,819 檔股票）
   - 借券賣出: 551 KB（1,014 檔股票）
   - 成交量前 20 名: 6.6 KB（20 檔股票）
+
+- **月營收資料收集時間**: 約 10-15 分鐘/月份
+- **單月資料量**: 約 945 KB（1,940 檔股票）
+  - 2025 年完整資料：11 個月，約 10.3 MB
+  - 包含：當月營收、年增率、月增率
 
 ### 儲存空間
 - **每月**: 約 120 MB（20 個交易日）
@@ -532,5 +558,15 @@ MIT License
 
 ---
 
-**最後更新**: 2026-02-02
-**版本**: 架構重構完成 - 統一使用 services/common 模組
+## 🎉 最新進展
+
+### 2026-02-08: 月營收資料收集完成
+- ✅ 完成 2025 年全年月營收資料收集（2025-01 至 2025-11）
+- ✅ 總計 11 個月份，約 21,340 筆資料
+- ✅ 資料儲存於 `data/raw/revenue-daily/2025/`
+- 📊 詳細收集狀態請參考：[revenue_collection_status.md](revenue_collection_status.md)
+
+---
+
+**最後更新**: 2026-02-08
+**版本**: 新增月營收資料收集功能 - 2025 年完整資料

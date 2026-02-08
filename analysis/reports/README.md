@@ -12,6 +12,15 @@ analysis/reports/
 │   │   ├── 年線選股_2026-02-06_*.csv
 │   │   └── 年線選股報告_2026-02-06.md
 │   └── YYYY-MM-DD/    # 其他日期
+│
+├── 月營收選股/        # 月營收選股報告 ⭐ 新增
+│   ├── README.md      # 報告說明
+│   ├── 2026-01/       # 2026 年 1 月報告
+│   │   ├── 綜合報告.md
+│   │   ├── 營收成長股.md
+│   │   └── *.csv
+│   └── archive/       # 歷史報告封存
+│
 └── [其他分析類型]/
 ```
 
@@ -34,6 +43,35 @@ export DB_PASSWORD=tw_stock_dev_password_2024
 ```
 
 **策略說明**：參考 [analysis/封關選股/README.md](../封關選股/README.md)
+
+### 2. 月營收選股 ⭐ 新增
+
+**說明**：基於月營收資料的選股策略，篩選營收成長、爆發或穩定的標的
+
+**輸出檔案**：
+- `綜合報告.md` - 包含所有策略的綜合報告
+- `營收成長股.md` / `營收成長股.csv` - 年增率 > 20% 且月增率 > 0%
+- `營收爆發股.md` / `營收爆發股.csv` - 月增率 > 30% 或年增率 > 50%
+- `穩定成長股.md` / `穩定成長股.csv` - 連續 3 個月年增率 > 10%
+- `轉虧為盈股.md` / `轉虧為盈股.csv` - 由衰退轉為成長
+
+**執行方式**：
+```bash
+# 策略 B：強勢成長股（推薦）
+psql-17 -U postgres -d tw_stock -v target_month='2026-01' \
+  -f analysis/月營收選股/strategy_b_balanced.sql
+
+# 策略 A：嚴格成長股（最嚴格）
+psql-17 -U postgres -d tw_stock -v target_month='2026-01' \
+  -f analysis/月營收選股/strategy_a_strict.sql
+
+# 使用 Python 腳本（待開發）
+python analysis/月營收選股/revenue_screener.py --year-month 2026-01
+```
+
+**策略說明**：參考 [analysis/月營收選股/README.md](../月營收選股/README.md)
+
+**詳細報告說明**：參考 [月營收選股/README.md](月營收選股/README.md)
 
 ---
 

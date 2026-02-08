@@ -1,0 +1,15 @@
+# 忽略 data 目錄下的所有檔案（除了 .gitkeep）
+data/*
+!data/.gitkeep
+
+# 忽略臨時檔案
+*.tmp
+*.temp
+*.cache
+
+# 忽略輸出檔案
+*.csv
+*.xlsx
+*.json
+!queries/*.sql
+!scripts/*.py

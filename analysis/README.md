@@ -25,6 +25,21 @@ analysis/
 │   ├── recommend_stocks_with_names.py # Python 腳本（Markdown 版）
 │   └── multi_strategy_selector.sql    # 對應 SQL 查詢
 │
+├── 月營收選股/                        # 月營收選股策略 ⭐ 新增
+│   ├── README.md                      # 策略說明文件
+│   ├── strategy_a_strict.sql          # 策略 A：嚴格成長股
+│   ├── strategy_b_balanced.sql        # 策略 B：強勢成長股
+│   ├── strategy_c_potential.sql       # 策略 C：潛力成長股
+│   ├── strategy_d_breakout.sql        # 策略 D：爆發突破股
+│   └── STRATEGY_COMPARISON.md         # 策略對比文件
+│
+├── reports/                           # 分析報告輸出目錄
+│   ├── README.md                      # 報告說明文件
+│   └── 月營收選股/                    # 月營收選股報告 ⭐ 新增
+│       ├── README.md                  # 報告格式說明
+│       ├── 2026-01/                   # 2026 年 1 月報告
+│       └── archive/                   # 歷史報告封存
+│
 └── results/                           # 篩選結果輸出目錄
     └── [日期]/                        # 按日期組織的結果
 ```
@@ -233,6 +248,64 @@ python analysis/多策略綜合/recommend_stocks_20260202.py
 
 ---
 
+### 4. 月營收選股策略 ⭐ 新增
+
+#### 4.1 概述
+
+基於月營收資料的**四大維度**多策略選股系統。
+
+#### 四大篩選維度
+
+| 維度 | 條件 | 意義 | 優先級 |
+|-----|------|------|-------|
+| **成長性** | YoY > 20% 且 MoM > 0% | 確立短期與長期成長動能 | ⭐⭐⭐ 必要 |
+| **歷史位階** | 創下 12 個月或歷史新高 | 尋求產業地位或產能突破 | ⭐⭐ 加分 |
+| **趨勢強度** | 連續 3 個月 YoY 遞增 | 排除單月偶發性入帳 | ⭐⭐⭐ 必要 |
+| **量價關係** | 營收公布後股價帶量突破 | 市場對營收表現給予肯定 | ⭐⭐ 加分 |
+
+#### 四大選股策略
+
+| 策略 | SQL 檔案 | 說明 | 適用場景 |
+|-----|---------|------|---------|
+| **策略 A** | [strategy_a_strict.sql](月營收選股/queries/strategy_a_strict.sql) | 嚴格成長股（滿足 4 維度） | 最嚴格篩選 |
+| **策略 B** | [strategy_b_balanced.sql](月營收選股/queries/strategy_b_balanced.sql) | 強勢成長股（3 必要維度）⭐ 推薦 | 平衡選擇 |
+| **策略 C** | [strategy_c_potential.sql](月營收選股/queries/strategy_c_potential.sql) | 潛力成長股（2 核心維度） | 寬鬆篩選 |
+| **策略 D** | [strategy_d_breakout.sql](月營收選股/queries/strategy_d_breakout.sql) | 爆發突破股（爆發+新高） | 短線交易 |
+
+#### 使用方式
+
+```bash
+# 策略 B：強勢成長股（推薦）
+psql-17 -U postgres -d tw_stock \
+  -v target_month='2026-01' \
+  -f analysis/月營收選股/strategy_b_balanced.sql
+
+# 策略 A：嚴格成長股（最嚴格）
+psql-17 -U postgres -d tw_stock \
+  -v target_month='2026-01' \
+  -f analysis/月營收選股/strategy_a_strict.sql
+
+# 策略 D：爆發突破股（短線）
+psql-17 -U postgres -d tw_stock \
+  -v target_month='2026-01' \
+  -f analysis/月營收選股/strategy_d_breakout.sql
+```
+
+#### 資料來源
+
+- **營收資料**: `stock_revenues`（2024-01 至今）
+- **股價資料**: `stock_prices`（用於量價關係判斷）
+
+#### 詳細說明
+
+完整策略說明與技術細節：[月營收選股/README.md](月營收選股/README.md)
+
+#### 分析報告
+
+每月報告儲存於：[reports/月營收選股/](reports/月營收選股/)
+
+---
+
 ## 🗄️ SQL 查詢檔案
 
 **每個策略都提供對應的 SQL 查詢檔案**，可直接在 PostgreSQL 資料庫中執行，無需 Python 環境。
@@ -245,6 +318,10 @@ python analysis/多策略綜合/recommend_stocks_20260202.py
 | [pullback_buy_selector.sql](回檔買進/pullback_buy_selector.sql) | pullback_buy_selector.py | 回檔買上漲選股（標準版） |
 | [find_bullish_stocks.sql](趨勢追蹤/find_bullish_stocks.sql) | find_bullish_stocks.py | 多頭市場選股 |
 | [multi_strategy_selector.sql](多策略綜合/multi_strategy_selector.sql) | recommend_stocks_*.py | 多策略綜合選股 |
+| [strategy_a_strict.sql](月營收選股/strategy_a_strict.sql) | 待開發 | 營收選股：嚴格成長股 ⭐ 新增 |
+| [strategy_b_balanced.sql](月營收選股/strategy_b_balanced.sql) | 待開發 | 營收選股：強勢成長股（推薦） ⭐ 新增 |
+| [strategy_c_potential.sql](月營收選股/strategy_c_potential.sql) | 待開發 | 營收選股：潛力成長股 ⭐ 新增 |
+| [strategy_d_breakout.sql](月營收選股/strategy_d_breakout.sql) | 待開發 | 營收選股：爆發突破股 ⭐ 新增 |
 
 ### SQL 使用方式
 
@@ -459,5 +536,5 @@ ORDER BY close_price DESC;
 
 ---
 
-**最後更新**: 2026-02-03
+**最後更新**: 2026-02-08
 **維護者**: Jason Huang
