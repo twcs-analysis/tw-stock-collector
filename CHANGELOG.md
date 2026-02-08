@@ -4,6 +4,31 @@
 
 ## [Unreleased]
 
+### 新增
+- **月營收篩選 + ETF 持股分析系統**（2026-02-09）
+  - 新增 `analysis/ETF持股篩選/月營收篩選_ETF持股_報告版_v2.sql`（嚴格版）
+    - 篩選條件：連續 3 個月 YoY 遞增 + 最新月份（2026-01）仍維持正成長
+    - 從資料庫讀取 ETF 持股資料（取代 hardcode）
+    - 輸出 Markdown 格式報告，包含最新收盤價
+  - 新增 `analysis/ETF持股篩選/月營收篩選_ETF持股_報告版_v3_寬鬆.sql`（寬鬆版）
+    - 篩選條件：近三個月中任意兩個月連續 YoY 遞增
+    - 擴大選股範圍，適合積極型投資者
+  - 新增 `analysis/ETF持股篩選/月營收篩選_純營收版.sql`（無 ETF 限制版）
+    - 不限 ETF 持股，擴大選股範圍
+  - 新增 `analysis/ETF持股篩選/README.md` - 完整使用文檔
+  - 新增 `analysis/ETF持股篩選/QUICKSTART.md` - 快速開始指南
+
+### 變更
+- **Markdown 轉 PDF 工具升級**（2026-02-09）
+  - 修改 `scripts/media-tools/md_to_pdf_with_chinese.sh`
+  - 從 `pandoc + weasyprint` 改用 `md-to-pdf`（基於 Puppeteer/Chrome）
+  - 優點：
+    - 完美支援中文（系統字體）
+    - 表格格式正確（斑馬紋）
+    - CSS 載入穩定
+    - 無 URLError: Bad file descriptor 錯誤
+  - 新增工具存在性檢查與安裝提示
+
 ### 修正
 - **月營收資料 MoM 計算錯誤修正**（2026-02-09）
   - **問題**：2025-02 至 2025-11 的月增率（MoM）計算錯誤
