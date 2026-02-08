@@ -95,71 +95,6 @@
 
 ---
 
-## 🗂️ 專案結構
-
-```
-tw-stock-collector/
-├── src/                         # 核心程式碼
-│   ├── collectors/              # 資料收集器
-│   │   ├── base.py              # BaseCollector 基礎類別
-│   │   ├── price_collector.py   # 價格資料收集器
-│   │   ├── margin_collector.py  # 融資融券收集器
-│   │   ├── institutional_collector.py  # 三大法人收集器
-│   │   └── lending_collector.py # 借券賣出收集器
-│   ├── datasources/             # 資料源 API 封裝
-│   │   ├── twse_datasource.py   # 證交所 API（上市）
-│   │   └── tpex_datasource.py   # 櫃買中心 API（上櫃）
-│   └── utils/                   # 工具函式庫
-│       ├── date_helper.py       # 交易日判斷、日期轉換
-│       ├── file_handler.py      # 檔案操作、路徑管理
-│       └── logger.py            # 統一日誌記錄
-│
-├── scripts/                     # 執行腳本
-│   ├── run_collection.py        # 資料收集主腳本
-│   └── backfill.py              # 歷史資料回補腳本
-│
-├── data/raw/                    # 原始資料儲存
-│   ├── price/                   # 每日價格資料
-│   ├── margin/                  # 融資融券資料
-│   ├── institutional/           # 三大法人資料
-│   ├── lending/                 # 借券賣出資料
-│   ├── top20_volume/            # 成交量前 20 名
-│   ├── revenue-daily/           # 月營收資料（每日模式）
-│   └── revenue-monthly/         # 月營收資料（月度模式）
-│
-├── data/transcripts/            # YouTube 影片逐字稿與分析報告
-│   └── yt-finance-show/         # 理財達人秀
-│       └── YYYY-MM-DD/          # 日期目錄
-│
-├── cron-automation/             # Cron 自動化腳本
-│   ├── revenue-pipeline/        # 月營收自動處理
-│   │   ├── run.sh               # 主執行腳本（日誌管理）
-│   │   ├── execute.sh           # 獨立執行腳本（完整流程）
-│   │   └── logs/                # 執行日誌
-│   └── yt-finance-show/         # 理財達人秀影片處理
-│       ├── run.sh               # 主執行腳本（日誌管理）
-│       ├── execute.sh           # 獨立執行腳本（完整流程）
-│       ├── analyze_transcript.py # AI 分析腳本
-│       └── logs/                # 執行日誌
-│
-├── .github/workflows/           # GitHub Actions
-│   ├── daily-collection.yml     # 每日資料收集
-│   └── backfill.yml             # 歷史資料回補
-│
-├── deployment/                  # 部署配置
-│   ├── deploy.sh                # 部署腳本
-│   └── stock-data-collector/    # Docker Compose 配置
-│
-├── build/                       # Docker 建置
-│   └── Dockerfile               # 容器映像檔
-│
-└── docs/                        # 文檔
-    ├── DATA_VALIDATION_SPEC.md  # 資料驗證規範
-    └── specifications/          # 詳細規格書
-```
-
----
-
 ## 📊 資料結構
 
 ### 資料類型
@@ -186,36 +121,13 @@ data/raw/revenue-daily/YYYY/YYYY-MM.json    # 每日模式（1-10 日，增量�
 data/raw/revenue-monthly/YYYY/YYYY-MM.json  # 月度模式（10 日後，完整資料）
 ```
 
+**資料特性**：
 - 每日資料：一個日期一個檔案，包含所有股票資料
 - 月營收資料：同一個月同一個檔案（daily 模式增量更新）
 - 依年份（YYYY）和月份（MM）分目錄
 - 統一的 JSON 格式，包含 metadata 和 data
 
-### JSON 格式範例
-
-```json
-{
-  "metadata": {
-    "date": "2025-12-26",
-    "collected_at": "2025-12-26T18:30:45",
-    "total_count": 1946,
-    "source": "TWSE + TPEx Official API"
-  },
-  "data": [
-    {
-      "date": "2025-12-26",
-      "stock_id": "2330",
-      "stock_name": "台積電",
-      "open": 1080.0,
-      "high": 1095.0,
-      "low": 1075.0,
-      "close": 1090.0,
-      "volume": 45678912,
-      "type": "twse"
-    }
-  ]
-}
-```
+**詳細 JSON 格式範例請參考**: [README.md](README.md)
 
 ---
 
@@ -273,129 +185,72 @@ class BaseCollector:
 
 ## 🚀 常用指令
 
-### 本地執行
-
 **⚠️ 重要：所有資料處理任務都應使用 `scripts/` 目錄下的 shell 腳本，而非直接執行 Python 檔案**
 
-#### 資料收集（data-collect）
+### 資料收集（data-collect）
 ```bash
-# 收集當天資料（預設使用當天日期）
+# 收集當天資料
 python3 scripts/run_collection.py
 
-# 收集指定日期的所有資料
-python3 scripts/run_collection.py --date 2024-12-27
-
-# 收集特定類型資料
+# 收集指定日期資料
 python3 scripts/run_collection.py --date 2024-12-27 --types price margin
-
-# 跳過交易日檢查
-python3 scripts/run_collection.py --date 2024-12-27 --skip-trading-day-check
 
 # 回補歷史資料
 python3 scripts/backfill.py --start 2025-01-01 --end 2025-01-31
-
-# 月營收收集（每日模式，1-10 日使用）
-python3.11 scripts/data-collector/collect_revenue.py --mode daily --year-month 2026-01
-
-# 月營收收集（月度模式，10 日後使用）
-python3.11 scripts/data-collector/collect_revenue.py --mode monthly --year-month 2026-01
 ```
 
-#### 資料匯入（data-import）
+### 資料匯入（data-import）
 ```bash
-# 匯入所有資料類型（需設定 DB_PASSWORD）
+# 匯入所有資料類型
 export DB_PASSWORD=<your_password>
 scripts/data-importer/import.sh all --date 2026-02-06
-
-# 匯入特定資料類型
-scripts/data-importer/import.sh price,institutional --date 2026-02-06
 ```
 
-#### 技術分析轉換（data-transform）
+### 技術分析轉換（data-transform）
 ```bash
-# 使用 shell 腳本執行（推薦）
-export DB_PASSWORD=<your_password>
-
 # 轉換今天的資料
+export DB_PASSWORD=<your_password>
 scripts/data-transformer/transform.sh today
-
-# 轉換指定日期
-scripts/data-transformer/transform.sh 2026-02-06
-
-# 轉換指定日期的特定股票
-scripts/data-transformer/transform.sh 2026-02-06 2330
 
 # 轉換日期區間
 scripts/data-transformer/transform.sh range 2026-01-01 2026-01-31
-
-# 轉換最近 N 天
-scripts/data-transformer/transform.sh latest 7
 ```
 
-#### Cron 自動化執行
+### Cron 自動化執行
 ```bash
 # Revenue Pipeline（月營收自動處理）
 ./cron-automation/revenue-pipeline/run.sh
-# 或使用獨立執行腳本（不依賴 Claude CLI）
-./cron-automation/revenue-pipeline/execute.sh --year-month 2026-01 --sample 10
 
 # YT Finance Show（理財達人秀影片處理）
 ./cron-automation/yt-finance-show/run.sh
-# 或使用獨立執行腳本
-./cron-automation/yt-finance-show/execute.sh --video-id ABC123xyz
-
-# 設定 crontab（範例）
-30 8 * * * /path/to/tw-stock-collector/cron-automation/revenue-pipeline/run.sh
-0 22 * * * /path/to/tw-stock-collector/cron-automation/yt-finance-show/run.sh
 ```
 
-#### 完整 Pipeline
+### 完整 Pipeline
 ```bash
 # 使用 data-pipeline skill 自動執行完整流程
 # 包含：收集 → 匯入 → 轉換 → Git 提交
 # 詳見：.claude/skills/data-pipeline/SKILL.md
 ```
 
-### Docker 部署
+---
 
-```bash
-# 互動式選擇服務
-cd deployment
-./deploy.sh
+## 💻 Claude Skills 快速參考
 
-# 直接指定服務
-./deploy.sh stock-data-collector
+本專案提供多個 Claude Skills 自動化常見任務：
 
-# 使用 Docker Compose
-cd deployment/stock-data-collector
-docker-compose up
-```
+### 資料處理類
+- **data-pipeline** - 完整資料處理流程（收集→匯入→轉換→Git 提交）
+- **data-collect** - 資料收集
+- **data-import** - 資料匯入資料庫
+- **data-transform** - 技術指標轉換
+- **revenue-pipeline** - 月營收資料處理
 
-### 交易日曆查詢
+### 工具類
+- **git** - Git 提交流程
+- **yt-finance-show** - YouTube 理財影片分析
 
-```bash
-# 檢查是否為交易日
-python scripts/common-tools/get_trading_days.py check 2026-01-01
-
-# 查詢交易日區間
-python scripts/common-tools/get_trading_days.py range 2026-01-01 2026-01-31
-
-# 年度摘要
-python scripts/common-tools/get_trading_days.py summary 2026
-```
-
-### 資料查看
-
-```bash
-# 查看檔案
-ls -lh data/raw/price/2024/12/
-
-# 查看 metadata
-cat data/raw/price/2024/12/2024-12-27.json | jq '.metadata'
-
-# 統計筆數
-cat data/raw/price/2024/12/2024-12-27.json | jq '.data | length'
-```
+**使用方式**: 在 Claude CLI 中直接輸入 skill 名稱即可執行
+**詳細說明**: 參考各 skill 的 SKILL.md 文件
 
 ---
 
@@ -545,6 +400,21 @@ CHANGELOG.md 使用 Keep a Changelog 格式：
 - 移除項目描述
 ```
 
+### 新增收集器
+
+1. 在 `src/collectors/` 建立新的收集器類別
+2. 繼承 `BaseCollector`
+3. 實作 `collect()`, `validate()`, `save()` 方法
+4. 在 `scripts/run_collection.py` 註冊新的收集器類型
+5. 更新相關文檔
+
+### 新增資料源
+
+1. 在 `src/datasources/` 建立新的資料源類別
+2. 實作統一的 API 介面
+3. 加入錯誤處理與重試機制
+4. 撰寫單元測試
+
 ---
 
 ## 🔒 安全注意事項
@@ -591,26 +461,6 @@ gh workflow run backfill.yml
 
 ---
 
-## 📈 效能指標
-
-### 資料收集效能
-
-- **收集時間**: 約 2-3 分鐘（五種資料類型）
-- **單日資料量**: 約 6.1 MB（6,528 筆記錄）
-  - price: 1,954 筆 (604 KB)
-  - institutional: 1,721 筆 (4.1 MB)
-  - margin: 1,819 筆 (980 KB)
-  - lending: 1,014 筆 (551 KB)
-  - top20_volume: 20 筆 (6.6 KB)
-
-### 儲存空間
-
-- **每月**: 約 120 MB（20 個交易日）
-- **每年**: 約 1.4 GB（240 個交易日）
-- **檔案數量**: ~1,200 個檔案/年（每交易日 5 個檔案）
-
----
-
 ## 🛠️ 開發工具
 
 ### 必要工具
@@ -651,107 +501,30 @@ gh workflow run backfill.yml
 
 ---
 
-## 💡 開發提示
-
-### 新增收集器
-
-1. 在 `src/collectors/` 建立新的收集器類別
-2. 繼承 `BaseCollector`
-3. 實作 `collect()`, `validate()`, `save()` 方法
-4. 在 `scripts/run_collection.py` 註冊新的收集器類型
-5. 更新相關文檔
-
-### 新增資料源
-
-1. 在 `src/datasources/` 建立新的資料源類別
-2. 實作統一的 API 介面
-3. 加入錯誤處理與重試機制
-4. 撰寫單元測試
-
-### 修改 Docker 配置
-
-1. 編輯 `build/Dockerfile` - 映像檔建置
-2. 編輯 `deployment/stock-data-collector/docker-compose.yml` - 服務配置
-3. 更新 `deployment/stock-data-collector/README.md` - 使用說明
-4. 測試部署流程
-
----
-
 ## ⚠️ 已知問題與修正歷史
 
 ### 2026-02-02：資料源 API 限制與雙模式設計
 
-**問題發現**：
-- 所有「一次取得所有股票」的 TWSE API 都**僅支援最新交易日資料**
-- `STOCK_DAY_ALL` (OpenAPI 和舊版) 都無法指定歷史日期查詢
-- 導致無法使用簡單 API 回補歷史資料
-
-**根本原因**：
-證交所 API 設計限制：
-- `STOCK_DAY_ALL`：一次取得所有股票（快，但只有當日資料）
-- `STOCK_DAY`：取得單一股票月資料（慢，但可查歷史）
-- 無法同時滿足「批次」和「歷史」兩個需求
+**問題**: TWSE `STOCK_DAY_ALL` API 僅支援最新交易日資料，無法查詢歷史日期
 
 **解決方案：雙模式設計**
+- ✅ **即時模式**（推薦）：使用 `STOCK_DAY_ALL` OpenAPI，每日自動收集當天資料
+- ⚠️ **回補模式**（緊急用）：使用 `STOCK_DAY` API 逐股查詢，速度慢（1,900 支 = 20-30 分鐘）
 
-#### 模式一：即時模式（預設，推薦）
-- **API**: `STOCK_DAY_ALL` (OpenAPI)
-- **用途**: 每日自動收集當天資料
-- **優點**: 快速（1 次請求），可取得所有股票
-- **限制**: 只能取得最新交易日資料
-- **使用**: `TWSEDataSource(use_backfill_mode=False)`
-
-#### 模式二：回補模式（緊急用）
-- **API**: `STOCK_DAY` (逐股查詢月資料)
-- **用途**: 回補缺失的歷史資料
-- **優點**: 可查詢任意歷史日期
-- **限制**:
-  - ⚠️ **非常慢**（1,900 支 = 20-30 分鐘）
-  - 必須提供股票代碼列表
-  - 每支股票 0.5 秒延遲（避免被封鎖）
-- **使用**: `TWSEDataSource(use_backfill_mode=True)`
-
-**建議作法**：
-1. ✅ 優先使用**每日自動收集**（GitHub Actions）
-2. ✅ **即時模式**用於當日收集
-3. ⚠️ **回補模式**僅用於緊急補少量資料
-4. ❌ 不建議大量回補（耗時過長）
-
-**修正檔案**：
-- [services/common/datasources/twse_datasource.py](services/common/datasources/twse_datasource.py) - 雙模式實作
-- [scripts/data-collector/backfill_historical.py](scripts/data-collector/backfill_historical.py) - 歷史回補腳本
+**建議**: 優先使用每日自動收集（GitHub Actions），回補模式僅用於緊急補少量資料
 
 ---
 
 ## 🚨 常見問題
 
 ### Docker 相關
-
-**Q: Docker daemon 未啟動怎麼辦？**
-A: 啟動 Docker Desktop 或使用 Python 腳本替代
-
-**Q: docker-compose.yml 的 command 參數如何設定？**
-A: 使用陣列格式，例如 `command: ["--date", "2024-12-27", "--skip-trading-day-check"]`
-
-**Q: 為什麼不建議用 Docker 進行生產環境部署？**
-A: Docker 配置主要用於本地測試，生產環境建議使用 GitHub Actions 自動化
+- **Q: Docker daemon 未啟動？** A: 啟動 Docker Desktop 或使用 Python 腳本替代
+- **Q: 不建議用 Docker 部署？** A: Docker 主要用於本地測試，生產環境建議使用 GitHub Actions
 
 ### 資料收集
-
-**Q: 如何判斷是否為交易日？**
-A: 使用 `src/utils/date_helper.py` 的 `is_trading_day()` 函式
-
-**Q: 資料收集失敗怎麼辦？**
-A: 系統會自動重試最多 3 次，查看日誌了解錯誤原因
-
-**Q: 如何回補缺失的歷史資料？**
-A:
-- **當日/最近資料**: 使用 `python scripts/run_collection.py --date YYYY-MM-DD`
-- **歷史資料回補**: 使用 `python scripts/data-collector/backfill_historical.py`
-  - 支援多種資料類型: `--types price margin institutional lending`
-  - 單一日期: `--date YYYY-MM-DD`
-  - 日期範圍: `--start YYYY-MM-DD --end YYYY-MM-DD`
-  - 範例: `python scripts/data-collector/backfill_historical.py --date 2026-01-15 --types price margin`
+- **Q: 如何判斷交易日？** A: 使用 `src/utils/date_helper.py` 的 `is_trading_day()` 函式
+- **Q: 收集失敗？** A: 系統會自動重試最多 3 次，查看日誌了解錯誤原因
+- **Q: 如何回補歷史資料？** A: 使用 `python scripts/data-collector/backfill_historical.py --date YYYY-MM-DD`
 
 ---
 
@@ -764,6 +537,6 @@ A:
 
 ---
 
-**最後更新**: 2026-02-04
+**最後更新**: 2026-02-08
 **維護者**: Jason Huang
 **專案狀態**: Phase 1 完成，持續維護中

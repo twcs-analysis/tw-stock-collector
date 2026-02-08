@@ -171,22 +171,11 @@ gh workflow run backfill.yml
 ```
 data/raw/
 ├── price/                       # 價格資料（開高低收、成交量）
-│   └── YYYY/MM/YYYY-MM-DD.json  # 單日檔案，包含所有股票
-│
 ├── institutional/               # 三大法人買賣超資料
-│   └── YYYY/MM/YYYY-MM-DD.json
-│
 ├── margin/                      # 融資融券資料
-│   └── YYYY/MM/YYYY-MM-DD.json
-│
 ├── lending/                     # 借券賣出資料
-│   └── YYYY/MM/YYYY-MM-DD.json
-│
 ├── revenue-daily/               # 月營收資料（Daily 模式）
-│   └── YYYY/YYYY-MM.json        # 單月檔案，包含所有股票
-│
 └── revenue-monthly/             # 月營收資料（Monthly 模式）
-    └── YYYY/YYYY-MM.json        # 單月檔案，包含所有股票
 ```
 
 **已收集資料快速連結**：
@@ -238,156 +227,22 @@ data/raw/
 
 ## 🗂️ 專案結構
 
+### 核心目錄
+
 ```
 tw-stock-collector/
-├── README.md                    # 本文件（專案說明）
-├── requirements.txt             # Python 套件依賴
-│
-├── .github/workflows/           # GitHub Actions 自動化
-│   ├── daily-collection.yml     # 每日資料收集
-│   ├── backfill.yml             # 歷史資料回補
-│   └── ci.yml                   # CI/CD 流程
-│
-├── services/                    # 服務化架構
-│   ├── common/                  # 共用核心模組
-│   │   ├── collectors/          # 資料收集器（統一實現）
-│   │   ├── datasources/         # API 資料源封裝
-│   │   ├── utils/               # 工具函式庫
-│   │   ├── validators/          # 資料驗證器
-│   │   └── database/            # ORM 模型
-│   │
-│   ├── data-collector/          # 資料收集服務
-│   ├── data-importer/           # 資料匯入服務
-│   ├── data-transformer/        # 資料轉換服務
-│   └── analyzer-service/        # 分析服務（規劃中）
-│
-├── scripts/                     # 執行腳本
-│   ├── data-collector/          # 資料收集腳本
-│   │   ├── collect.sh           # 單日收集
-│   │   └── backfill.sh          # 歷史回補
-│   ├── data-importer/           # 資料匯入腳本
-│   ├── data-transformer/        # 技術指標轉換
-│   ├── database/                # 資料庫管理
-│   └── common-tools/            # 通用工具
-│       ├── markdown_to_pdf.py   # Markdown 轉 PDF
-│       └── README.md            # 工具說明
-│
-├── analysis/                    # 技術分析工具（獨立目錄）
-│   ├── README.md                # 分析工具總覽
-│   ├── recommend_stocks_with_names.py          # 股票推薦（完整版）
-│   ├── recommend_stocks_with_names.README.md   # 使用說明
-│   ├── find_bullish_stocks.py                  # 多頭選股（簡化版）
-│   └── find_bullish_stocks.README.md           # 使用說明
-│
+├── services/common/             # 共用核心模組（collectors, datasources, utils）
+├── scripts/                     # 執行腳本（收集、匯入、轉換）
 ├── data/                        # 資料儲存目錄
 │   ├── raw/                     # 原始資料（JSON 格式）
-│   │   ├── price/               # 每日價格資料
-│   │   ├── margin/              # 融資融券資料
-│   │   ├── institutional/       # 三大法人資料
-│   │   ├── lending/             # 借券賣出資料
-│   │   ├── top20_volume/        # 成交量前 20 名
-│   │   ├── revenue-daily/       # 月營收資料（Daily 模式）
-│   │   └── revenue-monthly/     # 月營收資料（Monthly 模式）
-│   └── transformed/             # 轉換後資料
-│       └── technical/           # 技術指標（CSV 格式）
-│
-├── database/                    # 資料庫相關
-│   ├── schemas/                 # 資料庫 Schema 定義
-│   │   ├── common/              # PostgreSQL + SQLite 共用
-│   │   ├── postgresql/          # PostgreSQL 專用
-│   │   └── sqlite/              # SQLite 專用
-│   ├── backups/                 # 資料庫備份
-│   ├── seeds/                   # 測試資料
-│   └── sqlite/                  # SQLite 檔案儲存
-│
-├── deployment/                  # 部署配置
-│   ├── deploy.sh                # 部署腳本
-│   ├── stock-data-collector/    # 資料收集服務
-│   ├── database/                # 資料庫服務
-│   │   ├── postgresql/          # PostgreSQL 部署
-│   │   └── sqlite/              # SQLite 部署
-│   └── data-import-pipeline/    # 資料匯入管道
-│
-├── docs/                        # 文檔目錄
-│   ├── DATA_VALIDATION_SPEC.md  # 資料驗證規範
-│   ├── database/                # 資料庫文檔
-│   │   ├── QUERY_EXAMPLES.md    # SQL 查詢範例
-│   │   └── QUICK_REFERENCE.md   # 快速參考手冊
-│   └── specifications/          # 詳細規格書
-│
-├── transcripts/                 # 教學影片逐字稿
-│   ├── raw/                     # 原始逐字稿
-│   └── notes/                   # 重點整理
-│
-└── build/                       # Docker 建置檔案
-    ├── stock-data-collector/    # 資料收集器映像檔
-    └── data-importer/           # 資料匯入器映像檔
+│   └── transformed/             # 轉換後資料（技術指標）
+├── database/                    # 資料庫相關（schemas, backups）
+├── analysis/                    # 技術分析工具
+├── .github/workflows/           # GitHub Actions 自動化
+└── deployment/                  # 部署配置
 ```
 
----
-
-## ⚡ 快速命令參考
-
-### 本地收集資料
-
-```bash
-# 收集當天資料
-./scripts/data-collector/collect.sh
-
-# 收集指定日期的所有資料
-./scripts/data-collector/collect.sh 2026-02-02
-
-# 只收集特定類型資料
-./scripts/data-collector/collect.sh 2026-02-02 price margin
-
-# 回補歷史資料（自動：收集 → 匯入 → 轉換）
-./scripts/data-collector/backfill.sh 2026-01-01 2026-01-31
-```
-
-### Docker 部署
-
-```bash
-# 使用 Docker 收集資料
-COLLECTION_DATE=2024-12-27 docker-compose up
-
-# 使用 GitHub Container Registry 映像檔
-docker run --rm \
-  -v $(pwd)/data:/app/data \
-  ghcr.io/twcs-analysis/tw-stock-collector:phase1-latest \
-  --date 2024-12-27
-```
-
-### 檢視資料
-
-```bash
-# 查看收集結果
-ls -lh data/raw/price/2024/12/2024-12-27.json
-
-# 使用 jq 查看 metadata
-cat data/raw/price/2024/12/2024-12-27.json | jq '.metadata'
-
-# 統計資料筆數
-cat data/raw/price/2024/12/2024-12-27.json | jq '.data | length'
-```
-
-### 交易日曆查詢
-
-```bash
-# 檢查是否為交易日
-python scripts/common-tools/get_trading_days.py check 2026-01-01
-
-# 查詢日期區間的所有交易日
-python scripts/common-tools/get_trading_days.py range 2026-01-01 2026-01-31
-
-# 查看年度摘要
-python scripts/common-tools/get_trading_days.py summary 2026
-
-# 查看所有休市日
-python scripts/common-tools/get_trading_days.py holidays --year 2026
-
-# 查看特殊交易日
-python scripts/common-tools/get_trading_days.py special
-```
+完整結構請參考 [CLAUDE.md](CLAUDE.md)
 
 ---
 
@@ -410,30 +265,21 @@ python scripts/common-tools/get_trading_days.py special
 ## 📈 效能指標
 
 ### 資料收集
-- **每日資料收集時間**: 約 2-3 分鐘（五種資料類型）
+
+**每日資料**（五種類型）：
+- **收集時間**: 約 2-3 分鐘
 - **單日資料量**: 約 6.1 MB（6,528 筆記錄）
-  - 價格資料: 604 KB（1,954 檔股票）
-  - 三大法人: 4.1 MB（1,721 檔股票）
-  - 融資融券: 980 KB（1,819 檔股票）
-  - 借券賣出: 551 KB（1,014 檔股票）
-  - 成交量前 20 名: 6.6 KB（20 檔股票）
+- **儲存空間**: 約 120 MB/月（20 個交易日）
 
-- **月營收資料收集時間**: 約 10-15 分鐘/月份
+**月營收資料**：
+- **收集時間**: 約 10-15 分鐘/月份
 - **單月資料量**: 約 945 KB（1,940 檔股票）
-  - 2025 年完整資料：11 個月，約 10.3 MB
-  - 包含：當月營收、年增率、月增率
-
-### 儲存空間
-- **每月**: 約 120 MB（20 個交易日）
-- **每年**: 約 1.4 GB（240 個交易日）
-- **檔案數量**: ~1,200 個檔案/年（每交易日 5 個檔案）
+- **2025 年完整資料**: 11 個月，約 10.3 MB
 
 ### 成本
 - **GitHub Actions**: 完全在免費額度內運行
 - **API 使用**: 官方免費 API，無需 Token
 - **儲存空間**: GitHub 免費方案足夠使用
-
-**實測環境**: Python 3.11, 一般家用寬頻, 測試日期 2024-12-27
 
 ---
 
@@ -461,28 +307,9 @@ python scripts/common-tools/get_trading_days.py special
 ### 技術分析寬表
 
 `stock_analysis_daily` 表包含完整的技術指標：
-
-- **移動平均線**: MA5, MA10, MA20, MA60, MA120, MA240
-- **RSI 指標**: RSI6, RSI14
-- **MACD 指標**: DIF, DEA, Histogram
-- **DMI 指標**: PDI, MDI, ADX, ADXR
-- **布林通道**: Upper, Mid, Lower
-- **成交量分析**: Vol MA5, Vol MA20, Vol Ratio, VWAP
-
-### 快速部署資料庫
-
-```bash
-# PostgreSQL
-cd deployment/database/postgresql
-cp .env.example .env
-# 編輯 .env 設定密碼
-docker-compose up -d
-
-# SQLite
-cd deployment/database/sqlite
-cp .env.example .env
-docker-compose up -d
-```
+- 移動平均線（MA5～MA240）
+- RSI、MACD、DMI/ADX
+- 布林通道、成交量分析
 
 ### 查詢範例文檔
 
