@@ -57,16 +57,29 @@ export PGPASSWORD=tw_stock_dev_password_2024
 psql-17 -U postgres -d tw_stock -f "analysis/封關選股/年線附近選股.sql"
 ```
 
-### 2. 輸出到檔案
+### 2. 使用執行腳本（推薦）
 
 ```bash
+# 一鍵執行選股並產生報告
+export DB_PASSWORD=tw_stock_dev_password_2024
+./analysis/封關選股/run.sh
+```
+
+**輸出位置**：`analysis/reports/封關選股/YYYY-MM-DD/`
+
+### 3. 手動執行（進階）
+
+```bash
+# 建立報告目錄
+mkdir -p "analysis/reports/封關選股/$(date +%Y-%m-%d)"
+
 # 輸出為文字檔
 psql-17 -U postgres -d tw_stock -f "analysis/封關選股/年線附近選股.sql" \
-    > "analysis/封關選股/results_$(date +%Y%m%d).txt"
+    > "analysis/reports/封關選股/$(date +%Y-%m-%d)/年線選股_$(date +%Y%m%d_%H%M%S).txt"
 
 # 輸出為 CSV
 psql-17 -U postgres -d tw_stock -f "analysis/封關選股/年線附近選股.sql" \
-    --csv > "analysis/封關選股/results_$(date +%Y%m%d).csv"
+    --csv > "analysis/reports/封關選股/$(date +%Y-%m-%d)/年線選股_$(date +%Y%m%d_%H%M%S).csv"
 ```
 
 ---

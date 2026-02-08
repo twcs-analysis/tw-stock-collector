@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang xml:lang>
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>moneyline_20260206_part1_analysis</title>
+  <style>
+
+html {
+color: #1a1a1a;
+background-color: #fdfdfd;
+}
+body {
+margin: 0 auto;
+max-width: 36em;
+padding-left: 50px;
+padding-right: 50px;
+padding-top: 50px;
+padding-bottom: 50px;
+hyphens: auto;
+overflow-wrap: break-word;
+text-rendering: optimizeLegibility;
+font-kerning: normal;
+}
+@media (max-width: 600px) {
+body {
+font-size: 0.9em;
+padding: 12px;
+}
+h1 {
+font-size: 1.8em;
+}
+}
+@media print {
+html {
+background-color: white;
+}
+body {
+background-color: transparent;
+color: black;
+font-size: 12pt;
+}
+p, h2, h3 {
+orphans: 3;
+widows: 3;
+}
+h2, h3, h4 {
+page-break-after: avoid;
+}
+}
+p {
+margin: 1em 0;
+}
+a {
+color: #1a1a1a;
+}
+a:visited {
+color: #1a1a1a;
+}
+img {
+max-width: 100%;
+}
+svg {
+height: auto;
+max-width: 100%;
+}
+h1, h2, h3, h4, h5, h6 {
+margin-top: 1.4em;
+}
+h5, h6 {
+font-size: 1em;
+font-style: italic;
+}
+h6 {
+font-weight: normal;
+}
+ol, ul {
+padding-left: 1.7em;
+margin-top: 1em;
+}
+li > ol, li > ul {
+margin-top: 0;
+}
+blockquote {
+margin: 1em 0 1em 1.7em;
+padding-left: 1em;
+border-left: 2px solid #e6e6e6;
+color: #606060;
+}
+code {
+font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+font-size: 85%;
+margin: 0;
+hyphens: manual;
+}
+pre {
+margin: 1em 0;
+overflow: auto;
+}
+pre code {
+padding: 0;
+overflow: visible;
+overflow-wrap: normal;
+}
+.sourceCode {
+background-color: transparent;
+overflow: visible;
+}
+hr {
+border: none;
+border-top: 1px solid #1a1a1a;
+height: 1px;
+margin: 1em 0;
+}
+table {
+margin: 1em 0;
+border-collapse: collapse;
+width: 100%;
+overflow-x: auto;
+display: block;
+font-variant-numeric: lining-nums tabular-nums;
+}
+table caption {
+margin-bottom: 0.75em;
+}
+tbody {
+margin-top: 0.5em;
+border-top: 1px solid #1a1a1a;
+border-bottom: 1px solid #1a1a1a;
+}
+th {
+border-top: 1px solid #1a1a1a;
+padding: 0.25em 0.5em 0.25em 0.5em;
+}
+td {
+padding: 0.125em 0.5em 0.25em 0.5em;
+}
+header {
+margin-bottom: 4em;
+text-align: center;
+}
+#TOC li {
+list-style: none;
+}
+#TOC ul {
+padding-left: 1.3em;
+}
+#TOC > ul {
+padding-left: 0;
+}
+#TOC a:not(:hover) {
+text-decoration: none;
+}
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+
+ul.task-list[class]{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+font-size: inherit;
+width: 0.8em;
+margin: 0 0.8em 0.2em -1.6em;
+vertical-align: middle;
+}
+.display.math{display: block; text-align: center; margin: 0.5rem auto;}
+</style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">moneyline_20260206_part1_analysis</h1>
+</header>
+<nav id="TOC" role="doc-toc">
+<ul>
+<li><a href="#錢線百分百-2026-02-06-上集-深度分析報告" id="toc-錢線百分百-2026-02-06-上集-深度分析報告">錢線百分百 2026-02-06
+上集 深度分析報告</a>
+<ul>
+<li><a href="#一市場總體觀察" id="toc-一市場總體觀察">📊
+一、市場總體觀察</a>
+<ul>
+<li><a href="#台股當日表現" id="toc-台股當日表現">1.1
+台股當日表現</a></li>
+<li><a href="#三大法人動態" id="toc-三大法人動態">1.2
+三大法人動態</a></li>
+<li><a href="#美股與國際市場影響" id="toc-美股與國際市場影響">1.3
+美股與國際市場影響</a></li>
+<li><a href="#地緣政治風險伊朗議題" id="toc-地緣政治風險伊朗議題">1.4
+地緣政治風險：伊朗議題</a></li>
+</ul></li>
+<li><a href="#二產業分析與投資建議" id="toc-二產業分析與投資建議">🏭
+二、產業分析與投資建議</a>
+<ul>
+<li><a href="#記憶體產業" id="toc-記憶體產業">2.1 記憶體產業</a></li>
+<li><a href="#pcb-產業abf-載板為主" id="toc-pcb-產業abf-載板為主">2.2
+PCB 產業（ABF 載板為主）</a></li>
+<li><a href="#低軌衛星產業" id="toc-低軌衛星產業">2.3
+低軌衛星產業</a></li>
+<li><a href="#太陽能產業" id="toc-太陽能產業">2.4 太陽能產業</a></li>
+<li><a href="#ai-股與台積電" id="toc-ai-股與台積電">2.5 AI
+股與台積電</a></li>
+</ul></li>
+<li><a href="#三技術面分析與操作策略" id="toc-三技術面分析與操作策略">📈
+三、技術面分析與操作策略</a>
+<ul>
+<li><a href="#大盤技術分析" id="toc-大盤技術分析">3.1
+大盤技術分析</a></li>
+<li><a href="#封關前後策略" id="toc-封關前後策略">3.2
+封關前後策略</a></li>
+<li><a href="#個股操作時機整理" id="toc-個股操作時機整理">3.3
+個股操作時機整理</a></li>
+</ul></li>
+<li><a href="#四投資策略總結" id="toc-四投資策略總結">💡
+四、投資策略總結</a>
+<ul>
+<li><a href="#短期策略封關前-1-3-天" id="toc-短期策略封關前-1-3-天">4.1
+短期策略（封關前 1-3 天）</a></li>
+<li><a href="#中期策略開紅盤後-1-3-個月" id="toc-中期策略開紅盤後-1-3-個月">4.2 中期策略（開紅盤後 1-3
+個月）</a></li>
+<li><a href="#風險評估" id="toc-風險評估">4.3 風險評估</a></li>
+</ul></li>
+<li><a href="#五來賓金句整理" id="toc-五來賓金句整理">🎯
+五、來賓金句整理</a>
+<ul>
+<li><a href="#鄭老師" id="toc-鄭老師">鄭老師</a></li>
+<li><a href="#博接" id="toc-博接">博接</a></li>
+<li><a href="#銘漢" id="toc-銘漢">銘漢</a></li>
+<li><a href="#治理" id="toc-治理">治理</a></li>
+</ul></li>
+<li><a href="#六名詞解釋" id="toc-六名詞解釋">📚 六、名詞解釋</a>
+<ul>
+<li><a href="#技術指標類" id="toc-技術指標類">技術指標類</a></li>
+<li><a href="#籌碼類" id="toc-籌碼類">籌碼類</a></li>
+<li><a href="#產業類" id="toc-產業類">產業類</a></li>
+<li><a href="#市場術語" id="toc-市場術語">市場術語</a></li>
+<li><a href="#財經事件" id="toc-財經事件">財經事件</a></li>
+</ul></li>
+<li><a href="#總結" id="toc-總結">🔚 總結</a>
+<ul>
+<li><a href="#核心觀點" id="toc-核心觀點">核心觀點</a></li>
+<li><a href="#最重要的一句話" id="toc-最重要的一句話">最重要的一句話</a></li>
+</ul></li>
+</ul></li>
+</ul>
+</nav>
+<h1 id="錢線百分百-2026-02-06-上集-深度分析報告">錢線百分百 2026-02-06
+上集 深度分析報告</h1>
+<p><strong>節目日期</strong>: 2026-02-06 <strong>分析生成時間</strong>:
+2026-02-07 <strong>來源影片</strong>: <a href="https://www.youtube.com/watch?v=kkPSkSs4WHg">YouTube連結</a>
+<strong>主持人</strong>: 劉柱華 <strong>來賓陣容</strong>: - 鄭老師 -
+大盤分析與技術面解讀 - 博接 - 熱門焦點股分析 - 銘漢 - 符雲河上車操作策略
+- 治理 - 除救部息與持股建議</p>
+<hr />
+<h2 id="一市場總體觀察">📊 一、市場總體觀察</h2>
+<h3 id="台股當日表現">1.1 台股當日表現</h3>
+<p><strong>2026-02-06 盤勢總結</strong>: - <strong>收盤點位</strong>:
+31,782 點（-18 點，-0.06%） - <strong>日內波動</strong>: 先殺 600 點 →
+急拉 678 點 → 收小黑 - <strong>成交量</strong>: 6,958 億元 -
+<strong>技術關鍵</strong>:
+<strong>月線神奇守住</strong>（本週第二次回測月線收長下影線） -
+<strong>週K表現</strong>: 下跌 280 點（-0.8%），<strong>終止連 6
+紅</strong></p>
+<p><strong>技術面重點</strong>: - 禮拜一首次回測月線：收帶腳長下影線 -
+今日（禮拜四）再度回測月線：收更長的下影線 -
+<strong>月線成為關鍵防守點</strong>（約 31,500 點附近） -
+神秘買盤在月線附近支撐（研判為<strong>內資主導</strong>）</p>
+<h3 id="三大法人動態">1.2 三大法人動態</h3>
+<table>
+<colgroup>
+<col style="width: 32%" />
+<col style="width: 35%" />
+<col style="width: 32%" />
+</colgroup>
+<thead>
+<tr>
+<th>法人類別</th>
+<th>買賣超金額</th>
+<th>操作特徵</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>外資</strong></td>
+<td>賣超（未揭露具體金額，但較昨日減少）</td>
+<td>美元轉強、台幣貶值，持續調節</td>
+</tr>
+<tr>
+<td><strong>投信</strong></td>
+<td>（未明確揭露）</td>
+<td>-</td>
+</tr>
+<tr>
+<td><strong>自營商</strong></td>
+<td><strong>賣超 188 億</strong></td>
+<td>拋售力道比昨日更重</td>
+</tr>
+</tbody>
+</table>
+<p><strong>法人心態分析</strong>: - 外資在高點（3.2
+萬點附近）買進後發現「洗碗」出現大量賣壓，快速倒貨 -
+外資並未逃在便宜位置，屬「買在相對高點，快速停損」模式 -
+<strong>餅種（期貨自營商）與主力業內</strong>：正在<strong>回收資金</strong>，預計封關前賣壓將消化完畢</p>
+<h3 id="美股與國際市場影響">1.3 美股與國際市場影響</h3>
+<p><strong>美股財報季壓力</strong>: - <strong>AI
+七巨頭資本支出疑慮</strong>成為最大變數： -
+<strong>Meta（上週）</strong>: 資本支出高 →
+股價大漲（市場解讀：未來很好） - <strong>Amazon（本週）</strong>:
+資本支出高 → 股價重挫 18%（市場解讀：花錢太多、現金流壓力） -
+<strong>Google（昨日）</strong>: 財報後一度跌
+7%，尾盤翻紅（市場認可「錢雖然花很多，但拿得回來」） -
+<strong>同一件事，不同解讀</strong> →
+顯示市場處於<strong>漲多修正、找理由賣出</strong>階段</p>
+<p><strong>美股技術面</strong>: - <strong>那斯達克一月漲幅
+18%</strong>（創近年新高漲幅） - <strong>綜合指數僅漲 3%</strong> →
+兩者落差達 <strong>15 個百分點</strong>（不正常） - 未來兩種可能： 1.
+綜合指數補漲（科技股整理） 2. 科技股修正（綜合指數等待）</p>
+<p><strong>結論</strong>:
+美股短期進入「<strong>漲多震盪整理</strong>」格局，台股受其拖累。</p>
+<h3 id="地緣政治風險伊朗議題">1.4 地緣政治風險：伊朗議題</h3>
+<p><strong>最新發展</strong>（2026-02-06 凌晨）: -
+<strong>美國駐伊朗虛擬大使館</strong>發布安全警報 -
+呼籲所有在伊朗的美國公民<strong>立即離開</strong> -
+若無法搭機離境，建議陸路前往亞美尼亞或土耳其 -
+美伊官員即將在阿曼進行談判</p>
+<p><strong>市場反應指標</strong>: | 指標 | 變化 | 解讀 | |——|——|——| |
+<strong>原油價格</strong> | 早盤下跌 → 10 點後持續攀升 →
+錄影時（16:00）創當日新高 | 市場緊張情緒升溫 | |
+<strong>失業救濟金申請</strong> | 數據不佳 | 若油價續漲 + 就業惡化 → Fed
+陷入兩難 |</p>
+<p><strong>專家觀點</strong>: - <strong>鄭老師</strong>:
+「看油價就知道，懂的人已在操作原油。談判順利油價就下來，緊張就走高。」 -
+<strong>博接</strong>: 「伊朗問題影響佔比不到
+30%，主要還是美國財報影響。」 - <strong>銘漢</strong>:
+「只要台積電訂單不受影響，地緣政治影響空間有限。過往經驗顯示，政治因素下跌通常幅度不大且時間短暫。」</p>
+<hr />
+<h2 id="二產業分析與投資建議">🏭 二、產業分析與投資建議</h2>
+<h3 id="記憶體產業">2.1 記憶體產業</h3>
+<p><strong>基本面評估</strong>: ✅ <strong>無疑慮，缺貨嚴重</strong></p>
+<p><strong>美光（Micron）與 SK 海力士（SK Hynix）走勢</strong>: -
+美光：回測月線 - SK 海力士：回測季線（相對較強） -
+共同特徵：<strong>長多拉回整理</strong></p>
+<p><strong>台股記憶體個股分析</strong>:</p>
+<table>
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+</colgroup>
+<thead>
+<tr>
+<th>股票代號</th>
+<th>股票名稱</th>
+<th>技術位階</th>
+<th>操作建議</th>
+<th>關鍵價位</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>2408</strong></td>
+<td>南亞科</td>
+<td>回測月線</td>
+<td>封關日可考慮進場</td>
+<td>月線支撐</td>
+</tr>
+<tr>
+<td><strong>2344</strong></td>
+<td>華邦電</td>
+<td><strong>跌破月線（較弱）</strong></td>
+<td>⚠️ 開紅盤後再買</td>
+<td>-</td>
+</tr>
+<tr>
+<td><strong>2337</strong></td>
+<td>旺宏</td>
+<td>相對強勢</td>
+<td>短線若反攻優先</td>
+<td>籌碼乾淨</td>
+</tr>
+<tr>
+<td><strong>2427</strong></td>
+<td>立積電</td>
+<td><strong>最強（盤中翻紅）</strong></td>
+<td>✅ 60 元為關鍵停損</td>
+<td>守住 60 做多，跌破出場</td>
+</tr>
+<tr>
+<td><strong>8299</strong></td>
+<td>群聯</td>
+<td>跌破月線，今日量出</td>
+<td>今日低點收穩可考慮封關日進場</td>
+<td>今日低點為停損</td>
+</tr>
+</tbody>
+</table>
+<p><strong>本週記憶體漲跌榜</strong>: - <strong>漲幅前段</strong>:
+立積電、巴洛克、公寶 - <strong>跌幅前段</strong>:
+華邦電、殿與、龍品安、華星、群聯、南亞科</p>
+<p><strong>策略總結</strong>: &gt; <strong>年前忍耐，年後有力</strong>
+&gt; -
+目前處於「<strong>籌碼戰</strong>」階段（基本面無虞，技術面與籌碼面整理）
+&gt; - 緊盯每日現貨報價 &gt; - <strong>月線附近震盪</strong> →
+年後才有過高機會</p>
+<hr />
+<h3 id="pcb-產業abf-載板為主">2.2 PCB 產業（ABF 載板為主）</h3>
+<p><strong>基本面評估</strong>: ✅
+<strong>今年下半年、明年工需吃緊</strong></p>
+<p><strong>個股分析</strong>:</p>
+<table>
+<colgroup>
+<col style="width: 21%" />
+<col style="width: 21%" />
+<col style="width: 21%" />
+<col style="width: 21%" />
+<col style="width: 14%" />
+</colgroup>
+<thead>
+<tr>
+<th>股票代號</th>
+<th>股票名稱</th>
+<th>本週表現</th>
+<th>操作建議</th>
+<th>備註</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>3037</strong></td>
+<td>欣興</td>
+<td>震盪</td>
+<td>等回測月線再說</td>
+<td>籌碼面整理中</td>
+</tr>
+<tr>
+<td><strong>8046</strong></td>
+<td>南電</td>
+<td>近期被關注（處置股）</td>
+<td>⚠️ 等放出來再說</td>
+<td>短線不進場賭博</td>
+</tr>
+<tr>
+<td><strong>3450</strong></td>
+<td>聯鈞</td>
+<td>外資與投信偏好</td>
+<td>觀察十日線能否收穩</td>
+<td>下週前兩天關鍵</td>
+</tr>
+<tr>
+<td><strong>6277</strong></td>
+<td>德宏</td>
+<td><strong>今日震盪最劇烈</strong>（跌停 → 拉漲停 → 收小漲）</td>
+<td>昨日創高 + 融資暴增 → 今日洗盤</td>
+<td>去年 PCB 漲最多</td>
+</tr>
+<tr>
+<td><strong>3081</strong></td>
+<td>聯亞</td>
+<td>開低後拉漲停，收平盤上</td>
+<td>-</td>
+<td>PCB 組裝</td>
+</tr>
+</tbody>
+</table>
+<p><strong>德宏案例分析</strong>（6277）: - <strong>昨日</strong>:
+創波段新高 + 融資暴增 - <strong>今日</strong>: 開盤跌近跌停 → 當沖客進場
+→ 拉至漲停 → 收小漲 - <strong>解讀</strong>:
+短線加速上漲後，主力洗盤清理浮額</p>
+<p><strong>策略</strong>: - ABF 三雄（南電、欣興、聯鈞）目前都在整理 -
+<strong>股價已反映明年獲利</strong>（本益比用明年 EPS 評價） -
+題材未變，但股價漲多 → <strong>年後再布局</strong></p>
+<hr />
+<h3 id="低軌衛星產業">2.3 低軌衛星產業</h3>
+<p><strong>題材來源</strong>: SpaceX 啟動 IPO +
+申請發射<strong>一百萬顆衛星</strong></p>
+<p><strong>個股表現</strong>:</p>
+<table>
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+</colgroup>
+<thead>
+<tr>
+<th>股票代號</th>
+<th>股票名稱</th>
+<th>走勢特徵</th>
+<th>操作建議</th>
+<th>關鍵價位</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>2285</strong></td>
+<td>啟碁</td>
+<td>短線噴出後連跌，今日盤中一度跌停</td>
+<td>題材不確定性高</td>
+<td>-</td>
+</tr>
+<tr>
+<td><strong>3707</strong></td>
+<td>漢通</td>
+<td>今日守住低點（165 元）</td>
+<td>✅ <strong>165 元為短線停損</strong>，未跌破可抱</td>
+<td>165 元</td>
+</tr>
+<tr>
+<td><strong>2347</strong></td>
+<td>聯強</td>
+<td>一馬當先，所有均線站穩</td>
+<td>⚠️ 處置股，等放出來再說</td>
+<td>放出來當天會大震盪</td>
+</tr>
+</tbody>
+</table>
+<p><strong>風險提示</strong>: -
+低軌衛星屬於「<strong>未來題材</strong>」，不確定性高 -
+短線噴出後回檔屬正常，<strong>籌碼整理中</strong></p>
+<hr />
+<h3 id="太陽能產業">2.4 太陽能產業</h3>
+<p><strong>本週漲跌表現</strong>: - <strong>漲幅榜</strong>:
+聯合再生、千云科、草德宏、擁置等太陽能股上榜 - <strong>跌幅榜</strong>:
+部分太陽能股也進入跌幅榜</p>
+<p><strong>解讀</strong>:
+太陽能股呈現<strong>強弱分化</strong>，非全面走強。</p>
+<hr />
+<h3 id="ai-股與台積電">2.5 AI 股與台積電</h3>
+<p><strong>台積電（2330）</strong>: -
+表現：<strong>所有均線站上</strong>，成為盤面多頭指標 -
+紅海（電子股）：今天還要「苦撐」</p>
+<p><strong>AI 老將股</strong>（廣達、緯創等）: - 盤中急拉翻紅 -
+年後是否有戲？→ 需觀察美股科技股修正結束時機</p>
+<p><strong>關鍵判斷標準</strong>（銘漢提醒）: &gt;
+「台股最大市值超過市場市值的是台積電。發生任何事情的時候，自己想一下：發生這件事情到底台積電的訂單會不會掉？」
+&gt; <strong>→
+只要台積電訂單不受影響，股市受影響空間都不會太大。</strong></p>
+<hr />
+<h2 id="三技術面分析與操作策略">📈 三、技術面分析與操作策略</h2>
+<h3 id="大盤技術分析">3.1 大盤技術分析</h3>
+<p><strong>關鍵技術位</strong>: | 技術指標 | 數值/狀態 | 重要性 |
+|———|———|——–| | <strong>月線</strong> | 約 31,500 點 | 🔴
+<strong>核心防守點</strong>（本週兩次守住） | | <strong>週 K</strong> |
+終止連 6 紅 | ⚠️ 短線過熱訊號 | | <strong>量能</strong> | 6,958
+億（中等偏低） | 無明顯殺盤意願 | | <strong>籌碼面</strong> |
+內資撐盤，外資調節 | 八大官股近日買超 100+ 億 |</p>
+<p><strong>K 線型態解讀</strong>: - 禮拜一：回測月線收「帶腳長下影線」 -
+今日（禮拜四）：再度回測月線收「更長下影線」 - <strong>意義</strong>:
+多頭在月線防守意圖明確</p>
+<p><strong>神秘買盤分析</strong>: - 外資持續賣超 → 排除外資 - 自營商賣超
+188 億 → 排除自營商 - <strong>推論</strong>: <strong>八大官股 +
+主力業內</strong>共同撐盤 - 近日八大官股買超 100+ 億 -
+主力業內這幾天「反向」仍在賣超（但快賣完了）</p>
+<h3 id="封關前後策略">3.2 封關前後策略</h3>
+<p><strong>封關前三天（下週一、二、三）</strong>: -
+<strong>下週一</strong>: 餅種與主力業內賣壓將消化完畢 -
+<strong>下週二、三（尤其封關日）</strong>: 賣壓不會那麼大 -
+<strong>建議</strong>:
+流線金，現金比重拉高（<strong>現金為王</strong>）</p>
+<p><strong>開紅盤統計數據</strong>（近十年）: | 統計項目 | 數據 | 解讀 |
+|———|——|——| | 開紅盤當日漲跌 | <strong>80% 上漲</strong>（藍色走勢居多）
+| 歷史勝率高 | | 開紅盤後一週平均漲幅 | 約 1-3% | 正報酬機率高 | |
+例外案例 | 2020 疫情（-6%）、2024 Dipsick（-3%） | 黑天鵝事件 |</p>
+<p><strong>歷史教訓</strong>: - <strong>2020 疫情</strong>: 開紅盤大跌
+6%，拖累 2-3 個月 - <strong>2024 Dipsick</strong>: 開紅盤大跌
+3%+，但一個月內消化完畢 - <strong>結論</strong>:
+<strong>除非出現重大黑天鵝，否則開紅盤機率偏多</strong></p>
+<p><strong>年後走勢推演</strong>（銘漢觀點）: 1.
+<strong>情境一</strong>: 綜合指數補漲 → 科技股整理 → 台股跟隨震盪 2.
+<strong>情境二</strong>: 科技股修正 → 但不會全部吐回（因有基本面支撐）→
+修正後再走高</p>
+<p><strong>操作建議總結</strong>: &gt;
+<strong>年前減碼，年後進場</strong> &gt; - 賺錢的股票：可獲利了結 2-3 成
+&gt; - 小賺的股票：視情況減碼 &gt; -
+賠錢的股票：<strong>不要硬砍</strong>，先忍耐到開紅盤 &gt; -
+<strong>賺錢陪錢可一起賣</strong>，先把錢收回來 &gt; -
+過完年重新開始，機會更多</p>
+<h3 id="個股操作時機整理">3.3 個股操作時機整理</h3>
+<p><strong>封關日可考慮進場</strong>: - 南亞科（2408）- 月線附近 -
+群聯（8299）- 若今日低點收穩 - 漢通（3707）- 守住 165 元</p>
+<p><strong>開紅盤後再買</strong>: - 華邦電（2344）- 技術面較弱 -
+南電（8046）- 等處置結束 - 聯強（2347）- 等處置結束</p>
+<p><strong>短線可抱（設停損）</strong>: - 立積電（2427）- 60 元停損 -
+漢通（3707）- 165 元停損</p>
+<p><strong>觀察下週前兩天</strong>: - 聯鈞（3450）- 十日線能否守穩</p>
+<hr />
+<h2 id="四投資策略總結">💡 四、投資策略總結</h2>
+<h3 id="短期策略封關前-1-3-天">4.1 短期策略（封關前 1-3 天）</h3>
+<p><strong>核心原則</strong>: <strong>流線金，現金為王</strong></p>
+<p><strong>具體做法</strong>: 1. <strong>減碼幅度</strong>: 持股滿檔者減
+2-3 成 2. <strong>減碼對象</strong>: - ✅ 賺錢股票優先（保留利潤） - ✅
+小賺股票視情況 - ⚠️
+賠錢股票<strong>不要急著停損</strong>（除非跌破關鍵支撐） 3.
+<strong>保留部位</strong>: - 基本面無虞 + 技術面守住月線的個股 -
+例如：台積電、立積電、漢通等</p>
+<p><strong>風險管理</strong>: - 長假變數大（10 天以上） -
+美股科技股仍在整理 - 地緣政治風險（伊朗）</p>
+<h3 id="中期策略開紅盤後-1-3-個月">4.2 中期策略（開紅盤後 1-3
+個月）</h3>
+<p><strong>產業輪動重點</strong>: 1. <strong>記憶體</strong>:
+缺貨嚴重，<strong>年後優先關注</strong> - 低價優於高價（立積電、旺宏
+&gt; 群聯） - 月線附近為買點 2. <strong>ABF 載板</strong>:
+題材未變，但<strong>股價已反映</strong> - 等回測月線或十日線再進場 3.
+<strong>AI 股</strong>: 觀察美股科技股修正結束時機 -
+台積電持續為核心指標 4. <strong>低軌衛星</strong>:
+題材性高，但<strong>不確定性也高</strong> - 設好停損，短線操作</p>
+<p><strong>進場時機判斷</strong>: - ✅ <strong>封關日</strong>:
+部分月線附近個股（南亞科、群聯） - ✅ <strong>開紅盤</strong>:
+技術面較弱個股（華邦電） - ✅ <strong>開紅盤後一週</strong>:
+觀察美股動向再決定</p>
+<h3 id="風險評估">4.3 風險評估</h3>
+<p><strong>風險等級</strong>: 🟡 <strong>中等偏高</strong></p>
+<p><strong>主要風險</strong>: 1. <strong>美股科技股修正未結束</strong> →
+台股跟跌壓力 2. <strong>地緣政治（伊朗）</strong> → 油價上漲 + Fed 兩難
+3. <strong>長假黑天鵝</strong> → 不確定性高</p>
+<p><strong>風險對沖</strong>: - 保留 2-3 成現金 -
+持股以<strong>基本面無虞 + 技術面守關鍵位</strong>為主 -
+設定明確停損（例如月線、關鍵支撐）</p>
+<hr />
+<h2 id="五來賓金句整理">🎯 五、來賓金句整理</h2>
+<h3 id="鄭老師">鄭老師</h3>
+<blockquote>
+<p>「你不用看新聞報導，你就看油價就好了。因為懂得人就會去操作原油，只要緊張原油價格就走高，相反的只要談判
+OK 順利了，那油價就會下來。」</p>
+</blockquote>
+<blockquote>
+<p>「短線變成是什麼？是籌碼戰。就是說基本面沒問題，你就是籌碼跟技術面，短線的買賣力道。」</p>
+</blockquote>
+<blockquote>
+<p>「這裡你不用指望外資會買，但是你要這樣想，這一段拉這麼多上來，全部都是內資的力量。」</p>
+</blockquote>
+<h3 id="博接">博接</h3>
+<blockquote>
+<p>「如果你從全部看的話，伊朗問題可能佔不到三層。如果除非就是說，真的飛彈射來射去，然後不小心擦槍走火，這樣可能才會是一個比較嚴重的黑天鵝。」</p>
+</blockquote>
+<blockquote>
+<p>「長多股最大的問題不是基本面，因為這些基本面不會因為一天的大跌通通改變，是賺錢的人在幹嘛？獲利了結。」</p>
+</blockquote>
+<blockquote>
+<p>「年前你要忍耐。記憶體年後到底有沒有力？我先講，我認為有。但是年前你要忍耐。」</p>
+</blockquote>
+<h3 id="銘漢">銘漢</h3>
+<blockquote>
+<p>「常常投資問我說像這種問題，我說其實很簡單，記得一件事情：台股最大的市值超過市城市台積電，發生這種事情的時候，你自己想一下，發生這事情到底台積電的訂單會不會掉？」</p>
+</blockquote>
+<blockquote>
+<p>「就過往這種地緣政治，真的跟台積電沒有太大的關係。我當然就是長線的趨勢操作者，我常常最喜歡買的就是這種所謂地緣政治問題，通常會下去。」</p>
+</blockquote>
+<blockquote>
+<p>「只要台積電的訂單沒有受到影響，股市受到的空間都不會太大。」</p>
+</blockquote>
+<blockquote>
+<p>「同一件事情（資本支出），大家發現什麼事情？所以結論就是，大家可以看到，這個重點就是，他這個關係的部分要慢慢的修正。所以呢，台股的部分呢，其實已經跟不上進度了，因為我們已經要封關了。」</p>
+</blockquote>
+<h3 id="治理">治理</h3>
+<blockquote>
+<p>「年前稍微減碼，不是叫你賣光，但是你要手上留的一些現金。比如說你現在，講說你這幾天持股是滿檔的，你可能就減個三層、兩層。」</p>
+</blockquote>
+<blockquote>
+<p>「你可以賺錢陪錢一起賣，這樣會比較好。你先把錢收，因為如果後面還會再漲，過完年回來，大家重新開始。」</p>
+</blockquote>
+<hr />
+<h2 id="六名詞解釋">📚 六、名詞解釋</h2>
+<h3 id="技術指標類">技術指標類</h3>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>名詞</th>
+<th>解釋</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>月線</strong></td>
+<td>20 日均線，代表近一個月的平均成本，是短中期重要支撐</td>
+</tr>
+<tr>
+<td><strong>季線</strong></td>
+<td>60 日均線，代表近三個月的平均成本，是中期趨勢指標</td>
+</tr>
+<tr>
+<td><strong>十日線</strong></td>
+<td>10 日均線，短線操作者常用的支撐壓力參考</td>
+</tr>
+<tr>
+<td><strong>長下影線</strong></td>
+<td>K 線下方拖著長長的影線，代表盤中跌深後拉回，多頭守住關鍵位</td>
+</tr>
+<tr>
+<td><strong>收帶腳</strong></td>
+<td>K 線有下影線，俗稱「帶腳」，代表下檔有支撐</td>
+</tr>
+</tbody>
+</table>
+<h3 id="籌碼類">籌碼類</h3>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>名詞</th>
+<th>解釋</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>八大官股</strong></td>
+<td>四大基金（勞退、勞保、郵儲、退撫）+
+四大行庫（台銀、土銀、合庫、華南）</td>
+</tr>
+<tr>
+<td><strong>餅種</strong></td>
+<td>期貨自營商（Proprietary Traders），通常進行短線避險或套利操作</td>
+</tr>
+<tr>
+<td><strong>主力業內</strong></td>
+<td>券商自營部門，通常掌握短線資訊與籌碼</td>
+</tr>
+<tr>
+<td><strong>當沖</strong></td>
+<td>當日沖銷，當天買進當天賣出，不留倉過夜</td>
+</tr>
+<tr>
+<td><strong>融資暴增</strong></td>
+<td>融資（借錢買股）餘額大幅增加，代表散戶追高，通常是洗盤訊號</td>
+</tr>
+</tbody>
+</table>
+<h3 id="產業類">產業類</h3>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>名詞</th>
+<th>解釋</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>ABF 載板</strong></td>
+<td>Ajinomoto Build-up Film，高階封裝基板，用於 CPU、GPU
+等高效能晶片</td>
+</tr>
+<tr>
+<td><strong>DRAM</strong></td>
+<td>Dynamic Random Access Memory，動態隨機存取記憶體</td>
+</tr>
+<tr>
+<td><strong>NAND Flash</strong></td>
+<td>快閃記憶體，用於 SSD、手機等儲存裝置</td>
+</tr>
+<tr>
+<td><strong>低軌衛星</strong></td>
+<td>Low Earth Orbit Satellite，運行於 160-2,000
+公里高度的衛星，延遲低、覆蓋廣</td>
+</tr>
+<tr>
+<td><strong>HBM</strong></td>
+<td>High Bandwidth Memory，高頻寬記憶體，AI 晶片關鍵零組件</td>
+</tr>
+</tbody>
+</table>
+<h3 id="市場術語">市場術語</h3>
+<table>
+<thead>
+<tr>
+<th>名詞</th>
+<th>解釋</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>封關</strong></td>
+<td>農曆春節前最後一個交易日</td>
+</tr>
+<tr>
+<td><strong>開紅盤</strong></td>
+<td>農曆春節後第一個交易日</td>
+</tr>
+<tr>
+<td><strong>長假行情</strong></td>
+<td>長假前後的市場走勢與操作策略</td>
+</tr>
+<tr>
+<td><strong>黑天鵝</strong></td>
+<td>小機率但影響巨大的突發事件</td>
+</tr>
+<tr>
+<td><strong>洗碗</strong></td>
+<td>主力刻意震盪股價，清洗短線浮額與籌碼</td>
+</tr>
+<tr>
+<td><strong>報價過年</strong></td>
+<td>持股過年，不賣出股票</td>
+</tr>
+</tbody>
+</table>
+<h3 id="財經事件">財經事件</h3>
+<table>
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>名詞</th>
+<th>解釋</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Dipsick 事件</strong></td>
+<td>2024 年初因日本央行政策轉向引發的全球股市大跌（台股開紅盤跌
+3%+）</td>
+</tr>
+<tr>
+<td><strong>資本支出（CapEx）</strong></td>
+<td>Capital Expenditure，企業用於購買固定資產的支出，AI 公司的 CapEx
+反映投資力道</td>
+</tr>
+<tr>
+<td><strong>Fed 兩難</strong></td>
+<td>聯準會面臨「通膨」與「就業」兩難（油價漲 + 就業差 →
+降息或升息都困難）</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="總結">🔚 總結</h2>
+<h3 id="核心觀點">核心觀點</h3>
+<ol type="1">
+<li><strong>大盤</strong>: 月線為關鍵防守，內資撐盤，外資調節</li>
+<li><strong>美股</strong>: 科技股漲多修正，整理格局未結束</li>
+<li><strong>記憶體</strong>: 基本面無虞，年後有力，年前忍耐</li>
+<li><strong>封關策略</strong>: 減碼 2-3 成，流線金，現金為王</li>
+<li><strong>開紅盤</strong>: 歷史勝率高（80% 上漲），除非黑天鵝</li>
+</ol>
+<h3 id="最重要的一句話">最重要的一句話</h3>
+<blockquote>
+<p><strong>「只要台積電的訂單沒有受到影響，股市受到的空間都不會太大。」</strong>
+— 銘漢</p>
+</blockquote>
+<hr />
+<p><strong>報告生成</strong>: Claude Sonnet 4.5
+<strong>分析時間</strong>: 2026-02-07 <strong>資料來源</strong>:
+錢線百分百 2026-02-06 上集逐字稿</p>
+</body>
+</html>

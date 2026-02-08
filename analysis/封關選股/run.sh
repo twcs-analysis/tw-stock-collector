@@ -70,14 +70,16 @@ echo -e "${GREEN}✓ 最新資料日期：$LATEST_DATE${NC}"
 # 執行 SQL 查詢
 echo -e "${BLUE}[3/3] 執行選股查詢...${NC}"
 
-# 建立輸出目錄
-OUTPUT_DIR="$SCRIPT_DIR/results"
-mkdir -p "$OUTPUT_DIR"
+# 建立輸出目錄（按日期分層）
+# 目錄結構: analysis/reports/封關選股/YYYY-MM-DD/
+REPORT_BASE_DIR="$PROJECT_ROOT/analysis/reports/封關選股"
+REPORT_DATE_DIR="$REPORT_BASE_DIR/$LATEST_DATE"
+mkdir -p "$REPORT_DATE_DIR"
 
 # 輸出檔案名稱
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
-OUTPUT_TXT="$OUTPUT_DIR/年線選股_${LATEST_DATE}_${TIMESTAMP}.txt"
-OUTPUT_CSV="$OUTPUT_DIR/年線選股_${LATEST_DATE}_${TIMESTAMP}.csv"
+OUTPUT_TXT="$REPORT_DATE_DIR/年線選股_${LATEST_DATE}_${TIMESTAMP}.txt"
+OUTPUT_CSV="$REPORT_DATE_DIR/年線選股_${LATEST_DATE}_${TIMESTAMP}.csv"
 
 # 執行查詢（文字格式）
 echo "  執行 SQL 查詢..."
