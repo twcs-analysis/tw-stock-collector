@@ -65,6 +65,7 @@
 ```
 ETF持股篩選/
 ├── README.md                                # 本文件
+├── generate_reports.sh                      # 報告生成工具（自動化）⭐
 │
 ├── 回頭買上漲_ETF篩選.sql                    # 技術面：回頭買
 ├── 回頭買上漲_ETF篩選_寬鬆版.sql             # 技術面：回頭買（寬鬆）
@@ -73,7 +74,8 @@ ETF持股篩選/
 │
 ├── 主升段加速突破_ETF篩選.sql                # 技術面：主升段突破
 │
-├── 月營收篩選_ETF持股_報告版_v2.sql          # 基本面：月營收（從資料庫讀取 ETF）⭐
+├── 月營收篩選_ETF持股_報告版_v2.sql          # 基本面：月營收（嚴格版）⭐
+├── 月營收篩選_ETF持股_報告版_v3_寬鬆.sql     # 基本面：月營收（寬鬆版）⭐
 └── 月營收篩選_純營收版.sql                   # 基本面：月營收（不限 ETF）
 ```
 
@@ -83,16 +85,35 @@ ETF持股篩選/
 
 ### 1. 月營收成長股（推薦）
 
+#### 方式一：使用自動化腳本（推薦 ⭐）
+
 ```bash
-# ETF 持股版（從資料庫讀取 ETF，Markdown 報告）⭐ 推薦
+# 生成完整報告（嚴格版 + 寬鬆版），自動轉 PDF
+cd analysis/ETF持股篩選
+./generate_reports.sh              # 使用上個月資料
+./generate_reports.sh 2026-01      # 指定月份
+```
+
+**輸出檔案**：
+- `月營收報告_YYYY-MM_嚴格版.md` / `.pdf` - 嚴格篩選版（v2）
+- `月營收報告_YYYY-MM_寬鬆版.md` / `.pdf` - 寬鬆篩選版（v3）
+
+**差異說明**：
+- **嚴格版（v2）**：要求連續 3 個月 YoY 遞增，趨勢強勁
+- **寬鬆版（v3）**：任意兩個月連續 YoY 遞增即可，涵蓋更多標的
+
+#### 方式二：手動執行 SQL
+
+```bash
+# 嚴格版（從資料庫讀取 ETF，Markdown 報告）
 psql-17 -U postgres -d tw_stock -t -A \
   -f analysis/ETF持股篩選/月營收篩選_ETF持股_報告版_v2.sql \
-  -o analysis/reports/ETF持股篩選/$(date +%Y-%m-%d)/月營收篩選_ETF持股_$(date +%Y-%m-%d).md
+  -o /tmp/revenue_report_strict.md
 
-# 純營收版（不限 ETF，擴大選股範圍）
+# 寬鬆版（從資料庫讀取 ETF，Markdown 報告）
 psql-17 -U postgres -d tw_stock -t -A \
-  -f analysis/ETF持股篩選/月營收篩選_純營收版.sql \
-  -o analysis/reports/ETF持股篩選/$(date +%Y-%m-%d)/月營收篩選_純營收_$(date +%Y-%m-%d).md
+  -f analysis/ETF持股篩選/月營收篩選_ETF持股_報告版_v3_寬鬆.sql \
+  -o /tmp/revenue_report_loose.md
 ```
 
 **輸出欄位**（ETF 持股版）：
@@ -142,24 +163,46 @@ psql-17 -U postgres -d tw_stock \
 
 ### 月營收篩選參數
 
-編輯 SQL 檔案頂部的 `\set` 指令：
+#### 嚴格版（v2）參數
+
+編輯 [月營收篩選_ETF持股_報告版_v2.sql](月營收篩選_ETF持股_報告版_v2.sql) 頂部的 `\set` 指令：
+
+```sql
+\set target_month '''2026-01'''   -- 目標月份
+\set min_yoy 30                   -- 最低年增率 (%)
+\set min_mom -20                  -- 最低月增率 (%)（允許小幅回檔）
+\set min_etf_count 1              -- 最少 ETF 持有數
+```
+
+**篩選條件**：
+- ✅ 連續 3 個月 YoY 遞增（嚴格趨勢）
+- ✅ YoY ≥ 30%
+- ✅ MoM ≥ -20%（允許小幅回檔）
+- ✅ 至少被 1 個 ETF 持有
+
+#### 寬鬆版（v3）參數
+
+編輯 [月營收篩選_ETF持股_報告版_v3_寬鬆.sql](月營收篩選_ETF持股_報告版_v3_寬鬆.sql) 頂部的 `\set` 指令：
 
 ```sql
 \set target_month '''2025-11'''   -- 目標月份
 \set min_yoy 15                   -- 最低年增率 (%)
 \set min_mom 0                    -- 最低月增率 (%)
-\set min_etf_count 1              -- 最少 ETF 持有數（僅 ETF 持股版）
+\set min_etf_count 1              -- 最少 ETF 持有數
+\set verify_latest_month '''2026-01'''  -- 驗證最新月份
 ```
 
-**建議設定**（ETF 持股版）：
-- 穩健型：`min_yoy 15`, `min_etf_count 2`
-- 平衡型：`min_yoy 20`, `min_etf_count 1`
-- 積極型：`min_yoy 30`, `min_etf_count 1`
+**篩選條件**：
+- ✅ 任意兩個月連續 YoY 遞增（寬鬆趨勢）
+- ✅ YoY ≥ 15%
+- ✅ MoM ≥ 0%
+- ✅ 至少被 1 個 ETF 持有
+- ✅ 最新月份仍維持正成長
 
-**建議設定**（純營收版）：
-- 穩健型：`min_yoy 20`, `min_mom 5`
-- 平衡型：`min_yoy 15`, `min_mom 0`
-- 積極型：`min_yoy 10`, `min_mom -5`
+**建議設定**：
+- 穩健型：`min_yoy 20`, `min_etf_count 2`（嚴格版）
+- 平衡型：`min_yoy 15`, `min_etf_count 1`（寬鬆版）
+- 積極型：`min_yoy 10`, `min_etf_count 1`（自訂參數）
 
 ### 技術面篩選參數
 
@@ -329,7 +372,33 @@ WITH etf_holdings AS (
 
 ## 📈 報告輸出
 
-查詢結果可輸出為：
+### 自動化報告（推薦）
+
+使用 [generate_reports.sh](generate_reports.sh) 自動生成完整報告：
+
+```bash
+cd analysis/ETF持股篩選
+./generate_reports.sh              # 使用上個月資料
+./generate_reports.sh 2026-01      # 指定月份
+```
+
+**輸出路徑**：`analysis/reports/ETF持股篩選/YYYY-MM-DD/`
+
+**輸出檔案**：
+- `月營收報告_2026-01_嚴格版.md` - Markdown 格式（3.0KB）
+- `月營收報告_2026-01_嚴格版.pdf` - PDF 格式（564KB）
+- `月營收報告_2026-01_寬鬆版.md` - Markdown 格式（4.6KB）
+- `月營收報告_2026-01_寬鬆版.pdf` - PDF 格式（676KB）
+
+**報告內容**：
+- 📊 篩選結果統計（符合條件股票數、創新高數量、平均增率）
+- 🎯 篩選結果明細（完整股票清單 + ETF 持股）
+- 📝 風險等級說明
+- 📈 投資建議
+
+### 手動輸出格式
+
+查詢結果也可手動輸出為：
 - CSV 格式（Excel 可開啟）
 - HTML 格式（瀏覽器可開啟）
 - Markdown 格式（文件化）
@@ -337,12 +406,12 @@ WITH etf_holdings AS (
 ```bash
 # 輸出為 CSV
 psql-17 -U postgres -d tw_stock \
-  -f analysis/ETF持股篩選/月營收篩選_ETF持股.sql \
+  -f analysis/ETF持股篩選/月營收篩選_ETF持股_報告版_v2.sql \
   -o output.csv
 
 # 輸出為 HTML
 psql-17 -U postgres -d tw_stock \
-  -H -f analysis/ETF持股篩選/月營收篩選_ETF持股.sql \
+  -H -f analysis/ETF持股篩選/月營收篩選_ETF持股_報告版_v2.sql \
   -o output.html
 ```
 
@@ -363,4 +432,8 @@ psql-17 -U postgres -d tw_stock \
 ---
 
 **最後更新**: 2026-02-09
-**版本**: v2.1 - 改用資料庫讀取 ETF 持股，移除 hardcode 版本
+**版本**: v2.2
+- 新增自動化報告生成工具 `generate_reports.sh`
+- 新增寬鬆版篩選 SQL（v3）
+- 支援自動轉換 Markdown → PDF
+- 改用資料庫讀取 ETF 持股資料

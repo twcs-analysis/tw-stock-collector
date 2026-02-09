@@ -37,6 +37,26 @@
   - 移除 `--sample` 參數說明
 
 ### 新增
+- **月營收報告自動化生成工具**（2026-02-09）
+  - 新增 `analysis/ETF持股篩選/generate_reports.sh` - 自動化報告生成腳本
+    - 自動計算目標月份（預設為上個月）
+    - 同時生成嚴格版和寬鬆版報告
+    - 自動執行 SQL 查詢並生成 Markdown
+    - 使用 Python 清理 PostgreSQL 輸出格式（移除續行符號和多餘空白）
+    - 自動轉換 Markdown 為 PDF（使用 md-to-pdf）
+    - 輸出至 `analysis/reports/ETF持股篩選/YYYY-MM-DD/` 目錄
+  - **報告內容**：
+    - 篩選結果統計（符合條件股票數、創新高數量、平均增率）
+    - 篩選結果明細（完整股票清單 + ETF 持股 + 最新收盤價）
+    - 風險等級說明
+    - 投資建議
+  - **使用方式**：
+    ```bash
+    cd analysis/ETF持股篩選
+    ./generate_reports.sh              # 使用上個月
+    ./generate_reports.sh 2026-01      # 指定月份
+    ```
+
 - **月營收篩選 + ETF 持股分析系統**（2026-02-09）
   - 新增 `analysis/ETF持股篩選/月營收篩選_ETF持股_報告版_v2.sql`（嚴格版）
     - 篩選條件：連續 3 個月 YoY 遞增 + 最新月份（2026-01）仍維持正成長
@@ -47,7 +67,11 @@
     - 擴大選股範圍，適合積極型投資者
   - 新增 `analysis/ETF持股篩選/月營收篩選_純營收版.sql`（無 ETF 限制版）
     - 不限 ETF 持股，擴大選股範圍
-  - 新增 `analysis/ETF持股篩選/README.md` - 完整使用文檔
+  - 更新 `analysis/ETF持股篩選/README.md` - 新增自動化工具使用說明
+    - 版本升級至 v2.2
+    - 新增自動化腳本使用方式
+    - 新增嚴格版與寬鬆版差異說明
+    - 新增報告輸出路徑與檔案格式說明
   - 新增 `analysis/ETF持股篩選/QUICKSTART.md` - 快速開始指南
 
 ### 變更
