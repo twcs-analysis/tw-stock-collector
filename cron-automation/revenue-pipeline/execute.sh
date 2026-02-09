@@ -24,17 +24,12 @@ cd "$PROJECT_ROOT"
 
 # 解析參數
 YEAR_MONTH=""
-SAMPLE=8
 DRY_RUN=""
 
 while [[ $# -gt 0 ]]; do
     case $1 in
         --year-month)
             YEAR_MONTH="$2"
-            shift 2
-            ;;
-        --sample)
-            SAMPLE="$2"
             shift 2
             ;;
         --dry-run)
@@ -56,7 +51,7 @@ echo "Revenue Pipeline 執行開始"
 echo "============================================================"
 echo "時間: $(date '+%Y-%m-%d %H:%M:%S')"
 echo "專案: $PROJECT_ROOT"
-echo "參數: year-month=$YEAR_MONTH, sample=$SAMPLE, dry-run=$DRY_RUN"
+echo "參數: year-month=$YEAR_MONTH, dry-run=$DRY_RUN"
 echo ""
 
 # ============================================================
@@ -120,8 +115,26 @@ echo ""
 # ============================================================
 echo "[Step 3] 收集目標月營收資料..."
 
-COLLECT_CMD="python3.11 scripts/data-collector/collect_revenue.py"
-[ -n "$YEAR_MONTH" ] && COLLECT_CMD="$COLLECT_CMD --year-month $YEAR_MONTH"
+# 如果使用者未指定年月，自動計算目標年月（上個月）
+if [ -z "$YEAR_MONTH" ]; then
+    # 取得當前年月
+    CURRENT_YEAR=$(date '+%Y')
+    CURRENT_MONTH=$(date '+%m')
+
+    # 計算上個月
+    if [ "$CURRENT_MONTH" == "01" ]; then
+        TARGET_YEAR=$((CURRENT_YEAR - 1))
+        TARGET_MONTH="12"
+    else
+        TARGET_YEAR=$CURRENT_YEAR
+        TARGET_MONTH=$(printf "%02d" $((10#$CURRENT_MONTH - 1)))
+    fi
+
+    YEAR_MONTH="$TARGET_YEAR-$TARGET_MONTH"
+    echo "⚡ 自動計算目標年月: $YEAR_MONTH（上個月）"
+fi
+
+COLLECT_CMD="python3.11 scripts/data-collector/collect_revenue.py --year-month $YEAR_MONTH"
 [ -n "$DRY_RUN" ] && COLLECT_CMD="$COLLECT_CMD $DRY_RUN"
 
 echo "執行指令: $COLLECT_CMD"
@@ -164,12 +177,12 @@ else
 fi
 
 # ============================================================
-# Step 5: 展示最新月份營收資料
+# Step 5: 展示今日新增營收資料（含收盤價）
 # ============================================================
-echo "[Step 5] 展示最新月份營收資料..."
+echo "[Step 5] 展示今日新增營收資料..."
 
 # 使用 Python 腳本展示（格式更好控制）
-python3.11 "$SCRIPT_DIR/display_revenues.py" "$SAMPLE"
+python3.11 "$SCRIPT_DIR/display_revenues.py"
 
 echo ""
 echo "============================================================"

@@ -2,18 +2,21 @@
 """
 月營收資料展示腳本
 
-從資料庫讀取最新月份的營收資料並以格式化方式展示。
+顯示今天新增/更新的所有月營收資料，並加上當天收盤價。
 """
 
 import sys
 import os
 import psycopg2
-import random
+from datetime import date
 
 def main():
     # 從環境變數取得資料庫密碼
     db_password = os.environ.get("DB_PASSWORD", "tw_stock_dev_password_2024")
-    sample_size = int(sys.argv[1]) if len(sys.argv) > 1 else 8
+
+    # 取得今天日期
+    today = date.today()
+    today_str = today.strftime('%Y-%m-%d')
 
     # 連線資料庫
     try:
@@ -40,7 +43,7 @@ def main():
         conn.close()
         sys.exit(0)
 
-    # 查詢該月份的所有資料（包含 ETF 持股資訊）
+    # 查詢今天新增/更新的資料（包含 ETF 持股資訊和當天收盤價）
     cur.execute("""
         WITH etf_holdings_agg AS (
             SELECT
@@ -54,6 +57,14 @@ def main():
             ) AS distinct_holdings
             INNER JOIN etfs e ON distinct_holdings.etf_id = e.etf_id
             GROUP BY distinct_holdings.stock_id
+        ),
+        latest_prices AS (
+            SELECT
+                stock_id,
+                close_price,
+                trade_date
+            FROM stock_prices
+            WHERE trade_date = (SELECT MAX(trade_date) FROM stock_prices)
         )
         SELECT r.stock_id, s.stock_name, s.market_type,
                r.current_month_revenue, r.last_month_revenue, r.last_year_revenue,
@@ -61,36 +72,45 @@ def main():
                r.ytd_revenue, r.ytd_yoy_change_pct,
                r.collection_date, r.note,
                COALESCE(etf.etf_count, 0) AS etf_count,
-               COALESCE(etf.etf_detail, '-') AS etf_detail
+               COALESCE(etf.etf_detail, '-') AS etf_detail,
+               lp.close_price,
+               lp.trade_date,
+               r.created_at
         FROM stock_revenues r
         JOIN stocks s ON r.stock_id = s.stock_id
         LEFT JOIN etf_holdings_agg etf ON r.stock_id = etf.stock_id
+        LEFT JOIN latest_prices lp ON r.stock_id = lp.stock_id
         WHERE r.year_month = %s
+          AND DATE(r.created_at) = %s
         ORDER BY r.current_month_revenue DESC
-    """, (latest_year_month,))
+    """, (latest_year_month, today_str))
 
     all_data = cur.fetchall()
     total_count = len(all_data)
 
     if total_count == 0:
-        print(f"\n⚠️  {latest_year_month} 目前無月營收資料")
+        print(f"\n⚠️  今天（{today_str}）無新增月營收資料")
+        print(f"    提示：本次執行可能沒有新公告的股票")
         cur.close()
         conn.close()
         sys.exit(0)
 
-    # 隨機挑選
-    actual_sample_size = min(sample_size, total_count)
-    sample_data = random.sample(all_data, actual_sample_size)
+    # 取得最新股價日期
+    cur.execute("SELECT MAX(trade_date) FROM stock_prices")
+    latest_price_date = cur.fetchone()[0]
+    latest_price_date_str = latest_price_date.strftime('%Y-%m-%d') if latest_price_date else "N/A"
 
-    print(f"\n最新月份營收資料 ({latest_year_month}) - 隨機展示 {actual_sample_size} 檔")
-    print(f"{'='*80}\n")
+    print(f"\n{'='*120}")
+    print(f"今日新增月營收資料 ({latest_year_month}) - 共 {total_count} 檔")
+    print(f"收集日期: {today_str} | 最新股價日期: {latest_price_date_str}")
+    print(f"{'='*120}\n")
 
-    # 表格標題
-    print(f"| {'代碼':<6} | {'名稱':<10} | {'市場':<4} | {'當月營收(億)':>12} | {'月增率':>8} | {'年增率':>9} | {'YTD營收(億)':>12} | {'YTD年增率':>10} | {'ETF數':>6} |")
-    print(f"|{'-'*8}|{'-'*12}|{'-'*6}|{'-'*14}|{'-'*10}|{'-'*11}|{'-'*14}|{'-'*12}|{'-'*8}|")
+    # 表格標題（加上收盤價）
+    print(f"| {'代碼':<6} | {'名稱':<10} | {'市場':<4} | {'當月營收(億)':>12} | {'月增率':>8} | {'年增率':>9} | {'YTD營收(億)':>12} | {'YTD年增率':>10} | {'收盤價':>8} | {'ETF數':>6} |")
+    print(f"|{'-'*8}|{'-'*12}|{'-'*6}|{'-'*14}|{'-'*10}|{'-'*11}|{'-'*14}|{'-'*12}|{'-'*10}|{'-'*8}|")
 
-    for row in sample_data:
-        stock_id, stock_name, market_type, revenue, last_month_rev, last_year_rev, mom, yoy, ytd_revenue, ytd_yoy, collection_date, note, etf_count, etf_detail = row
+    for row in all_data:
+        stock_id, stock_name, market_type, revenue, last_month_rev, last_year_rev, mom, yoy, ytd_revenue, ytd_yoy, collection_date, note, etf_count, etf_detail, close_price, trade_date, created_at = row
 
         # 市場類型轉換
         market_display = "上市" if market_type == "twse" else "上櫃"
@@ -107,14 +127,18 @@ def main():
         # ETF 數量
         etf_count_display = str(int(etf_count)) if etf_count else "0"
 
-        print(f"| {stock_id:<6} | {stock_name:<10} | {market_display:<4} | {revenue_billion:>12,.0f} | {mom_str:>8} | {yoy_str:>9} | {ytd_revenue_billion:>12,.0f} | {ytd_yoy_str:>10} | {etf_count_display:>6} |")
+        # 收盤價
+        close_price_str = f"{float(close_price):.2f}" if close_price else "N/A"
 
-    print(f"\n{'='*80}\n")
+        print(f"| {stock_id:<6} | {stock_name:<10} | {market_display:<4} | {revenue_billion:>12,.0f} | {mom_str:>8} | {yoy_str:>9} | {ytd_revenue_billion:>12,.0f} | {ytd_yoy_str:>10} | {close_price_str:>8} | {etf_count_display:>6} |")
 
-    # 詳細資料（前 3 檔）
-    print("詳細資料（前 3 檔）：\n")
-    for i, row in enumerate(sample_data[:3], 1):
-        stock_id, stock_name, market_type, revenue, last_month_rev, last_year_rev, mom, yoy, ytd_revenue, ytd_yoy, collection_date, note, etf_count, etf_detail = row
+    print(f"\n{'='*120}\n")
+
+    # 詳細資料（前 10 檔）
+    detail_count = min(10, total_count)
+    print(f"詳細資料（前 {detail_count} 檔）：\n")
+    for i, row in enumerate(all_data[:detail_count], 1):
+        stock_id, stock_name, market_type, revenue, last_month_rev, last_year_rev, mom, yoy, ytd_revenue, ytd_yoy, collection_date, note, etf_count, etf_detail, close_price, trade_date, created_at = row
 
         market_display = "上市" if market_type == "twse" else "上櫃"
         revenue_billion = float(revenue) / 100000 if revenue else 0
@@ -132,6 +156,13 @@ def main():
         if ytd_revenue:
             ytd_yoy_display = f" | YTD年增率: {float(ytd_yoy):+.2f}%" if ytd_yoy is not None else ""
             print(f"    年初至今: {float(ytd_revenue):,.0f} 千元 ({ytd_revenue_billion:,.2f} 億){ytd_yoy_display}")
+
+        # 收盤價資訊
+        if close_price:
+            trade_date_str = trade_date.strftime('%Y-%m-%d') if trade_date else "N/A"
+            print(f"    收盤價: {float(close_price):.2f} 元 (截至 {trade_date_str})")
+        else:
+            print(f"    收盤價: N/A (無最新股價資料)")
 
         # ETF 持股資訊
         if etf_count and int(etf_count) > 0:
@@ -154,7 +185,23 @@ def main():
         print(f"    收集日期: {collection_date} | 備註: {note_display}")
         print()
 
-    print(f"{'='*80}")
+    print(f"{'='*120}")
+    print(f"\n統計資訊：")
+    print(f"  本日新增: {total_count} 檔")
+
+    # 計算市場分布
+    twse_count = sum(1 for row in all_data if row[2] == 'twse')
+    tpex_count = sum(1 for row in all_data if row[2] == 'tpex')
+    print(f"  上市: {twse_count} 檔")
+    print(f"  上櫃: {tpex_count} 檔")
+
+    # 計算成長率分布
+    positive_yoy = sum(1 for row in all_data if row[7] and float(row[7]) > 0)
+    negative_yoy = sum(1 for row in all_data if row[7] and float(row[7]) < 0)
+    print(f"  年增率正成長: {positive_yoy} 檔 ({positive_yoy/total_count*100:.1f}%)")
+    print(f"  年增率負成長: {negative_yoy} 檔 ({negative_yoy/total_count*100:.1f}%)")
+
+    print(f"\n{'='*120}")
 
     cur.close()
     conn.close()

@@ -4,6 +4,38 @@
 
 ## [Unreleased]
 
+### 修正
+- **Revenue Pipeline 自動計算目標月份**（2026-02-09）
+  - **問題**：執行 `/revenue-pipeline` 時會收集當前月份（2026-02）資料，但該月尚無公告，導致收集 0 筆
+  - **根本原因**：
+    - `execute.sh` 未指定 `--year-month` 參數
+    - `collect_revenue.py` 智慧判斷使用當前日期判斷模式，但沒有自動計算目標月份
+    - 預設收集當前月份資料，而非上個月
+  - **修正方法**：
+    - 修改 `cron-automation/revenue-pipeline/execute.sh`
+    - 新增自動計算邏輯：若未指定年月，自動計算為上個月（2026-02 → 2026-01）
+    - 正確處理跨年情況（1月 → 上年12月）
+  - **修正結果**：
+    - ✅ 執行 `/revenue-pipeline` 自動收集上個月資料
+    - ✅ 成功收集 1,138 檔（新增 520 檔，累計 58.7%）
+    - ✅ 智慧判斷模式正常運作（9號使用 daily 模式）
+
+### 新增
+- **Revenue Pipeline 展示功能增強**（2026-02-09）
+  - 修改 `cron-automation/revenue-pipeline/display_revenues.py`
+  - 新增收盤價資訊（JOIN `stock_prices` 表）
+  - 改為顯示今日新增的所有資料（不再隨機抽樣）
+  - 前 10 檔顯示詳細資訊（含收盤價、ETF 持股）
+  - 移除 `--sample` 參數（不再需要）
+
+### 變更
+- **Revenue Pipeline Skill 文檔更新**（2026-02-09）
+  - 更新 `.claude/skills/revenue-pipeline/SKILL.md`
+  - 更新 `.claude/skills/revenue-pipeline/instructions.md`
+  - 說明自動計算目標月份機制
+  - 說明展示今日新增資料功能
+  - 移除 `--sample` 參數說明
+
 ### 新增
 - **月營收篩選 + ETF 持股分析系統**（2026-02-09）
   - 新增 `analysis/ETF持股篩選/月營收篩選_ETF持股_報告版_v2.sql`（嚴格版）
