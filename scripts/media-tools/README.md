@@ -1,25 +1,38 @@
 # 影音轉文字工具
 
-自動下載影音並轉換為中文逐字稿的工具。
+提供兩種影音轉文字功能：
 
-## 功能
+1. **影音網址轉逐字稿**：自動下載影音並轉換為中文逐字稿
+2. **批次 MP3 轉逐字稿**：批次處理本地 mp3 檔案，轉換為逐字稿
+
+## 工具清單
+
+### 1. video_to_transcript - 影音網址轉逐字稿
 
 1. 使用 `yt-dlp` 下載影音網址，轉換為 mp3 格式
 2. 使用 `whisper-cpp` 將 mp3 轉換為中文逐字稿
 3. 儲存逐字稿到 `data/transcripts/{日期}/{檔名}.txt`
 
+### 2. batch_mp3_to_transcript - 批次 MP3 轉逐字稿
+
+1. 批次掃描指定目錄下所有 2026-* 子目錄的 mp3 檔案
+2. 使用 `whisper-cpp` 將 mp3 轉換為中文逐字稿
+3. 逐字稿保存在各自的原始目錄下（例如：`2026-01-02/錢線百分百_20260102_上集.txt`）
+4. 自動跳過已存在的逐字稿，避免重複轉換
+5. 顯示進度並記錄錯誤
+
 ## 環境需求
 
 ### 必要套件
 
-1. **yt-dlp**（影音下載工具）
-   ```bash
-   brew install yt-dlp
-   ```
-
-2. **whisper-cpp**（語音轉文字）
+1. **whisper-cpp**（語音轉文字）- 兩個工具都需要
    ```bash
    brew install whisper-cpp
+   ```
+
+2. **yt-dlp**（影音下載工具）- 僅 video_to_transcript 需要
+   ```bash
+   brew install yt-dlp
    ```
 
 3. **Whisper 模型**（第一次使用時自動下載）
@@ -31,7 +44,11 @@
 - Python 3.11+
 - 標準函式庫（無需額外安裝套件）
 
+---
+
 ## 使用方式
+
+## 工具 1: video_to_transcript - 影音網址轉逐字稿
 
 ### 方法 1：使用 Shell 腳本（推薦）
 
@@ -64,6 +81,113 @@ python3.11 scripts/media-tools/video_to_transcript.py "https://www.youtube.com/w
 ```bash
 python3.11 scripts/media-tools/video_to_transcript.py --help
 ```
+
+---
+
+## 工具 2: batch_mp3_to_transcript - 批次 MP3 轉逐字稿
+
+### 方法 1：使用 Shell 腳本（推薦）
+
+```bash
+# 基本使用（使用預設 base 模型）
+./scripts/media-tools/batch_mp3_to_transcript.sh /Users/jasonhuang/yt-video/yt-moneyline
+
+# 使用不同的 Whisper 模型
+./scripts/media-tools/batch_mp3_to_transcript.sh /Users/jasonhuang/yt-video/yt-moneyline --model small
+
+# 強制重新轉換（忽略已存在的逐字稿）
+./scripts/media-tools/batch_mp3_to_transcript.sh /Users/jasonhuang/yt-video/yt-moneyline --force
+
+# 組合選項
+./scripts/media-tools/batch_mp3_to_transcript.sh /Users/jasonhuang/yt-video/yt-moneyline --model small --force
+```
+
+### 方法 2：直接執行 Python 腳本
+
+```bash
+# 基本使用
+python3.11 scripts/media-tools/batch_mp3_to_transcript.py /Users/jasonhuang/yt-video/yt-moneyline
+
+# 使用不同的 Whisper 模型
+python3.11 scripts/media-tools/batch_mp3_to_transcript.py /Users/jasonhuang/yt-video/yt-moneyline --model small
+
+# 強制重新轉換
+python3.11 scripts/media-tools/batch_mp3_to_transcript.py /Users/jasonhuang/yt-video/yt-moneyline --force
+```
+
+### 查看完整說明
+
+```bash
+python3.11 scripts/media-tools/batch_mp3_to_transcript.py --help
+```
+
+### 輸出說明
+
+批次工具會在每個 mp3 檔案所在的目錄下產生同名的 txt 檔案：
+
+```
+/Users/jasonhuang/yt-video/yt-moneyline/
+├── 2026-01-02/
+│   ├── 錢線百分百_20260102_上集.mp3
+│   ├── 錢線百分百_20260102_上集.txt    ← 轉換後的逐字稿
+│   ├── 錢線百分百_20260102_中集.mp3
+│   ├── 錢線百分百_20260102_中集.txt    ← 轉換後的逐字稿
+│   ├── 錢線百分百_20260102_下集.mp3
+│   └── 錢線百分百_20260102_下集.txt    ← 轉換後的逐字稿
+├── 2026-01-03/
+│   ├── ...
+```
+
+### 執行範例輸出
+
+```
+🔍 檢查依賴套件...
+✅ whisper-cpp 已安裝
+✅ 模型檔案存在: /opt/homebrew/share/whisper-cpp/models/ggml-base.bin
+
+📂 搜尋 /Users/jasonhuang/yt-video/yt-moneyline 下的 2026-* 目錄...
+✅ 找到 158 個 mp3 檔案
+
+準備處理 158 個 mp3 檔案
+模型: base
+強制重新轉換: 否
+
+按 Enter 繼續，或 Ctrl+C 取消...
+
+================================================================================
+開始批次處理
+================================================================================
+
+[1/158] 處理中: 錢線百分百_20260102_上集.mp3
+  目錄: /Users/jasonhuang/yt-video/yt-moneyline/2026-01-02
+  🎤 開始轉換（模型: base）...
+  ✅ 轉換完成
+
+[2/158] 處理中: 錢線百分百_20260102_中集.mp3
+  目錄: /Users/jasonhuang/yt-video/yt-moneyline/2026-01-02
+  ⏭️  逐字稿已存在，跳過
+
+...
+
+================================================================================
+📊 處理結果統計
+================================================================================
+總檔案數: 158
+成功轉換: 120
+跳過檔案: 35
+失敗檔案: 3
+總耗時: 2:15:30
+
+❌ 失敗的檔案:
+  - /Users/jasonhuang/yt-video/yt-moneyline/2026-01-15/錢線百分百_20260115_上集.mp3
+  - ...
+
+================================================================================
+⚠️  部分檔案處理失敗
+================================================================================
+```
+
+---
 
 ## 參數說明
 
@@ -250,17 +374,21 @@ brew upgrade yt-dlp
 
 ## 整合到專案
 
-這個工具已整合到專案中，目錄結構：
+這些工具已整合到專案中，目錄結構：
 
 ```
 scripts/media-tools/
-├── README.md                    # 本說明文件
-├── video_to_transcript.py       # Python 主程式
-└── video_to_transcript.sh       # Shell 包裝器
+├── README.md                         # 本說明文件
+├── video_to_transcript.py            # 影音網址轉逐字稿（Python）
+├── video_to_transcript.sh            # 影音網址轉逐字稿（Shell）
+├── batch_mp3_to_transcript.py        # 批次 MP3 轉逐字稿（Python）
+├── batch_mp3_to_transcript.sh        # 批次 MP3 轉逐字稿（Shell）
+├── html_to_pdf.py                    # HTML 轉 PDF
+└── md_to_pdf_with_chinese.sh         # Markdown 轉 PDF
 
 data/
-├── temp/                        # 暫存目錄（已加入 .gitignore）
-└── transcripts/                 # 逐字稿目錄（已加入 .gitignore）
+├── temp/                             # 暫存目錄（已加入 .gitignore）
+└── transcripts/                      # 逐字稿目錄（已加入 .gitignore）
 ```
 
 ## 授權

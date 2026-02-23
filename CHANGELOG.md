@@ -4,6 +4,35 @@
 
 ## [Unreleased]
 
+### 新增
+- **批次 MP3 轉逐字稿工具**（2026-02-23）
+  - 新增 `batch_mp3_to_transcript.py` 和 `batch_mp3_to_transcript.sh`
+  - **功能**: 批次掃描指定目錄下所有 2026-* 子目錄的 mp3 檔案，轉換為中文逐字稿
+  - **特性**:
+    - 使用 whisper-cpp 進行語音轉文字
+    - 自動跳過已存在的逐字稿，支援續傳
+    - 支援多種 Whisper 模型（tiny, base, small, medium, large）
+    - 顯示進度並統計處理結果
+    - 逐字稿保存在各自的原始目錄下
+  - **相關文檔**:
+    - `scripts/media-tools/README.md` - 工具說明（已更新）
+    - `scripts/media-tools/BATCH_MP3_QUICKSTART.md` - 快速開始指南
+    - `scripts/media-tools/BATCH_MP3_EXAMPLES.md` - 使用範例
+
+### 資料更新
+- **2026-01 月營收完整資料更新**（2026-02-23）
+  - 執行 Revenue Pipeline（Monthly 模式）
+  - **本次更新**: 1,943 檔（上市 1,065 + 上櫃 878）
+  - **資料檔案**:
+    - `data/raw/revenue-monthly/2026/2026-01.json`（新增，1,049 KB）
+    - `data/raw/revenue-daily/2026/2026-01.json`（更新，957 KB）
+    - `data/raw/revenue-monthly/2025/2025-12.json`（更新，1,053 KB）
+  - **資料庫**: 已匯入 `stock_revenues` 表
+  - **重點觀察**:
+    - 台積電 (2330): 1月營收 3,098 億 (+14.84% YoY)
+    - 鴻海 (2317): 1月營收 4,012 億 (+36.81% YoY)
+    - 年增率正成長: 1,337 檔（68.8%）
+
 ### 修復
 - **刪除春節連假期間的錯誤資料**（2026-02-23）
   - 刪除 2026-02-16 到 2026-02-19 共 28 個錯誤資料檔案
