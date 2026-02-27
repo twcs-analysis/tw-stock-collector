@@ -101,3 +101,4 @@ scripts/gas/test_payload_*.json
 
 # 排除 2025 年 raw 資料（僅本地保留）
 data/raw/*/2025/
+data/transformed/technical/2025-*.csv
