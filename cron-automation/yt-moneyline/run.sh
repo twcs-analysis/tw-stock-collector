@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # YT Moneyline Cron 執行腳本
 #

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # YT Moneyline 獨立執行腳本
 #
