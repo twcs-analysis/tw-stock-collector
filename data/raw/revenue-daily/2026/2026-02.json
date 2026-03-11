@@ -2,13 +2,13 @@
   "metadata": {
     "year_month": "2026-02",
     "mode": "daily",
-    "collection_date": "2026-03-10",
-    "total_count": 1931,
-    "twse_count": 1052,
+    "collection_date": "2026-03-11",
+    "total_count": 1933,
+    "twse_count": 1054,
     "tpex_count": 879,
     "total_stocks": 1943,
-    "announced_ratio": "99.4%",
-    "new_announced": 237,
+    "announced_ratio": "99.5%",
+    "new_announced": 2,
     "source": "MOPS API"
   },
   "data": [
@@ -30777,6 +30777,38 @@
       "last_month_revenue": 117226,
       "mom_change_pct": 54.16887038711549,
       "ytd_yoy_change_pct": -36.43229588919517
+    },
+    {
+      "year_month": "2026-02",
+      "stock_id": "2852",
+      "stock_name": "第一保",
+      "type": "twse",
+      "current_month_revenue": 725462.0,
+      "last_year_revenue": 782351.0,
+      "revenue_change": -75932.0,
+      "yoy_change_pct": -4.74,
+      "ytd_revenue": 1524610.0,
+      "ytd_last_year_revenue": 1600542.0,
+      "note": null,
+      "last_month_revenue": 799148,
+      "mom_change_pct": -9.220569906950903,
+      "ytd_yoy_change_pct": -4.744142921585313
+    },
+    {
+      "year_month": "2026-02",
+      "stock_id": "2882",
+      "stock_name": "國泰金",
+      "type": "twse",
+      "current_month_revenue": 26123903.0,
+      "last_year_revenue": 29364042.0,
+      "revenue_change": -2887267.0,
+      "yoy_change_pct": -5.25,
+      "ytd_revenue": 52126054.0,
+      "ytd_last_year_revenue": 55013321.0,
+      "note": null,
+      "last_month_revenue": 26002151,
+      "mom_change_pct": 0.4682381853716641,
+      "ytd_yoy_change_pct": -5.248305224111085
     }
   ]
 }
