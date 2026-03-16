@@ -5,6 +5,34 @@
 ## [Unreleased]
 
 ### 新增
+- **個股期貨資料收集功能**（2026-03-16）
+  - 新增完整的個股期貨資料收集系統
+  - **資料來源**: TAIFEX OpenAPI (DailyMarketReportFut)
+  - **收集範圍**: 2026 年全年（243 個交易日）
+  - **資料內容**: 每日 154 筆契約，涵蓋 21 檔活躍股票，總標的數 314 檔
+  - **資料大小**: 18 MB（243 個 JSON 檔案）
+  - **檔案位置**: `data/raw/stock_futures/2026/`
+  - **核心模組**:
+    - `services/common/datasources/taifex_datasource.py` - TAIFEX API 資料源（280 行）
+    - `services/common/collectors/stock_futures_collector.py` - 個股期貨收集器（109 行）
+  - **執行腳本**:
+    - `scripts/data-collector/collect_stock_futures.py` - 單日收集
+    - `scripts/data-collector/backfill_stock_futures_parallel.py` - 平行化回補（357 行）
+    - `scripts/data-collector/collect_stock_futures.sh` - Shell 包裝腳本
+    - `scripts/data-collector/backfill_stock_futures.sh` - 回補 Shell 腳本
+  - **測試工具**:
+    - `scripts/research/test_taifex_api.py` - TAIFEX API 測試工具
+  - **文件**:
+    - `docs/STOCK_FUTURES_COLLECTION.md` - 使用指南
+    - `docs/STOCK_FUTURES_BACKFILL.md` - 回補指南
+    - `docs/research/TAIFEX_API_RESEARCH.md` - TAIFEX API 研究報告
+    - `docs/CHANGELOG_STOCK_FUTURES.md` - 功能變更記錄
+  - **效能**:
+    - 平行化處理（5 執行緒）
+    - 243 天資料僅需 34.3 秒（平均 0.14 秒/天）
+    - 自動跳過非交易日和已收集資料
+  - **資料品質**: 100% 驗證通過，所有檔案結構完整，無異常值
+
 - **2026-02 月營收資料收集**（2026-03-09）
   - 收集 2026 年 2 月月營收資料（daily 模式）
   - **總計**: 898 檔股票（上市 483 + 上櫃 415）

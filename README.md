@@ -35,6 +35,9 @@
 - ✅ 股權分散表
 - ✅ 董監持股與質押比例
 
+### 衍生性商品
+- ✅ **[個股期貨](data/raw/stock_futures/)** - 每日期貨交易資料（開高低收、成交量、未平倉）
+
 ### 市場統計
 - ✅ **[成交量前 20 名](data/raw/top20_volume/)** - 每日成交量排行
 - ✅ 每日市場總覽 (漲跌家數、成交量)
@@ -103,6 +106,12 @@ python3.11 scripts/data-collector/collect_revenue.py --mode daily --year-month 2
 
 # Monthly 模式（10 日後使用，完整資料）
 python3.11 scripts/data-collector/collect_revenue.py --mode monthly --year-month 2026-01
+
+# 收集個股期貨資料
+./scripts/data-collector/collect_stock_futures.sh                    # 收集當天資料
+./scripts/data-collector/collect_stock_futures.sh 2026-03-13         # 收集指定日期
+./scripts/data-collector/backfill_stock_futures.sh 2026              # 回補整年資料
+./scripts/data-collector/backfill_stock_futures.sh 2026-01-01 2026-03-31  # 回補指定範圍
 ```
 
 #### 使用 Python 腳本

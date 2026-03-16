@@ -7,9 +7,11 @@
 from .base_datasource import BaseDataSource
 from .twse_datasource import TWSEDataSource
 from .tpex_datasource import TPExDataSource
+from .taifex_datasource import TAIFEXDataSource
 
 __all__ = [
     'BaseDataSource',
     'TWSEDataSource',
     'TPExDataSource',
+    'TAIFEXDataSource',
 ]
