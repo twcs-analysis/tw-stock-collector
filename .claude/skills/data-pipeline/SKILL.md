@@ -16,6 +16,8 @@ allowed-tools: Bash(python3:*), Read, Grep, Glob, TodoWrite
 1. **資料收集（data-collect）**
    - 使用 `scripts/run_collection.py`
    - 收集：price, institutional, margin, lending, top20_volume
+   - 使用 `scripts/data-collector/collect_stock_futures.py`
+   - 收集：stock_futures（個股期貨）
 
 2. **資料匯入（data-import）**
    - 使用 `scripts/data-importer/import.sh`
@@ -116,16 +118,17 @@ scripts/data-transformer/transform.sh $TARGET_DATE
 
 2. **資料類型處理**：
    - 預設：all（所有類型）
-   - 可選：price, institutional, margin, lending, top20_volume
+   - 可選：price, institutional, margin, lending, top20_volume, stock_futures
 
 ### 📋 Step 2: 建立 Todo List
 
 使用 TodoWrite 建立任務清單：
 ```
-1. ⏳ 收集資料（data-collect）
-2. ⏳ 匯入資料庫（data-import）
-3. ⏳ 計算技術指標（data-transform）
-4. ⏳ Git 提交（git commit & push）
+1. ⏳ 收集股票資料（price, institutional, margin, lending, top20_volume）
+2. ⏳ 收集個股期貨資料（stock_futures）
+3. ⏳ 匯入資料庫（data-import）
+4. ⏳ 計算技術指標（data-transform）
+5. ⏳ Git 提交（git commit & push）
 ```
 
 ### 📋 Step 3: 階段 1 - 資料收集
@@ -212,7 +215,63 @@ cat data/raw/price/$YEAR/$MONTH/$TARGET_DATE.json | jq -r '
 2539      櫻花建    2026-02-06   47.1    48.05   46.7    47.9    0.4    785721
 ```
 
-**更新 Todo**: 標記「收集資料」為 completed
+**更新 Todo**: 標記「收集股票資料」為 completed
+
+### 📋 Step 3.5: 階段 1.5 - 收集個股期貨資料
+
+```bash
+# 執行收集
+python3.11 scripts/data-collector/collect_stock_futures.py --date $TARGET_DATE
+
+# 檢查結果
+ls -lh data/raw/stock_futures/$YEAR/$MONTH/$TARGET_DATE.json
+```
+
+**成功條件**：
+- ✅ JSON 檔案已生成
+- ✅ 檔案大小 > 0
+- ✅ metadata.total_count > 0（通常約 154 筆合約）
+
+**🔍 日期驗證**：
+```bash
+# 從 JSON 檔案提取 metadata.date
+COLLECTED_DATE=$(cat data/raw/stock_futures/$YEAR/$MONTH/$TARGET_DATE.json | jq -r '.metadata.date')
+
+if [ "$COLLECTED_DATE" != "$TARGET_DATE" ]; then
+    echo "❌ 個股期貨日期驗證失敗！"
+    echo "目標日期: $TARGET_DATE"
+    echo "實際收集日期: $COLLECTED_DATE"
+    exit 1
+fi
+
+echo "✅ 個股期貨日期驗證通過：$COLLECTED_DATE"
+```
+
+**📊 顯示重點期貨資訊**：
+顯示以下個股期貨合約的當日行情：
+- **台積電期貨 (CDF)**
+- **0050 期貨 (NYF)**
+
+```bash
+# 使用 jq 提取台積電期貨和 0050 期貨的資料
+cat data/raw/stock_futures/$YEAR/$MONTH/$TARGET_DATE.json | jq -r '
+  ["合約", "股票代碼", "股票名稱", "到期月份", "開盤", "最高", "最低", "收盤", "成交量", "未平倉"],
+  (.data[] |
+   select(.contract == "CDF" or .contract == "NYF") |
+   select(.contract_month[0:6] == (.date[0:4] + .date[5:7])) |
+   [.contract, .stock_id, .stock_name, .contract_month, .open, .high, .low, .close, .volume, .open_interest]
+  ) | @tsv
+' | column -t -s $'\t'
+```
+
+**輸出範例**：
+```
+合約  股票代碼  股票名稱  到期月份  開盤    最高    最低    收盤    成交量  未平倉
+CDF   2330      台積電    202603    1870.0  1880.0  1845.0  1870.0  7706    12345
+NYF   0050      元大台灣50 202603    75.6    76.7    75.45   75.6    2156    8901
+```
+
+**更新 Todo**: 標記「收集個股期貨資料」為 completed
 
 ### 📋 Step 4: 階段 2 - 資料庫匯入
 
@@ -270,6 +329,7 @@ data: Daily collection for YYYY-MM-DD
 - institutional: X 筆
 - margin: X 筆
 - top20_volume: X 筆
+- stock_futures: X 筆合約
 - 技術分析: X 檔股票
 
 Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
@@ -289,14 +349,16 @@ Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
 
 📊 執行摘要：
 - 日期: 2026-02-05
-- 資料類型: price, institutional, margin, lending, top20_volume
+- 資料類型: price, institutional, margin, lending, top20_volume, stock_futures
 - 收集股票數: 1,958 檔
-- 匯入資料庫: 1,958 筆
+- 收集期貨合約: 154 筆
+- 匯入資料庫: 2,112 筆（股票 1,958 + 期貨 154）
 - 技術分析: 1,921 檔（30 個指標）
 - Git Commit: 32deeb51
 
 📁 生成的檔案：
 - data/raw/price/2026/02/2026-02-05.json
+- data/raw/stock_futures/2026/02/2026-02-05.json
 - data/transformed/technical/2026/02/2026-02-05.json
 ```
 
@@ -530,4 +592,50 @@ chmod +x scripts/run_collection.py
 
 ---
 
-**最後更新**: 2026-02-05
+---
+
+## 個股期貨收集說明
+
+### 資料來源
+- **API**: TAIFEX OpenAPI（台灣期貨交易所）
+- **URL**: `https://openapi.taifex.com.tw/v1/DailyMarketReportFut`
+- **無需認證**: 完全免費的公開 API
+
+### 收集範圍
+- **合約數量**: 每日約 154 筆個股期貨合約
+- **涵蓋股票**: 約 21 檔標的股票（包含 ETF）
+- **合約類型**:
+  - 近月合約（當月）
+  - 次月合約
+  - 季月合約
+  - 跨月價差合約
+
+### 資料欄位
+每筆期貨資料包含：
+- 基本資訊：合約代碼、股票代碼、股票名稱、到期月份
+- 價格資訊：開盤、最高、最低、收盤、結算價
+- 交易資訊：成交量、未平倉量
+- 交易時段：一般交易、盤後交易
+
+### 執行方式
+```bash
+# 單日收集
+python3.11 scripts/data-collector/collect_stock_futures.py --date 2026-03-17
+
+# 使用 shell wrapper
+scripts/data-collector/collect_stock_futures.sh 2026-03-17
+```
+
+### 儲存位置
+```
+data/raw/stock_futures/YYYY/MM/YYYY-MM-DD.json
+```
+
+### 注意事項
+- ⚠️ 非交易日會自動跳過（回傳空資料或錯誤）
+- ⚠️ 使用 `python3.11` 而非 `python3`
+- ⚠️ 期貨資料會在交易日結束後更新（通常 15:00 後）
+
+---
+
+**最後更新**: 2026-03-17
