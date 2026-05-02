@@ -5,6 +5,24 @@
 ## [Unreleased]
 
 ### 新增
+- **月線篩選器（monthly-screener）**（2026-05-02）
+  - 新增以月 K 線為基礎的兩套量化選股公式
+  - **公式 1: 大底突破（VCP 型）** — 找剛從谷底起飛
+    - A：均線多頭排列（MA5 > MA10 > MA20 > MA24 + MA20 上揚）
+    - B：24 月波動壓縮 (Max−Min)/Min < 50%
+    - C：量能爆發 當月量 > 12M 均量 × 2.5
+  - **公式 2: 強勢趨勢** — 找已經會漲的飆股
+    - A：同公式 1
+    - B'：站上 12 月新高（收盤 ≥ 近 12M 高 × 95%）
+    - C'：量能溫和放大（> 12M 均量 × 1.5）
+  - **檔案結構**:
+    - `analysis/monthly-screener/README.md` - 兩套公式說明與比較
+    - `analysis/monthly-screener/01_breakout_bottom.sql` - 大底突破 SQL
+    - `analysis/monthly-screener/02_strong_trend.sql` - 強勢趨勢 SQL
+    - `analysis/monthly-screener/2026-04_strong_trend_report.md` - 2026-04 篩選報告（101 檔 + 月線型態判讀）
+    - `analysis/monthly-screener/2026-04_strong_trend_report.html` / `.pdf` - 報告 HTML / PDF 版
+  - **型態判讀**: 自動標註月線 W 底、大底突破、平台突破、杯柄、強勢趨勢創高、飆股延續創高等 7 種型態
+
 - **個股期貨資料收集功能**（2026-03-16）
   - 新增完整的個股期貨資料收集系統
   - **資料來源**: TAIFEX OpenAPI (DailyMarketReportFut)

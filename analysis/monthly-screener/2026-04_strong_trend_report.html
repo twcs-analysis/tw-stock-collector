@@ -1,0 +1,1417 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>強勢趨勢篩選 + 月線型態判讀 (2026-04)</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" href="../trader-analysis/style.css" />
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">強勢趨勢篩選 + 月線型態判讀 (2026-04)</h1>
+</header>
+<h1 id="月線強勢趨勢篩選器完整報告">月線「強勢趨勢」篩選器完整報告</h1>
+<p><strong>篩選日期</strong>: 2026-04 月線（截至 2026-04-30）
+<strong>樣本總數</strong>: 1,828 檔（具有 ≥ 24 個月歷史資料）
+<strong>符合條件</strong>: <strong>101 檔</strong>（A + B’ + C’
+三全達標）</p>
+<hr />
+<h2 id="公式定義">公式定義</h2>
+<pre><code>Score = A × 0.4 + B&#39; × 0.3 + C&#39; × 0.3</code></pre>
+<table>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>指標</th>
+<th>條件</th>
+<th>目的</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>A</strong> 均線多頭排列</td>
+<td>MA5 &gt; MA10 &gt; MA20 &gt; MA24 且 MA20 上揚</td>
+<td>多頭結構確立</td>
+</tr>
+<tr>
+<td><strong>B’</strong> 站上 12 月新高</td>
+<td>收盤 ≥ 近 12 月最高收盤 × 95%</td>
+<td>趨勢延續性</td>
+</tr>
+<tr>
+<td><strong>C’</strong> 量能溫和放大</td>
+<td>當月量 &gt; 12M 均量 × 1.5</td>
+<td>主力持續加碼</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="月線型態判讀說明">月線型態判讀說明</h2>
+<table>
+<colgroup>
+<col style="width: 25%" />
+<col style="width: 37%" />
+<col style="width: 37%" />
+</colgroup>
+<thead>
+<tr>
+<th>型態</th>
+<th>判讀條件</th>
+<th>操作意義</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>月線 W 底</strong></td>
+<td>雙底深度差 &lt; 20% + 中間反彈 &gt; 10% + 突破頸線</td>
+<td>⭐ 最理想，確認反轉</td>
+</tr>
+<tr>
+<td><strong>大底突破</strong></td>
+<td>24M 區間 &lt; 50% + 創新高</td>
+<td>真‧底部起飛</td>
+</tr>
+<tr>
+<td><strong>平台突破</strong></td>
+<td>24M 區間 &lt; 80% + 突破前高</td>
+<td>整理後突破</td>
+</tr>
+<tr>
+<td><strong>回後再起 (杯柄)</strong></td>
+<td>24M 漲幅 &gt; 50% + 創新高</td>
+<td>健康強勢</td>
+</tr>
+<tr>
+<td><strong>強勢趨勢創高</strong></td>
+<td>24M 漲 100~200% + 創新高</td>
+<td>趨勢延續</td>
+</tr>
+<tr>
+<td><strong>飆股延續創高</strong></td>
+<td>24M 漲 &gt; 200% + 創新高</td>
+<td>高風險高報酬</td>
+</tr>
+<tr>
+<td><strong>創新高 / 接近高點</strong></td>
+<td>佔 24M 高 ≥ 80~95%</td>
+<td>一般強勢</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="完整清單共-101-檔按量倍排序">完整清單（共 101
+檔，按量倍排序）</h2>
+<table>
+<colgroup>
+<col style="width: 5%" />
+<col style="width: 11%" />
+<col style="width: 11%" />
+<col style="width: 11%" />
+<col style="width: 16%" />
+<col style="width: 16%" />
+<col style="width: 16%" />
+<col style="width: 11%" />
+</colgroup>
+<thead>
+<tr>
+<th>#</th>
+<th>代號</th>
+<th>名稱</th>
+<th>收盤</th>
+<th>佔12M高%</th>
+<th>量倍 12M</th>
+<th>月線型態</th>
+<th>備註</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>2426</td>
+<td>鼎元</td>
+<td>57.30</td>
+<td>100.0%</td>
+<td>14.49×</td>
+<td><strong>飆股延續創高</strong></td>
+<td>24M 漲 209%, 創新高</td>
+</tr>
+<tr>
+<td>2</td>
+<td>3054</td>
+<td>立萬利</td>
+<td>66.00</td>
+<td>97.6%</td>
+<td>13.14×</td>
+<td><strong>回後再起 (杯柄)</strong></td>
+<td>24M 漲 228%, 整理後再攻高</td>
+</tr>
+<tr>
+<td>3</td>
+<td>6174</td>
+<td>安碁</td>
+<td>31.05</td>
+<td>100.0%</td>
+<td>13.12×</td>
+<td><strong>平台突破</strong></td>
+<td>24M 區間 59%, 突破前高</td>
+</tr>
+<tr>
+<td>4</td>
+<td>8162</td>
+<td>微矽電子-創</td>
+<td>50.70</td>
+<td>100.0%</td>
+<td>11.41×</td>
+<td><strong>月線 W 底</strong></td>
+<td>雙底 34.6/34.1, 頸線 41.5</td>
+</tr>
+<tr>
+<td>5</td>
+<td>6664</td>
+<td>群翊</td>
+<td>464.50</td>
+<td>100.0%</td>
+<td>8.55×</td>
+<td><strong>回後再起 (杯柄)</strong></td>
+<td>24M 漲 84%, 整理後再攻高</td>
+</tr>
+<tr>
+<td>6</td>
+<td>6829</td>
+<td>千附精密</td>
+<td>245.50</td>
+<td>100.0%</td>
+<td>8.03×</td>
+<td><strong>強勢趨勢創高</strong></td>
+<td>24M 漲 123%, 創新高</td>
+</tr>
+<tr>
+<td>7</td>
+<td>3577</td>
+<td>泓格</td>
+<td>87.30</td>
+<td>100.0%</td>
+<td>7.78×</td>
+<td><strong>平台突破</strong></td>
+<td>24M 區間 72%, 突破前高</td>
+</tr>
+<tr>
+<td>8</td>
+<td>6861</td>
+<td>睿生光電</td>
+<td>328.00</td>
+<td>100.0%</td>
+<td>7.49×</td>
+<td><strong>飆股延續創高</strong></td>
+<td>24M 漲 351%, 創新高</td>
+</tr>
+<tr>
+<td>9</td>
+<td>4960</td>
+<td>誠美材</td>
+<td>39.00</td>
+<td>100.0%</td>
+<td>6.79×</td>
+<td><strong>強勢趨勢創高</strong></td>
+<td>24M 漲 157%, 創新高</td>
+</tr>
+<tr>
+<td>10</td>
+<td>1711</td>
+<td>永光</td>
+<td>56.50</td>
+<td>100.0%</td>
+<td>6.64×</td>
+<td><strong>強勢趨勢創高</strong></td>
+<td>24M 漲 197%, 創新高</td>
+</tr>
+<tr>
+<td>11</td>
+<td>1717</td>
+<td>長興</td>
+<td>78.90</td>
+<td>100.0%</td>
+<td>6.53×</td>
+<td><strong>強勢趨勢創高</strong></td>
+<td>24M 漲 154%, 創新高</td>
+</tr>
+<tr>
+<td>12</td>
+<td>8240</td>
+<td>華宏</td>
+<td>66.50</td>
+<td>100.0%</td>
+<td>5.78×</td>
+<td><strong>回後再起 (杯柄)</strong></td>
+<td>24M 漲 75%, 整理後再攻高</td>
+</tr>
+<tr>
+<td>13</td>
+<td>8358</td>
+<td>金居</td>
+<td>388.50</td>
+<td>100.0%</td>
+<td>5.42×</td>
+<td><strong>飆股延續創高</strong></td>
+<td>24M 漲 476%, 創新高</td>
+</tr>
+<tr>
+<td>14</td>
+<td>1528</td>
+<td>恩德</td>
+<td>28.80</td>
+<td>100.0%</td>
+<td>5.31×</td>
+<td><strong>月線 W 底</strong></td>
+<td>雙底 13.0/12.4, 頸線 21.1</td>
+</tr>
+<tr>
+<td>15</td>
+<td>3455</td>
+<td>由田</td>
+<td>243.00</td>
+<td>100.0%</td>
+<td>5.27×</td>
+<td><strong>強勢趨勢創高</strong></td>
+<td>24M 漲 126%, 創新高</td>
+</tr>
+<tr>
+<td>16</td>
+<td>5292</td>
+<td>華懋</td>
+<td>240.00</td>
+<td>99.8%</td>
+<td>5.10×</td>
+<td><strong>月線 W 底</strong></td>
+<td>雙底 143.0/146.5, 頸線 168.5</td>
+</tr>
+<tr>
+<td>17</td>
+<td>3026</td>
+<td>禾伸堂</td>
+<td>212.50</td>
+<td>100.0%</td>
+<td>5.07×</td>
+<td><strong>強勢趨勢創高</strong></td>
+<td>24M 漲 115%, 創新高</td>
+</tr>
+<tr>
+<td>18</td>
+<td>6136</td>
+<td>富爾特</td>
+<td>25.40</td>
+<td>100.0%</td>
+<td>5.07×</td>
+<td><strong>平台突破</strong></td>
+<td>24M 區間 17%, 突破前高</td>
+</tr>
+<tr>
+<td>19</td>
+<td>6175</td>
+<td>立敦</td>
+<td>62.40</td>
+<td>100.0%</td>
+<td>4.55×</td>
+<td><strong>平台突破</strong></td>
+<td>24M 區間 80%, 突破前高</td>
+</tr>
+<tr>
+<td>20</td>
+<td>6877</td>
+<td>鏵友益</td>
+<td>169.00</td>
+<td>100.0%</td>
+<td>4.45×</td>
+<td><strong>飆股延續創高</strong></td>
+<td>24M 漲 314%, 創新高</td>
+</tr>
+<tr>
+<td>21</td>
+<td>6672</td>
+<td>騰輝電子-KY</td>
+<td>219.00</td>
+<td>100.0%</td>
+<td>4.41×</td>
+<td><strong>月線 W 底</strong></td>
+<td>雙底 62.5/71.5, 頸線 83.1</td>
+</tr>
+<tr>
+<td>22</td>
+<td>3498</td>
+<td>陽程</td>
+<td>87.70</td>
+<td>100.0%</td>
+<td>4.29×</td>
+<td><strong>強勢趨勢創高</strong></td>
+<td>24M 漲 122%, 創新高</td>
+</tr>
+<tr>
+<td>23</td>
+<td>7556</td>
+<td>意德士科技</td>
+<td>305.50</td>
+<td>100.0%</td>
+<td>3.98×</td>
+<td><strong>強勢趨勢創高</strong></td>
+<td>24M 漲 123%, 創新高</td>
+</tr>
+<tr>
+<td>24</td>
+<td>6127</td>
+<td>九豪</td>
+<td>44.10</td>
+<td>100.0%</td>
+<td>3.90×</td>
+<td><strong>平台突破</strong></td>
+<td>24M 區間 70%, 突破前高</td>
+</tr>
+<tr>
+<td>25</td>
+<td>1569</td>
+<td>濱川</td>
+<td>57.80</td>
+<td>100.0%</td>
+<td>3.81×</td>
+<td><strong>接近高點</strong></td>
+<td>佔 24M 高 89%</td>
+</tr>
+<tr>
+<td>26</td>
+<td>5228</td>
+<td>鈺鎧</td>
+<td>34.00</td>
+<td>100.0%</td>
+<td>3.74×</td>
+<td><strong>回後再起 (杯柄)</strong></td>
+<td>24M 漲 53%, 整理後再攻高</td>
+</tr>
+<tr>
+<td>27</td>
+<td>2402</td>
+<td>毅嘉</td>
+<td>70.20</td>
+<td>100.0%</td>
+<td>3.68×</td>
+<td><strong>強勢趨勢創高</strong></td>
+<td>24M 漲 103%, 創新高</td>
+</tr>
+<tr>
+<td>28</td>
+<td>6667</td>
+<td>信紘科</td>
+<td>266.00</td>
+<td>100.0%</td>
+<td>3.53×</td>
+<td><strong>大底突破</strong></td>
+<td>24M 區間僅 47%, 突破創高</td>
+</tr>
+<tr>
+<td>29</td>
+<td>4958</td>
+<td>臻鼎-KY</td>
+<td>421.00</td>
+<td>100.0%</td>
+<td>3.52×</td>
+<td><strong>飆股延續創高</strong></td>
+<td>24M 漲 245%, 創新高</td>
+</tr>
+<tr>
+<td>30</td>
+<td>1727</td>
+<td>中華化</td>
+<td>81.50</td>
+<td>100.0%</td>
+<td>3.44×</td>
+<td><strong>強勢趨勢創高</strong></td>
+<td>24M 漲 181%, 創新高</td>
+</tr>
+<tr>
+<td>31</td>
+<td>6257</td>
+<td>矽格</td>
+<td>180.00</td>
+<td>100.0%</td>
+<td>3.37×</td>
+<td><strong>強勢趨勢創高</strong></td>
+<td>24M 漲 129%, 創新高</td>
+</tr>
+<tr>
+<td>32</td>
+<td>6227</td>
+<td>茂綸</td>
+<td>91.30</td>
+<td>97.3%</td>
+<td>3.35×</td>
+<td><strong>平台突破</strong></td>
+<td>24M 區間 39%, 突破前高</td>
+</tr>
+<tr>
+<td>33</td>
+<td>5243</td>
+<td>乙盛-KY</td>
+<td>105.50</td>
+<td>100.0%</td>
+<td>3.26×</td>
+<td><strong>回後再起 (杯柄)</strong></td>
+<td>24M 漲 78%, 整理後再攻高</td>
+</tr>
+<tr>
+<td>34</td>
+<td>3171</td>
+<td>炎洲流通</td>
+<td>69.10</td>
+<td>98.4%</td>
+<td>3.15×</td>
+<td><strong>回後再起 (杯柄)</strong></td>
+<td>24M 漲 131%, 整理後再攻高</td>
+</tr>
+<tr>
+<td>35</td>
+<td>3028</td>
+<td>增你強</td>
+<td>68.30</td>
+<td>100.0%</td>
+<td>3.13×</td>
+<td><strong>月線 W 底</strong></td>
+<td>雙底 28.6/31.1, 頸線 34.0</td>
+</tr>
+<tr>
+<td>36</td>
+<td>6213</td>
+<td>聯茂</td>
+<td>270.00</td>
+<td>100.0%</td>
+<td>3.01×</td>
+<td><strong>強勢趨勢創高</strong></td>
+<td>24M 漲 144%, 創新高</td>
+</tr>
+<tr>
+<td>37</td>
+<td>6426</td>
+<td>統新</td>
+<td>223.50</td>
+<td>100.0%</td>
+<td>3.00×</td>
+<td><strong>月線 W 底</strong></td>
+<td>雙底 61.5/70.6, 頸線 86.0</td>
+</tr>
+<tr>
+<td>38</td>
+<td>6465</td>
+<td>威潤</td>
+<td>45.20</td>
+<td>100.0%</td>
+<td>2.92×</td>
+<td><strong>強勢趨勢創高</strong></td>
+<td>24M 漲 108%, 創新高</td>
+</tr>
+<tr>
+<td>39</td>
+<td>6693</td>
+<td>廣閎科</td>
+<td>139.50</td>
+<td>100.0%</td>
+<td>2.89×</td>
+<td><strong>回後再起 (杯柄)</strong></td>
+<td>24M 漲 82%, 整理後再攻高</td>
+</tr>
+<tr>
+<td>40</td>
+<td>4764</td>
+<td>雙鍵</td>
+<td>258.00</td>
+<td>100.0%</td>
+<td>2.87×</td>
+<td><strong>月線 W 底</strong></td>
+<td>雙底 40.8/39.9, 頸線 47.8</td>
+</tr>
+<tr>
+<td>41</td>
+<td>2313</td>
+<td>華通</td>
+<td>244.50</td>
+<td>98.6%</td>
+<td>2.72×</td>
+<td><strong>回後再起 (杯柄)</strong></td>
+<td>24M 漲 234%, 整理後再攻高</td>
+</tr>
+<tr>
+<td>42</td>
+<td>6574</td>
+<td>霈方</td>
+<td>101.50</td>
+<td>100.0%</td>
+<td>2.72×</td>
+<td><strong>強勢趨勢創高</strong></td>
+<td>24M 漲 101%, 創新高</td>
+</tr>
+<tr>
+<td>43</td>
+<td>6761</td>
+<td>穩得</td>
+<td>218.00</td>
+<td>100.0%</td>
+<td>2.72×</td>
+<td><strong>回後再起 (杯柄)</strong></td>
+<td>24M 漲 96%, 整理後再攻高</td>
+</tr>
+<tr>
+<td>44</td>
+<td>1785</td>
+<td>光洋科</td>
+<td>165.50</td>
+<td>100.0%</td>
+<td>2.71×</td>
+<td><strong>飆股延續創高</strong></td>
+<td>24M 漲 233%, 創新高</td>
+</tr>
+<tr>
+<td>45</td>
+<td>8064</td>
+<td>東捷</td>
+<td>104.00</td>
+<td>100.0%</td>
+<td>2.68×</td>
+<td><strong>強勢趨勢創高</strong></td>
+<td>24M 漲 186%, 創新高</td>
+</tr>
+<tr>
+<td>46</td>
+<td>5498</td>
+<td>凱崴</td>
+<td>73.90</td>
+<td>100.0%</td>
+<td>2.67×</td>
+<td><strong>飆股延續創高</strong></td>
+<td>24M 漲 369%, 創新高</td>
+</tr>
+<tr>
+<td>47</td>
+<td>2535</td>
+<td>達欣工</td>
+<td>72.10</td>
+<td>98.1%</td>
+<td>2.66×</td>
+<td><strong>月線 W 底</strong></td>
+<td>雙底 49.0/56.6, 頸線 61.7</td>
+</tr>
+<tr>
+<td>48</td>
+<td>8261</td>
+<td>富鼎</td>
+<td>118.50</td>
+<td>100.0%</td>
+<td>2.64×</td>
+<td><strong>平台突破</strong></td>
+<td>24M 區間 61%, 突破前高</td>
+</tr>
+<tr>
+<td>49</td>
+<td>5439</td>
+<td>高技</td>
+<td>382.50</td>
+<td>100.0%</td>
+<td>2.53×</td>
+<td><strong>飆股延續創高</strong></td>
+<td>24M 漲 307%, 創新高</td>
+</tr>
+<tr>
+<td>50</td>
+<td>3645</td>
+<td>達邁</td>
+<td>104.00</td>
+<td>100.0%</td>
+<td>2.45×</td>
+<td><strong>強勢趨勢創高</strong></td>
+<td>24M 漲 146%, 創新高</td>
+</tr>
+<tr>
+<td>51</td>
+<td>4903</td>
+<td>聯光通</td>
+<td>45.25</td>
+<td>95.3%</td>
+<td>2.45×</td>
+<td><strong>回後再起 (杯柄)</strong></td>
+<td>24M 漲 82%, 整理後再攻高</td>
+</tr>
+<tr>
+<td>52</td>
+<td>1802</td>
+<td>台玻</td>
+<td>67.00</td>
+<td>100.0%</td>
+<td>2.43×</td>
+<td><strong>飆股延續創高</strong></td>
+<td>24M 漲 269%, 創新高</td>
+</tr>
+<tr>
+<td>53</td>
+<td>3583</td>
+<td>辛耘</td>
+<td>792.00</td>
+<td>100.0%</td>
+<td>2.40×</td>
+<td><strong>強勢趨勢創高</strong></td>
+<td>24M 漲 134%, 創新高</td>
+</tr>
+<tr>
+<td>54</td>
+<td>6531</td>
+<td>愛普*</td>
+<td>840.00</td>
+<td>100.0%</td>
+<td>2.37×</td>
+<td><strong>強勢趨勢創高</strong></td>
+<td>24M 漲 143%, 創新高</td>
+</tr>
+<tr>
+<td>55</td>
+<td>6727</td>
+<td>亞泰金屬</td>
+<td>382.00</td>
+<td>95.5%</td>
+<td>2.35×</td>
+<td><strong>回後再起 (杯柄)</strong></td>
+<td>24M 漲 458%, 整理後再攻高</td>
+</tr>
+<tr>
+<td>56</td>
+<td>6187</td>
+<td>萬潤</td>
+<td>1210.00</td>
+<td>100.0%</td>
+<td>2.31×</td>
+<td><strong>飆股延續創高</strong></td>
+<td>24M 漲 408%, 創新高</td>
+</tr>
+<tr>
+<td>57</td>
+<td>2454</td>
+<td>聯發科</td>
+<td>2610.00</td>
+<td>100.0%</td>
+<td>2.29×</td>
+<td><strong>月線 W 底</strong></td>
+<td>雙底 1175.0/1250.0, 頸線 1510.0</td>
+</tr>
+<tr>
+<td>58</td>
+<td>2337</td>
+<td>旺宏</td>
+<td>154.00</td>
+<td>100.0%</td>
+<td>2.28×</td>
+<td><strong>月線 W 底</strong></td>
+<td>雙底 19.2/18.9, 頸線 22.0</td>
+</tr>
+<tr>
+<td>59</td>
+<td>3162</td>
+<td>精確</td>
+<td>73.20</td>
+<td>100.0%</td>
+<td>2.23×</td>
+<td><strong>強勢趨勢創高</strong></td>
+<td>24M 漲 134%, 創新高</td>
+</tr>
+<tr>
+<td>60</td>
+<td>6525</td>
+<td>捷敏-KY</td>
+<td>92.40</td>
+<td>100.0%</td>
+<td>2.22×</td>
+<td><strong>大底突破</strong></td>
+<td>24M 區間僅 43%, 突破創高</td>
+</tr>
+<tr>
+<td>61</td>
+<td>6173</td>
+<td>信昌電</td>
+<td>85.70</td>
+<td>100.0%</td>
+<td>2.21×</td>
+<td><strong>回後再起 (杯柄)</strong></td>
+<td>24M 漲 74%, 整理後再攻高</td>
+</tr>
+<tr>
+<td>62</td>
+<td>3081</td>
+<td>聯亞</td>
+<td>2640.00</td>
+<td>100.0%</td>
+<td>2.19×</td>
+<td><strong>飆股延續創高</strong></td>
+<td>24M 漲 1863%, 創新高</td>
+</tr>
+<tr>
+<td>63</td>
+<td>3189</td>
+<td>景碩</td>
+<td>528.00</td>
+<td>100.0%</td>
+<td>2.19×</td>
+<td><strong>飆股延續創高</strong></td>
+<td>24M 漲 459%, 創新高</td>
+</tr>
+<tr>
+<td>64</td>
+<td>3030</td>
+<td>德律</td>
+<td>342.50</td>
+<td>100.0%</td>
+<td>2.17×</td>
+<td><strong>回後再起 (杯柄)</strong></td>
+<td>24M 漲 99%, 整理後再攻高</td>
+</tr>
+<tr>
+<td>65</td>
+<td>4577</td>
+<td>達航科技</td>
+<td>165.00</td>
+<td>100.0%</td>
+<td>2.09×</td>
+<td><strong>飆股延續創高</strong></td>
+<td>24M 漲 564%, 創新高</td>
+</tr>
+<tr>
+<td>66</td>
+<td>8028</td>
+<td>昇陽半導體</td>
+<td>245.00</td>
+<td>100.0%</td>
+<td>2.09×</td>
+<td><strong>飆股延續創高</strong></td>
+<td>24M 漲 291%, 創新高</td>
+</tr>
+<tr>
+<td>67</td>
+<td>2481</td>
+<td>強茂</td>
+<td>101.00</td>
+<td>100.0%</td>
+<td>2.08×</td>
+<td><strong>月線 W 底</strong></td>
+<td>雙底 44.1/47.5, 頸線 50.6</td>
+</tr>
+<tr>
+<td>68</td>
+<td>3689</td>
+<td>湧德</td>
+<td>134.00</td>
+<td>99.3%</td>
+<td>2.05×</td>
+<td><strong>回後再起 (杯柄)</strong></td>
+<td>24M 漲 81%, 整理後再攻高</td>
+</tr>
+<tr>
+<td>69</td>
+<td>8039</td>
+<td>台虹</td>
+<td>136.50</td>
+<td>100.0%</td>
+<td>2.05×</td>
+<td><strong>強勢趨勢創高</strong></td>
+<td>24M 漲 161%, 創新高</td>
+</tr>
+<tr>
+<td>70</td>
+<td>4989</td>
+<td>榮科</td>
+<td>113.00</td>
+<td>100.0%</td>
+<td>2.01×</td>
+<td><strong>飆股延續創高</strong></td>
+<td>24M 漲 340%, 創新高</td>
+</tr>
+<tr>
+<td>71</td>
+<td>6190</td>
+<td>萬泰科</td>
+<td>69.80</td>
+<td>100.0%</td>
+<td>2.00×</td>
+<td><strong>回後再起 (杯柄)</strong></td>
+<td>24M 漲 77%, 整理後再攻高</td>
+</tr>
+<tr>
+<td>72</td>
+<td>8155</td>
+<td>博智</td>
+<td>416.00</td>
+<td>100.0%</td>
+<td>1.98×</td>
+<td><strong>強勢趨勢創高</strong></td>
+<td>24M 漲 181%, 創新高</td>
+</tr>
+<tr>
+<td>73</td>
+<td>1590</td>
+<td>亞德客-KY</td>
+<td>1455.00</td>
+<td>100.0%</td>
+<td>1.96×</td>
+<td><strong>月線 W 底</strong></td>
+<td>雙底 790.0/753.0, 頸線 975.0</td>
+</tr>
+<tr>
+<td>74</td>
+<td>4977</td>
+<td>眾達-KY</td>
+<td>217.50</td>
+<td>100.0%</td>
+<td>1.94×</td>
+<td><strong>強勢趨勢創高</strong></td>
+<td>24M 漲 193%, 創新高</td>
+</tr>
+<tr>
+<td>75</td>
+<td>2455</td>
+<td>全新</td>
+<td>347.50</td>
+<td>100.0%</td>
+<td>1.91×</td>
+<td><strong>強勢趨勢創高</strong></td>
+<td>24M 漲 146%, 創新高</td>
+</tr>
+<tr>
+<td>76</td>
+<td>6830</td>
+<td>汎銓</td>
+<td>850.00</td>
+<td>100.0%</td>
+<td>1.88×</td>
+<td><strong>飆股延續創高</strong></td>
+<td>24M 漲 554%, 創新高</td>
+</tr>
+<tr>
+<td>77</td>
+<td>6196</td>
+<td>帆宣</td>
+<td>378.00</td>
+<td>100.0%</td>
+<td>1.86×</td>
+<td><strong>強勢趨勢創高</strong></td>
+<td>24M 漲 145%, 創新高</td>
+</tr>
+<tr>
+<td>78</td>
+<td>5434</td>
+<td>崇越</td>
+<td>406.00</td>
+<td>100.0%</td>
+<td>1.84×</td>
+<td><strong>平台突破</strong></td>
+<td>24M 區間 65%, 突破前高</td>
+</tr>
+<tr>
+<td>79</td>
+<td>3264</td>
+<td>欣銓</td>
+<td>195.00</td>
+<td>100.0%</td>
+<td>1.81×</td>
+<td><strong>強勢趨勢創高</strong></td>
+<td>24M 漲 169%, 創新高</td>
+</tr>
+<tr>
+<td>80</td>
+<td>3563</td>
+<td>牧德</td>
+<td>873.00</td>
+<td>100.0%</td>
+<td>1.81×</td>
+<td><strong>強勢趨勢創高</strong></td>
+<td>24M 漲 133%, 創新高</td>
+</tr>
+<tr>
+<td>81</td>
+<td>3430</td>
+<td>奇鈦科</td>
+<td>122.00</td>
+<td>100.0%</td>
+<td>1.78×</td>
+<td><strong>回後再起 (杯柄)</strong></td>
+<td>24M 漲 96%, 整理後再攻高</td>
+</tr>
+<tr>
+<td>82</td>
+<td>8103</td>
+<td>瀚荃</td>
+<td>125.00</td>
+<td>100.0%</td>
+<td>1.78×</td>
+<td><strong>強勢趨勢創高</strong></td>
+<td>24M 漲 164%, 創新高</td>
+</tr>
+<tr>
+<td>83</td>
+<td>5515</td>
+<td>建國</td>
+<td>40.70</td>
+<td>100.0%</td>
+<td>1.73×</td>
+<td><strong>月線 W 底</strong></td>
+<td>雙底 21.9/23.6, 頸線 31.1</td>
+</tr>
+<tr>
+<td>84</td>
+<td>3265</td>
+<td>台星科</td>
+<td>168.00</td>
+<td>100.0%</td>
+<td>1.72×</td>
+<td><strong>平台突破</strong></td>
+<td>24M 區間 67%, 突破前高</td>
+</tr>
+<tr>
+<td>85</td>
+<td>3357</td>
+<td>臺慶科</td>
+<td>165.00</td>
+<td>98.8%</td>
+<td>1.72×</td>
+<td><strong>平台突破</strong></td>
+<td>24M 區間 41%, 突破前高</td>
+</tr>
+<tr>
+<td>86</td>
+<td>8111</td>
+<td>立碁</td>
+<td>69.40</td>
+<td>97.7%</td>
+<td>1.70×</td>
+<td><strong>回後再起 (杯柄)</strong></td>
+<td>24M 漲 183%, 整理後再攻高</td>
+</tr>
+<tr>
+<td>87</td>
+<td>8046</td>
+<td>南電</td>
+<td>1005.00</td>
+<td>100.0%</td>
+<td>1.68×</td>
+<td><strong>飆股延續創高</strong></td>
+<td>24M 漲 414%, 創新高</td>
+</tr>
+<tr>
+<td>88</td>
+<td>2472</td>
+<td>立隆電</td>
+<td>176.50</td>
+<td>100.0%</td>
+<td>1.63×</td>
+<td><strong>強勢趨勢創高</strong></td>
+<td>24M 漲 128%, 創新高</td>
+</tr>
+<tr>
+<td>89</td>
+<td>6881</td>
+<td>潤德</td>
+<td>263.00</td>
+<td>100.0%</td>
+<td>1.63×</td>
+<td><strong>大底突破</strong></td>
+<td>24M 區間僅 21%, 突破創高</td>
+</tr>
+<tr>
+<td>90</td>
+<td>0053</td>
+<td>元大電子</td>
+<td>209.25</td>
+<td>100.0%</td>
+<td>1.61×</td>
+<td><strong>強勢趨勢創高</strong></td>
+<td>24M 漲 132%, 創新高</td>
+</tr>
+<tr>
+<td>91</td>
+<td>3044</td>
+<td>健鼎</td>
+<td>448.50</td>
+<td>100.0%</td>
+<td>1.61×</td>
+<td><strong>強勢趨勢創高</strong></td>
+<td>24M 漲 112%, 創新高</td>
+</tr>
+<tr>
+<td>92</td>
+<td>8074</td>
+<td>鉅橡</td>
+<td>80.30</td>
+<td>100.0%</td>
+<td>1.61×</td>
+<td><strong>飆股延續創高</strong></td>
+<td>24M 漲 275%, 創新高</td>
+</tr>
+<tr>
+<td>93</td>
+<td>2467</td>
+<td>志聖</td>
+<td>609.00</td>
+<td>100.0%</td>
+<td>1.59×</td>
+<td><strong>月線 W 底</strong></td>
+<td>雙底 140.0/145.0, 頸線 240.0</td>
+</tr>
+<tr>
+<td>94</td>
+<td>3234</td>
+<td>光環</td>
+<td>113.50</td>
+<td>99.6%</td>
+<td>1.56×</td>
+<td><strong>強勢趨勢創高</strong></td>
+<td>24M 漲 139%, 創新高</td>
+</tr>
+<tr>
+<td>95</td>
+<td>6788</td>
+<td>華景電</td>
+<td>442.00</td>
+<td>100.0%</td>
+<td>1.56×</td>
+<td><strong>飆股延續創高</strong></td>
+<td>24M 漲 209%, 創新高</td>
+</tr>
+<tr>
+<td>96</td>
+<td>8027</td>
+<td>鈦昇</td>
+<td>193.50</td>
+<td>100.0%</td>
+<td>1.56×</td>
+<td><strong>月線 W 底</strong></td>
+<td>雙底 86.7/92.9, 頸線 117.0</td>
+</tr>
+<tr>
+<td>97</td>
+<td>8047</td>
+<td>星雲</td>
+<td>55.90</td>
+<td>97.2%</td>
+<td>1.56×</td>
+<td><strong>回後再起 (杯柄)</strong></td>
+<td>24M 漲 274%, 整理後再攻高</td>
+</tr>
+<tr>
+<td>98</td>
+<td>3090</td>
+<td>日電貿</td>
+<td>96.30</td>
+<td>96.6%</td>
+<td>1.54×</td>
+<td><strong>月線 W 底</strong></td>
+<td>雙底 60.6/70.1, 頸線 77.3</td>
+</tr>
+<tr>
+<td>99</td>
+<td>2360</td>
+<td>致茂</td>
+<td>2120.00</td>
+<td>100.0%</td>
+<td>1.52×</td>
+<td><strong>飆股延續創高</strong></td>
+<td>24M 漲 644%, 創新高</td>
+</tr>
+<tr>
+<td>100</td>
+<td>6417</td>
+<td>韋僑</td>
+<td>116.50</td>
+<td>100.0%</td>
+<td>1.51×</td>
+<td><strong>大底突破</strong></td>
+<td>24M 區間僅 17%, 突破創高</td>
+</tr>
+<tr>
+<td>101</td>
+<td>8210</td>
+<td>勤誠</td>
+<td>1130.00</td>
+<td>100.0%</td>
+<td>1.51×</td>
+<td><strong>飆股延續創高</strong></td>
+<td>24M 漲 270%, 創新高</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="型態分佈統計">型態分佈統計</h2>
+<table>
+<thead>
+<tr>
+<th>型態</th>
+<th>數量</th>
+<th>佔比</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>強勢趨勢創高</td>
+<td>31</td>
+<td>30.7%</td>
+</tr>
+<tr>
+<td>飆股延續創高</td>
+<td>21</td>
+<td>20.8%</td>
+</tr>
+<tr>
+<td>回後再起 (杯柄)</td>
+<td>18</td>
+<td>17.8%</td>
+</tr>
+<tr>
+<td>月線 W 底</td>
+<td>16</td>
+<td>15.8%</td>
+</tr>
+<tr>
+<td>平台突破</td>
+<td>10</td>
+<td>9.9%</td>
+</tr>
+<tr>
+<td>大底突破</td>
+<td>4</td>
+<td>4.0%</td>
+</tr>
+<tr>
+<td>接近高點</td>
+<td>1</td>
+<td>1.0%</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="重點推薦月線-w-底">⭐ 重點推薦：月線 W 底</h2>
+<p>共 <strong>16</strong> 檔，這是最理想的反轉型態：</p>
+<table>
+<colgroup>
+<col style="width: 9%" />
+<col style="width: 18%" />
+<col style="width: 18%" />
+<col style="width: 18%" />
+<col style="width: 18%" />
+<col style="width: 18%" />
+</colgroup>
+<thead>
+<tr>
+<th>#</th>
+<th>代號</th>
+<th>名稱</th>
+<th>收盤</th>
+<th>量倍</th>
+<th>備註</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>8162</td>
+<td>微矽電子-創</td>
+<td>50.70</td>
+<td>11.41×</td>
+<td>雙底 34.6/34.1, 頸線 41.5</td>
+</tr>
+<tr>
+<td>2</td>
+<td>1528</td>
+<td>恩德</td>
+<td>28.80</td>
+<td>5.31×</td>
+<td>雙底 13.0/12.4, 頸線 21.1</td>
+</tr>
+<tr>
+<td>3</td>
+<td>5292</td>
+<td>華懋</td>
+<td>240.00</td>
+<td>5.10×</td>
+<td>雙底 143.0/146.5, 頸線 168.5</td>
+</tr>
+<tr>
+<td>4</td>
+<td>6672</td>
+<td>騰輝電子-KY</td>
+<td>219.00</td>
+<td>4.41×</td>
+<td>雙底 62.5/71.5, 頸線 83.1</td>
+</tr>
+<tr>
+<td>5</td>
+<td>3028</td>
+<td>增你強</td>
+<td>68.30</td>
+<td>3.13×</td>
+<td>雙底 28.6/31.1, 頸線 34.0</td>
+</tr>
+<tr>
+<td>6</td>
+<td>6426</td>
+<td>統新</td>
+<td>223.50</td>
+<td>3.00×</td>
+<td>雙底 61.5/70.6, 頸線 86.0</td>
+</tr>
+<tr>
+<td>7</td>
+<td>4764</td>
+<td>雙鍵</td>
+<td>258.00</td>
+<td>2.87×</td>
+<td>雙底 40.8/39.9, 頸線 47.8</td>
+</tr>
+<tr>
+<td>8</td>
+<td>2535</td>
+<td>達欣工</td>
+<td>72.10</td>
+<td>2.66×</td>
+<td>雙底 49.0/56.6, 頸線 61.7</td>
+</tr>
+<tr>
+<td>9</td>
+<td>2454</td>
+<td>聯發科</td>
+<td>2610.00</td>
+<td>2.29×</td>
+<td>雙底 1175.0/1250.0, 頸線 1510.0</td>
+</tr>
+<tr>
+<td>10</td>
+<td>2337</td>
+<td>旺宏</td>
+<td>154.00</td>
+<td>2.28×</td>
+<td>雙底 19.2/18.9, 頸線 22.0</td>
+</tr>
+<tr>
+<td>11</td>
+<td>2481</td>
+<td>強茂</td>
+<td>101.00</td>
+<td>2.08×</td>
+<td>雙底 44.1/47.5, 頸線 50.6</td>
+</tr>
+<tr>
+<td>12</td>
+<td>1590</td>
+<td>亞德客-KY</td>
+<td>1455.00</td>
+<td>1.96×</td>
+<td>雙底 790.0/753.0, 頸線 975.0</td>
+</tr>
+<tr>
+<td>13</td>
+<td>5515</td>
+<td>建國</td>
+<td>40.70</td>
+<td>1.73×</td>
+<td>雙底 21.9/23.6, 頸線 31.1</td>
+</tr>
+<tr>
+<td>14</td>
+<td>2467</td>
+<td>志聖</td>
+<td>609.00</td>
+<td>1.59×</td>
+<td>雙底 140.0/145.0, 頸線 240.0</td>
+</tr>
+<tr>
+<td>15</td>
+<td>8027</td>
+<td>鈦昇</td>
+<td>193.50</td>
+<td>1.56×</td>
+<td>雙底 86.7/92.9, 頸線 117.0</td>
+</tr>
+<tr>
+<td>16</td>
+<td>3090</td>
+<td>日電貿</td>
+<td>96.30</td>
+<td>1.54×</td>
+<td>雙底 60.6/70.1, 頸線 77.3</td>
+</tr>
+</tbody>
+</table>
+<h2 id="次重點大底突破">⭐ 次重點：大底突破</h2>
+<p>共 <strong>4</strong> 檔，24 月區間壓縮 + 突破創高：</p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>代號</th>
+<th>名稱</th>
+<th>收盤</th>
+<th>量倍</th>
+<th>備註</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>6667</td>
+<td>信紘科</td>
+<td>266.00</td>
+<td>3.53×</td>
+<td>24M 區間僅 47%, 突破創高</td>
+</tr>
+<tr>
+<td>2</td>
+<td>6525</td>
+<td>捷敏-KY</td>
+<td>92.40</td>
+<td>2.22×</td>
+<td>24M 區間僅 43%, 突破創高</td>
+</tr>
+<tr>
+<td>3</td>
+<td>6881</td>
+<td>潤德</td>
+<td>263.00</td>
+<td>1.63×</td>
+<td>24M 區間僅 21%, 突破創高</td>
+</tr>
+<tr>
+<td>4</td>
+<td>6417</td>
+<td>韋僑</td>
+<td>116.50</td>
+<td>1.51×</td>
+<td>24M 區間僅 17%, 突破創高</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<p><em>資料來源: tw-stock-collector PostgreSQL 資料庫</em> <em>計算範圍:
+2024-01 ~ 2026-04（28 個月線）</em> <em>產出時間: 2026-05-02</em></p>
+</body>
+</html>
