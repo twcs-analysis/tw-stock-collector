@@ -5,6 +5,23 @@
 ## [Unreleased]
 
 ### 新增
+- **月線篩選器：公式 3 初升段爆發**（2026-05-08）
+  - 新增第三套月線量化選股公式，捕捉「剛起漲第一/第二棒」的爆發初期股
+  - **設計動機**: 公式 2 因要求均線多頭排列，會漏掉「連 1~2 月暴漲但均線還沒翻多」的爆發初期標的（如 5443 均豪）
+  - **公式 3: 初升段爆發**
+    - D：近 2 月累積漲幅 ≥ 25%（捕捉爆發初期）
+    - E：站上 12 月新高（收盤 ≥ 近 12M 高 × 95%）
+    - F：量能強爆發（當月量 > 12M 均量 × 3.0，比公式 2 嚴格）
+    - 不要求均線多頭排列（A 條件）
+  - **新增檔案**:
+    - `analysis/monthly-screener/03_initial_breakout.sql` - 初升段爆發 SQL
+    - `analysis/monthly-screener/2026-04_initial_breakout_report.md` - 2026-04 篩選報告（313 檔 + 型態判讀）
+    - `analysis/monthly-screener/2026-04_initial_breakout_report.html` / `.pdf` - 報告 HTML / PDF 版
+    - `analysis/monthly-screener/style.css` - 月線篩選器報告專用樣式
+  - **更新**:
+    - `analysis/monthly-screener/README.md` - 補上公式 3 說明與三公式比較表
+    - `analysis/monthly-screener/2026-04_strong_trend_report.html` - CSS 路徑改用本地 `style.css`
+
 - **月線篩選器（monthly-screener）**（2026-05-02）
   - 新增以月 K 線為基礎的兩套量化選股公式
   - **公式 1: 大底突破（VCP 型）** — 找剛從谷底起飛
